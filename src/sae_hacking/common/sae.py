@@ -6,7 +6,7 @@ from beartype import beartype
 from jaxtyping import Float, jaxtyped
 
 
-class SparseAutoEncoder(torch.nn.Module):
+class ReluSparseAutoEncoder(torch.nn.Module):
     @beartype
     def __init__(self, sae_hidden_dim: int):
         super().__init__()

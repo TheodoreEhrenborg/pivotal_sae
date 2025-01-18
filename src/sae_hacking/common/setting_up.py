@@ -11,7 +11,7 @@ from transformers import (
     GPTNeoForCausalLM,
 )
 
-from sae_hacking.common.sae import SparseAutoEncoder
+from sae_hacking.common.sae import ReluSparseAutoEncoder
 
 
 @beartype
@@ -37,7 +37,7 @@ def make_dataset(tokenizer: GPT2TokenizerFast) -> DatasetDict:
 @beartype
 def setup(
     sae_hidden_dim: int, cuda: bool, no_internet: bool
-) -> tuple[DatasetDict, GPTNeoForCausalLM, SparseAutoEncoder, GPT2TokenizerFast]:
+) -> tuple[DatasetDict, GPTNeoForCausalLM, ReluSparseAutoEncoder, GPT2TokenizerFast]:
     llm = AutoModelForCausalLM.from_pretrained(
         "roneneldan/TinyStories-33M", local_files_only=no_internet
     )
@@ -48,7 +48,7 @@ def setup(
     )
     tokenizer.pad_token = tokenizer.eos_token
     filtered_datasets = make_dataset(tokenizer)
-    sae = SparseAutoEncoder(sae_hidden_dim)
+    sae = ReluSparseAutoEncoder(sae_hidden_dim)
     if cuda:
         sae.cuda()
     return filtered_datasets, llm, sae, tokenizer
