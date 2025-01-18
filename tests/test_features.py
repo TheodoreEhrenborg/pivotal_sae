@@ -2,7 +2,7 @@ import torch
 from beartype import beartype
 from jaxtyping import Float, jaxtyped
 
-from tiny_stories_sae.common.sae import get_feature_magnitudes
+from sae_hacking.common.sae import get_feature_magnitudes
 
 
 @jaxtyped(typechecker=beartype)

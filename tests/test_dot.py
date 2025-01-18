@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import torch
 
-from tiny_stories_sae.common.angle import get_rotation_between
+from sae_hacking.common.angle import get_rotation_between
 
 
 def test_rotation():

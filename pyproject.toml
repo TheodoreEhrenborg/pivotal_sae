@@ -1,5 +1,5 @@
 [project]
-name = "tiny_stories_sae"
+name = "sae_hacking"
 version = "0.1.0"
 description = "Add your description here"
 dependencies = [
@@ -31,13 +31,13 @@ ignore = ["F722"]
 extend-select = ["I"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["tiny_stories_sae"]
+known-first-party = ["sae_hacking"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/tiny_stories_sae"]
+packages = ["src/sae_hacking"]
 
 [tool.uv]
 dev-dependencies = [

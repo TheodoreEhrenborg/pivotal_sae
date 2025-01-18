@@ -11,7 +11,7 @@ from transformers import (
     GPTNeoForCausalLM,
 )
 
-from tiny_stories_sae.common.sae import SparseAutoEncoder
+from sae_hacking.common.sae import SparseAutoEncoder
 
 
 @beartype

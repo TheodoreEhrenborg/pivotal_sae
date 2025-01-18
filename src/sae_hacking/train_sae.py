@@ -8,11 +8,11 @@ from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from tiny_stories_sae.common.obtain_activations import (
+from sae_hacking.common.obtain_activations import (
     get_llm_activation,
     normalize_activations,
 )
-from tiny_stories_sae.common.setting_up import make_base_parser, setup
+from sae_hacking.common.setting_up import make_base_parser, setup
 
 
 @beartype

@@ -6,14 +6,14 @@ from beartype import beartype
 from jaxtyping import Float, Int, jaxtyped
 from transformers import GenerationConfig, GPTNeoForCausalLM
 
-from tiny_stories_sae.common.activation_analysis import get_annotated_text
-from tiny_stories_sae.common.angle import get_rotation_between
-from tiny_stories_sae.common.obtain_activations import (
+from sae_hacking.common.activation_analysis import get_annotated_text
+from sae_hacking.common.angle import get_rotation_between
+from sae_hacking.common.obtain_activations import (
     get_llm_activation_from_tensor,
     normalize_activations,
 )
-from tiny_stories_sae.common.sae import SparseAutoEncoder
-from tiny_stories_sae.common.setting_up import setup
+from sae_hacking.common.sae import SparseAutoEncoder
+from sae_hacking.common.setting_up import setup
 
 
 @jaxtyped(typechecker=beartype)
