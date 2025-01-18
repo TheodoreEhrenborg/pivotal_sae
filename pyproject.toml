@@ -1,0 +1,45 @@
+[project]
+name = "tiny_stories_sae"
+version = "0.1.0"
+description = "Add your description here"
+dependencies = [
+    "beartype==0.18.5",
+    "jaxtyping==0.2.33",
+    "tensorboard==2.17.1",
+    "coolname==2.2.0",
+    "accelerate==0.33.0",
+    "datasets==2.20.0",
+    "huggingface-hub==0.24.5",
+    "torch==2.4.0",
+    "transformers==4.43.3",
+    "openai>=1.45.0",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.9.1",
+    "tqdm>=4.66.5",
+    "seaborn>=0.13.2",
+    "pandas>=2.2.2",
+]
+readme = "README.md"
+requires-python = ">= 3.9"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff.lint]
+ignore = ["F722"]
+extend-select = ["I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tiny_stories_sae"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tiny_stories_sae"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]

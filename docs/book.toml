@@ -1,0 +1,20 @@
+[book]
+authors = ["Theodore Ehrenborg"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Tiny Stories Sparse Autoencoder"
+
+[preprocessor]
+
+[preprocessor.admonish]
+command = "mdbook-admonish"
+assets_version = "3.0.2" # do not edit: managed by `mdbook-admonish install`
+
+[output]
+
+[output.html]
+additional-css = ["./mdbook-admonish.css"]
+mathjax-support = true
+smart-punctuation = true
+git-repository-url = "https://github.com/TheodoreEhrenborg/tiny_stories_sae"
