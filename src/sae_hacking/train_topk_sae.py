@@ -19,7 +19,7 @@ from sae_hacking.common.obtain_activations import (
     get_llm_activation,
     normalize_activations,
 )
-from sae_hacking.common.sae import TopkSparseAutoEncoder
+from sae_hacking.common.sae import TopkSparseAutoEncoder, TopkSparseAutoEncoder2Child
 from sae_hacking.common.setting_up import make_base_parser
 
 
@@ -39,8 +39,17 @@ def make_dataset(tokenizer: GPT2TokenizerFast, abridge: int | None) -> DatasetDi
 
 @beartype
 def setup(
-    sae_hidden_dim: int, cuda: bool, no_internet: bool, abridge: int | None
-) -> tuple[DatasetDict, GPTNeoForCausalLM, TopkSparseAutoEncoder, GPT2TokenizerFast]:
+    sae_hidden_dim: int,
+    cuda: bool,
+    no_internet: bool,
+    abridge: int | None,
+    hierarchical: bool,
+) -> tuple[
+    DatasetDict,
+    GPTNeoForCausalLM,
+    TopkSparseAutoEncoder | TopkSparseAutoEncoder2Child,
+    GPT2TokenizerFast,
+]:
     # TODO DRY with the original setup function
     llm = AutoModelForCausalLM.from_pretrained(
         "roneneldan/TinyStories-33M", local_files_only=no_internet
@@ -52,7 +61,9 @@ def setup(
     )
     tokenizer.pad_token = tokenizer.eos_token
     filtered_datasets = make_dataset(tokenizer, abridge)
-    sae = TopkSparseAutoEncoder(sae_hidden_dim)
+    SAEClass = TopkSparseAutoEncoder2Child if hierarchical else TopkSparseAutoEncoder
+    print(SAEClass)
+    sae = SAEClass(sae_hidden_dim)
     if cuda:
         sae.cuda()
     return filtered_datasets, llm, sae, tokenizer
@@ -62,6 +73,7 @@ def setup(
 def make_parser() -> ArgumentParser:
     parser = make_base_parser()
     parser.add_argument("--abridge", type=int)
+    parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument(
         "--only_count_tokens",
         action="store_true",
@@ -77,7 +89,11 @@ def main(user_args: Namespace):
     writer = SummaryWriter(output_dir)
 
     filtered_datasets, llm, sae, _ = setup(
-        user_args.sae_hidden_dim, user_args.cuda, False, user_args.abridge
+        user_args.sae_hidden_dim,
+        user_args.cuda,
+        False,
+        user_args.abridge,
+        user_args.hierarchical,
     )
 
     lr = 1e-5
