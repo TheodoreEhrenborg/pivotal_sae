@@ -55,6 +55,8 @@ class TopkSparseAutoEncoder(torch.nn.Module):
         self.encoder = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
         self.decoder = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
         self.k = 150
+        # Let's guess P(child_i activates | parent activates) should be 50%
+        self.per_child_k = self.k // 2
 
     @jaxtyped(typechecker=beartype)
     def forward(
@@ -126,5 +128,26 @@ class TopkSparseAutoEncoder2Child(torch.nn.Module):
 
         # Now take topk of each child
 
-        reconstructed = self.decoder(sae_activations)
+        topk_child1 = torch.topk(masked_activations_child1, self.per_child_k)
+        topk_child2 = torch.topk(masked_activations_child2, self.per_child_k)
+
+        final_activations_child1 = torch.scatter(
+            input=torch.zeros_like(masked_activations_child1),
+            dim=2,
+            index=topk_child1.indices,
+            src=topk_child1.values,
+        )
+
+        final_activations_child2 = torch.scatter(
+            input=torch.zeros_like(masked_activations_child2),
+            dim=2,
+            index=topk_child2.indices,
+            src=topk_child2.values,
+        )
+
+        reconstructed = (
+            self.decoder(sae_activations)
+            + self.decoder_child1(final_activations_child1)
+            + self.decoder_child2(final_activations_child2)
+        )
         return reconstructed
