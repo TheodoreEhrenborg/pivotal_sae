@@ -115,14 +115,14 @@ class TopkSparseAutoEncoder2Child(torch.nn.Module):
         # Filter down each child to only activate where the parent
         # does
         masked_activations_child1 = torch.where(
+            sae_activations != 0.0,
             pre_activations_child1,
-            sae_activations != 0,
             torch.zeros_like(pre_activations_child1),
         )
 
         masked_activations_child2 = torch.where(
+            sae_activations != 0.0,
             pre_activations_child2,
-            sae_activations != 0,
             torch.zeros_like(pre_activations_child2),
         )
 
