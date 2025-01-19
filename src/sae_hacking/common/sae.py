@@ -61,7 +61,7 @@ class TopkSparseAutoEncoder(torch.nn.Module):
         self, llm_activations: Float[torch.Tensor, "1 seq_len 768"]
     ) -> Float[torch.Tensor, "1 seq_len 768"]:
         pre_activations = self.encoder(llm_activations)
-        topk = torch.topk(pre_activations)
+        topk = torch.topk(pre_activations, self.k)
         # Just zero out the parts of the decoder matrix that isn't in the topk
         # Later look at instead making the decoder matrix smaller with torch.gather
         # for efficiency
