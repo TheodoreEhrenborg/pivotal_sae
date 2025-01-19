@@ -55,8 +55,6 @@ class TopkSparseAutoEncoder(torch.nn.Module):
         self.encoder = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
         self.decoder = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
         self.k = 150
-        # Let's guess P(child_i activates | parent activates) should be 50%
-        self.per_child_k = self.k // 2
 
     @jaxtyped(typechecker=beartype)
     def forward(
@@ -93,6 +91,8 @@ class TopkSparseAutoEncoder2Child(torch.nn.Module):
         self.encoder_child2 = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
         self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
         self.k = 150
+        # Let's guess P(child_i activates | parent activates) should be 50%
+        self.per_child_k = self.k // 2
 
     @jaxtyped(typechecker=beartype)
     def forward(
