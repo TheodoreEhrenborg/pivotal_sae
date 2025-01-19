@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace
 import torch
 from beartype import beartype
 from coolname import generate_slug
-from datasets import DatasetDict
+from datasets import DatasetDict, load_dataset
 from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
@@ -20,12 +20,26 @@ from sae_hacking.common.obtain_activations import (
     normalize_activations,
 )
 from sae_hacking.common.sae import TopkSparseAutoEncoder
-from sae_hacking.common.setting_up import make_base_parser, make_dataset
+from sae_hacking.common.setting_up import make_base_parser
+
+
+@beartype
+def make_dataset(tokenizer: GPT2TokenizerFast, abridge: int | None) -> DatasetDict:
+    # TODO DRY this
+    d = load_dataset("roneneldan/TinyStories")
+    if abridge:
+        d["train"] = d["train"].select(range(abridge))
+
+    def tokenize(example):
+        return {"input_ids": tokenizer(example["text"])["input_ids"]}
+
+    tokenized_datasets = d.map(tokenize)
+    return tokenized_datasets.filter(lambda x: len(x["input_ids"]) != 0)
 
 
 @beartype
 def setup(
-    sae_hidden_dim: int, cuda: bool, no_internet: bool
+    sae_hidden_dim: int, cuda: bool, no_internet: bool, abridge: int | None
 ) -> tuple[DatasetDict, GPTNeoForCausalLM, TopkSparseAutoEncoder, GPT2TokenizerFast]:
     # TODO DRY with the original setup function
     llm = AutoModelForCausalLM.from_pretrained(
@@ -37,7 +51,7 @@ def setup(
         "EleutherAI/gpt-neo-125M", local_files_only=no_internet
     )
     tokenizer.pad_token = tokenizer.eos_token
-    filtered_datasets = make_dataset(tokenizer)
+    filtered_datasets = make_dataset(tokenizer, abridge)
     sae = TopkSparseAutoEncoder(sae_hidden_dim)
     if cuda:
         sae.cuda()
@@ -47,6 +61,7 @@ def setup(
 @beartype
 def make_parser() -> ArgumentParser:
     parser = make_base_parser()
+    parser.add_argument("--abridge", type=int)
     parser.add_argument(
         "--only_count_tokens",
         action="store_true",
@@ -62,7 +77,7 @@ def main(user_args: Namespace):
     writer = SummaryWriter(output_dir)
 
     filtered_datasets, llm, sae, _ = setup(
-        user_args.sae_hidden_dim, user_args.cuda, False
+        user_args.sae_hidden_dim, user_args.cuda, False, user_args.abridge
     )
 
     lr = 1e-5
