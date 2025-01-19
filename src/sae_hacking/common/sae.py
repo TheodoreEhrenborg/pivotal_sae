@@ -74,3 +74,57 @@ class TopkSparseAutoEncoder(torch.nn.Module):
 
         reconstructed = self.decoder(sae_activations)
         return reconstructed
+
+
+class TopkSparseAutoEncoder2Child(torch.nn.Module):
+    @beartype
+    def __init__(self, sae_hidden_dim: int):
+        super().__init__()
+        self.sae_hidden_dim = sae_hidden_dim
+        llm_hidden_dim = 768
+        self.encoder = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
+        self.decoder = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
+        # Maybe I should use matrices and bias vectors directly instead
+        # of Linear; it might be easier to have that level of control.
+        self.encoder_child1 = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
+        self.decoder_child1 = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
+        self.encoder_child2 = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
+        self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
+        self.k = 150
+
+    @jaxtyped(typechecker=beartype)
+    def forward(
+        self, llm_activations: Float[torch.Tensor, "1 seq_len 768"]
+    ) -> Float[torch.Tensor, "1 seq_len 768"]:
+        pre_activations = self.encoder(llm_activations)
+        topk = torch.topk(pre_activations, self.k)
+        sae_activations = torch.scatter(
+            input=torch.zeros_like(pre_activations),
+            dim=2,
+            index=topk.indices,
+            src=topk.values,
+        )
+
+        # This is wasting compute and memory because we already know which indices
+        # we're going to throw away
+        pre_activations_child1 = self.encoder_child1(llm_activations)
+        pre_activations_child2 = self.encoder_child2(llm_activations)
+
+        # Filter down each child to only activate where the parent
+        # does
+        masked_activations_child1 = torch.where(
+            pre_activations_child1,
+            sae_activations != 0,
+            torch.zeros_like(pre_activations_child1),
+        )
+
+        masked_activations_child2 = torch.where(
+            pre_activations_child2,
+            sae_activations != 0,
+            torch.zeros_like(pre_activations_child2),
+        )
+
+        # Now take topk of each child
+
+        reconstructed = self.decoder(sae_activations)
+        return reconstructed
