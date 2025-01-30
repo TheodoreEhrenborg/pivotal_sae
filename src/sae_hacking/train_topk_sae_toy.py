@@ -125,7 +125,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     )
 
     # Add labels
-    plt.title("Encoder Weights vs Child Vectors Similarity")
+    plt.title(f"Encoder Weights vs Child Vectors Similarity, step {step}")
     plt.xlabel("Child Vectors (Child 1 | Child 2)")
     plt.ylabel("Encoder Weight Vectors")
 
