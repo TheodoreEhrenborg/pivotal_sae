@@ -157,7 +157,6 @@ class TopkSparseAutoEncoder_v2(torch.nn.Module):
     @beartype
     def __init__(self, sae_hidden_dim: int):
         super().__init__()
-        self.sae_hidden_dim = 100
         model_hidden_dim = 10
         self.encoder = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
         self.decoder = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
