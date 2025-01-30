@@ -31,7 +31,7 @@ class ToyDataset:
     @jaxtyped(typechecker=beartype)
     def generate(
         self, num_samples: int = 1
-    ) -> Float[torch.Tensor, "num_samples n_dim"]:
+    ) -> Float[torch.Tensor, "num_samples {self.N_DIMS}"]:
         activations: Bool[torch.Tensor, "num_samples n_features"] = (
             torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
         )
