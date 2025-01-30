@@ -34,6 +34,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--cuda", action="store_true")
     parser.add_argument("--sae_hidden_dim", type=int, default=100)
     parser.add_argument("--max_step", type=int, default=100000)
+    parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
     return parser
 
@@ -52,7 +53,7 @@ def main(user_args: Namespace):
         user_args.hierarchical,
     )
 
-    lr = 1e-5
+    lr = user_args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
 
     for step in trange(user_args.max_step):
