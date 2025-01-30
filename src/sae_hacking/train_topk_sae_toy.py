@@ -69,7 +69,7 @@ def main(user_args: Namespace):
         optimizer.step()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
-            save_similarity_graph(sae, dataset, output_dir)
+            save_similarity_graph(sae, dataset, output_dir, step)
 
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
@@ -93,7 +93,7 @@ def get_reconstruction_loss(
     return ((act - sae_act) ** 2).sum()
 
 
-def save_similarity_graph(sae, dataset, output_dir):
+def save_similarity_graph(sae, dataset, output_dir, step):
     encoder_weights = sae.encoder.weight
 
     # Get parent vectors
@@ -129,15 +129,8 @@ def save_similarity_graph(sae, dataset, output_dir):
     plt.xlabel("Child Vectors (Child 1 | Child 2)")
     plt.ylabel("Encoder Weight Vectors")
 
-    # Add vertical line to separate children
-    plt.axvline(x=100, color="black", linestyle="--")
-
-    # Add text labels for sections
-    plt.text(50, -5, "Child 1", ha="center")
-    plt.text(150, -5, "Child 2", ha="center")
-
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/similarity_heatmap.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight")
     plt.close()
 
 
