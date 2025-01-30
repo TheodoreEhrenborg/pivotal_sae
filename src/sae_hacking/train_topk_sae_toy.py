@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import time
+import matplotlib.pyplot as plt
+import seaborn as sns
+import torch.nn.functional as F
 from argparse import ArgumentParser, Namespace
 
 import torch
@@ -65,6 +68,7 @@ def main(user_args: Namespace):
         optimizer.step()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
+            save_similarity_graph(sae, dataset, output_dir)
 
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
@@ -87,6 +91,57 @@ def get_reconstruction_loss(
     # TODO DRY this
     return ((act - sae_act) ** 2).sum()
 
+def save_similarity_graph(sae, dataset, output_dir):
+    # Get encoder weights and normalize them
+    encoder_weights = sae.encoder.weight  # [100, 10]
+    encoder_weights = encoder_weights / encoder_weights.norm(dim=1, keepdim=True)
+
+    # Get parent vectors
+    parent_vecs = dataset.features  # [100, 10]
+
+    # Create normalized child vectors
+    child_vecs = []
+    for i in range(dataset.N_CHILDREN):
+        child = parent_vecs + dataset.perturbations[:, i, :]
+        child = child / child.norm(dim=1, keepdim=True)  # normalize
+        child_vecs.append(child)
+
+    # Concatenate children only
+    all_child_vecs = torch.cat(child_vecs, dim=0)  # [200, 10]
+
+    # Calculate similarities
+    similarity = F.cosine_similarity(
+        encoder_weights.unsqueeze(1),  # [100, 1, 10]
+        all_child_vecs.unsqueeze(0),   # [1, 200, 10]
+        dim=2
+    )
+
+    # Create heatmap
+    plt.figure(figsize=(12, 5))
+    sns.heatmap(
+        similarity.cpu().detach().numpy(),
+        cmap='RdYlBu_r',
+        center=0,
+        vmin=-1,
+        vmax=1,
+        square=True
+    )
+
+    # Add labels
+    plt.title('Encoder Weights vs Child Vectors Similarity')
+    plt.xlabel('Child Vectors (Child 1 | Child 2)')
+    plt.ylabel('Encoder Weight Vectors')
+
+    # Add vertical line to separate children
+    plt.axvline(x=100, color='black', linestyle='--')
+
+    # Add text labels for sections
+    plt.text(50, -5, 'Child 1', ha='center')
+    plt.text(150, -5, 'Child 2', ha='center')
+
+    plt.tight_layout()
+    plt.savefig(f'{output_dir}/similarity_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.close()
 
 if __name__ == "__main__":
     main(make_parser().parse_args())
