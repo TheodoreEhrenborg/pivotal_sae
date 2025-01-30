@@ -1,4 +1,3 @@
-from typing import Optional
 
 import torch
 from beartype import beartype
@@ -6,7 +5,6 @@ from jaxtyping import Bool, Float, jaxtyped
 
 
 class ToyDataset:
-    N_FEATURES = 100
     N_DIMS = 10
     N_CHILDREN = 2
     ACTIVATION_PROB = 0.03
@@ -16,13 +14,13 @@ class ToyDataset:
     perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
 
     @beartype
-    def __init__(self, seed: Optional[int] = None) -> None:
-        if seed is not None:
-            torch.manual_seed(seed)
-        self.features = torch.randn(self.N_FEATURES, self.N_DIMS)
+    def __init__(self, num_features: int, seed: int) -> None:
+        torch.manual_seed(seed)
+        self.n_features = num_features
+        self.features = torch.randn(self.n_features, self.N_DIMS)
         self.features = self.features / self.features.norm(dim=1, keepdim=True)
 
-        raw_perturbations = torch.randn(self.N_FEATURES, self.N_CHILDREN, self.N_DIMS)
+        raw_perturbations = torch.randn(self.n_features, self.N_CHILDREN, self.N_DIMS)
         self.perturbations = (
             self.PERTURBATION_SIZE
             * raw_perturbations
@@ -34,15 +32,15 @@ class ToyDataset:
         self, num_samples: int = 1
     ) -> Float[torch.Tensor, "num_samples n_dim"]:
         activations: Bool[torch.Tensor, "num_samples n_features"] = (
-            torch.rand(num_samples, self.N_FEATURES) < self.ACTIVATION_PROB
+            torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
         )
         perturbation_choices = torch.randint(
-            0, self.N_CHILDREN, (num_samples, self.N_FEATURES)
+            0, self.N_CHILDREN, (num_samples, self.n_features)
         )
 
         result = torch.zeros(num_samples, self.N_DIMS)
         for i in range(num_samples):
-            for j in range(self.N_FEATURES):
+            for j in range(self.n_features):
                 if activations[i, j]:
                     perturbed_feature = (
                         self.features[j]

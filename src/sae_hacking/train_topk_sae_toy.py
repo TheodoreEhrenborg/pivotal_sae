@@ -35,8 +35,9 @@ def setup(
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--cuda", action="store_true")
-    parser.add_argument("--sae_hidden_dim", type=int, default=100)
-    parser.add_argument("--max_step", type=int, default=100000)
+    parser.add_argument("--sae-hidden-dim", type=int, default=100)
+    parser.add_argument("--dataset-num-features", type=int, default=100)
+    parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
     return parser
@@ -47,7 +48,7 @@ def main(user_args: Namespace):
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
     writer = SummaryWriter(output_dir)
-    dataset = ToyDataset(seed=1)
+    dataset = ToyDataset(seed=1, num_features=user_args.dataset_num_features)
 
     sae = setup(
         user_args.sae_hidden_dim,
