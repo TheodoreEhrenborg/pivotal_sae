@@ -151,3 +151,33 @@ class TopkSparseAutoEncoder2Child(torch.nn.Module):
             + self.decoder_child2(final_activations_child2)
         )
         return reconstructed
+
+
+class TopkSparseAutoEncoder_v2(torch.nn.Module):
+    @beartype
+    def __init__(self, sae_hidden_dim: int):
+        super().__init__()
+        self.sae_hidden_dim = 100
+        model_hidden_dim = 10
+        self.encoder = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
+        self.decoder = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.k = 3
+
+    @jaxtyped(typechecker=beartype)
+    def forward(
+        self, llm_activations: Float[torch.Tensor, "1 model_hidden_dim"]
+    ) -> Float[torch.Tensor, "1 model_hidden_dim"]:
+        pre_activations = self.encoder(llm_activations)
+        topk = torch.topk(pre_activations, self.k)
+        # Just zero out the parts of the decoder matrix that aren't in the topk
+        # Later look at instead making the decoder matrix smaller with torch.gather
+        # for efficiency
+        sae_activations = torch.scatter(
+            input=torch.zeros_like(pre_activations),
+            dim=1,
+            index=topk.indices,
+            src=topk.values,
+        )
+
+        reconstructed = self.decoder(sae_activations)
+        return reconstructed

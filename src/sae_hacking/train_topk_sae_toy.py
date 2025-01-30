@@ -9,8 +9,7 @@ from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
-from sae_hacking.common.sae import TopkSparseAutoEncoder, TopkSparseAutoEncoder2Child
-from sae_hacking.common.setting_up import make_base_parser
+from sae_hacking.common.sae import TopkSparseAutoEncoder2Child, TopkSparseAutoEncoder_v2
 from sae_hacking.common.toy_dataset import ToyDataset
 
 
@@ -20,8 +19,8 @@ def setup(
     cuda: bool,
     no_internet: bool,
     hierarchical: bool,
-) -> TopkSparseAutoEncoder | TopkSparseAutoEncoder2Child:
-    SAEClass = TopkSparseAutoEncoder2Child if hierarchical else TopkSparseAutoEncoder
+) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child:
+    SAEClass = TopkSparseAutoEncoder2Child if hierarchical else TopkSparseAutoEncoder_v2
     print(SAEClass)
     sae = SAEClass(sae_hidden_dim)
     if cuda:
@@ -31,7 +30,10 @@ def setup(
 
 @beartype
 def make_parser() -> ArgumentParser:
-    parser = make_base_parser()
+    parser = ArgumentParser()
+    parser.add_argument("--cuda", action="store_true")
+    parser.add_argument("--sae_hidden_dim", type=int, default=100)
+    parser.add_argument("--max_step", type=int, default=100000)
     parser.add_argument("--hierarchical", action="store_true")
     return parser
 
@@ -78,8 +80,8 @@ def main(user_args: Namespace):
 
 @jaxtyped(typechecker=beartype)
 def get_reconstruction_loss(
-    act: Float[torch.Tensor, "1 seq_len 768"],
-    sae_act: Float[torch.Tensor, "1 seq_len 768"],
+    act: Float[torch.Tensor, "1 projected_dim"],
+    sae_act: Float[torch.Tensor, "1 projected_dim"],
 ) -> Float[torch.Tensor, ""]:
     # TODO DRY this
     return ((act - sae_act) ** 2).sum()
