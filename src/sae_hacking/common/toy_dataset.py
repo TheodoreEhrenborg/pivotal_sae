@@ -6,10 +6,10 @@ from jaxtyping import Bool, Float, jaxtyped
 
 
 class ToyDataset:
-    N_FEATURES = 10
-    N_DIMS = 100
+    N_FEATURES = 100
+    N_DIMS = 10
     N_CHILDREN = 2
-    ACTIVATION_PROB = 0.2
+    ACTIVATION_PROB = 0.03
     PERTURBATION_SIZE = 0.2
 
     features: Float[torch.Tensor, "n_features n_dim"]
