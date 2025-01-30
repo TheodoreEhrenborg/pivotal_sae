@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import time
-import matplotlib.pyplot as plt
-import seaborn as sns
-import torch.nn.functional as F
 from argparse import ArgumentParser, Namespace
 
+import matplotlib.pyplot as plt
+import seaborn as sns
 import torch
+import torch.nn.functional as F
 from beartype import beartype
 from coolname import generate_slug
 from jaxtyping import Float, jaxtyped
@@ -91,57 +91,54 @@ def get_reconstruction_loss(
     # TODO DRY this
     return ((act - sae_act) ** 2).sum()
 
+
 def save_similarity_graph(sae, dataset, output_dir):
-    # Get encoder weights and normalize them
-    encoder_weights = sae.encoder.weight  # [100, 10]
-    encoder_weights = encoder_weights / encoder_weights.norm(dim=1, keepdim=True)
+    encoder_weights = sae.encoder.weight
 
     # Get parent vectors
-    parent_vecs = dataset.features  # [100, 10]
+    parent_vecs = dataset.features
 
     # Create normalized child vectors
     child_vecs = []
     for i in range(dataset.N_CHILDREN):
         child = parent_vecs + dataset.perturbations[:, i, :]
-        child = child / child.norm(dim=1, keepdim=True)  # normalize
         child_vecs.append(child)
 
     # Concatenate children only
-    all_child_vecs = torch.cat(child_vecs, dim=0)  # [200, 10]
+    all_child_vecs = torch.cat(child_vecs, dim=0)
 
     # Calculate similarities
     similarity = F.cosine_similarity(
-        encoder_weights.unsqueeze(1),  # [100, 1, 10]
-        all_child_vecs.unsqueeze(0),   # [1, 200, 10]
-        dim=2
+        encoder_weights.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
     )
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
     sns.heatmap(
         similarity.cpu().detach().numpy(),
-        cmap='RdYlBu_r',
+        cmap="RdYlBu_r",
         center=0,
         vmin=-1,
         vmax=1,
-        square=True
+        square=True,
     )
 
     # Add labels
-    plt.title('Encoder Weights vs Child Vectors Similarity')
-    plt.xlabel('Child Vectors (Child 1 | Child 2)')
-    plt.ylabel('Encoder Weight Vectors')
+    plt.title("Encoder Weights vs Child Vectors Similarity")
+    plt.xlabel("Child Vectors (Child 1 | Child 2)")
+    plt.ylabel("Encoder Weight Vectors")
 
     # Add vertical line to separate children
-    plt.axvline(x=100, color='black', linestyle='--')
+    plt.axvline(x=100, color="black", linestyle="--")
 
     # Add text labels for sections
-    plt.text(50, -5, 'Child 1', ha='center')
-    plt.text(150, -5, 'Child 2', ha='center')
+    plt.text(50, -5, "Child 1", ha="center")
+    plt.text(150, -5, "Child 2", ha="center")
 
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/similarity_heatmap.png', dpi=300, bbox_inches='tight')
+    plt.savefig(f"{output_dir}/similarity_heatmap.png", dpi=300, bbox_inches="tight")
     plt.close()
+
 
 if __name__ == "__main__":
     main(make_parser().parse_args())
