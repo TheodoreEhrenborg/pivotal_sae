@@ -16,7 +16,7 @@ class ToyDataset:
     perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
 
     @beartype
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: Optional[int] = None) -> None:
         if seed is not None:
             torch.manual_seed(seed)
         self.features = torch.randn(self.N_FEATURES, self.N_DIMS)
