@@ -116,7 +116,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     )
     all_child_vecs = rearrange(
         child_vecs,
-        "n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim",
+        "n_features children_per_parent n_dim -> (n_features children_per_parent) n_dim",
     )
 
     similarity = calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
