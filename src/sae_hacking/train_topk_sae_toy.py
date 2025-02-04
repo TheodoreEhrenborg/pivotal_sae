@@ -92,6 +92,11 @@ def get_reconstruction_loss(
     # TODO DRY this
     return ((act - sae_act) ** 2).mean()
 
+@jaxtyped(typechecker=beartype)
+def calculate_cosine_sim(decoder_weights_t: Float[torch.Tensor, "n_features model_dim"], all_child_vecs : Float[torch.Tensor, "total_num_children model_dim"]) -> Float[torch.Tensor, "n_features total_num_children"]:
+    return F.cosine_similarity(
+        decoder_weights_t.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
+    )
 
 def save_similarity_graph(sae, dataset, output_dir, step):
     decoder_weights = sae.decoder.weight
@@ -108,10 +113,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     # Concatenate children only
     all_child_vecs = torch.cat(child_vecs, dim=0)
 
-    # Calculate similarities
-    similarity = F.cosine_similarity(
-        decoder_weights.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
-    )
+    similarity = calculate_cosine_sim(torch.transpose(decoder_weights, 0,1), all_child_vecs)
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
