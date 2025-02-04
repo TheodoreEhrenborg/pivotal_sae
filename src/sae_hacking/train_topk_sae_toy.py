@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from einops import repeat, rearrange
 import time
 from argparse import ArgumentParser, Namespace
 
@@ -112,6 +113,12 @@ def save_similarity_graph(sae, dataset, output_dir, step):
 
     # Concatenate children only
     all_child_vecs = torch.cat(child_vecs, dim=0)
+
+    child_vecs2 = repeat(parent_vecs, 'b d -> b c d', c=dataset.N_CHILDREN_PER_PARENT) + dataset.perturbations
+    all_child_vecs2 = rearrange(child_vecs2, 'b c d -> (c b) d')
+    print(all_child_vecs.size())
+    print(all_child_vecs2.size())
+    assert torch.allclose(all_child_vecs, all_child_vecs2)
 
     similarity = calculate_cosine_sim(torch.transpose(decoder_weights, 0,1), all_child_vecs)
 
