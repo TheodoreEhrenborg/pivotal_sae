@@ -90,7 +90,7 @@ def get_reconstruction_loss(
     sae_act: Float[torch.Tensor, "1 projected_dim"],
 ) -> Float[torch.Tensor, ""]:
     # TODO DRY this
-    return ((act - sae_act) ** 2).sum()
+    return ((act - sae_act) ** 2).mean()
 
 
 def save_similarity_graph(sae, dataset, output_dir, step):
