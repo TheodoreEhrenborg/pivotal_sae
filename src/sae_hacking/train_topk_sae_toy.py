@@ -94,7 +94,7 @@ def get_reconstruction_loss(
 
 
 def save_similarity_graph(sae, dataset, output_dir, step):
-    encoder_weights = sae.encoder.weight
+    decoder_weights = sae.decoder.weight
 
     # Get parent vectors
     parent_vecs = dataset.features
@@ -110,7 +110,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
 
     # Calculate similarities
     similarity = F.cosine_similarity(
-        encoder_weights.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
+        decoder_weights.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
     )
 
     # Create heatmap
@@ -125,9 +125,9 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     )
 
     # Add labels
-    plt.title(f"Encoder Weights vs Child Vectors Similarity, step {step}")
+    plt.title(f"Decoder Weights vs Child Vectors Similarity, step {step}")
     plt.xlabel("Child Vectors (Child 1 | Child 2)")
-    plt.ylabel("Encoder Weight Vectors")
+    plt.ylabel("Decoder Weight Vectors")
 
     plt.tight_layout()
     plt.savefig(f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight")
