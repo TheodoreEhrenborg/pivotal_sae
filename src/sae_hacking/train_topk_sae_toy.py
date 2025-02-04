@@ -102,10 +102,8 @@ def calculate_cosine_sim(decoder_weights_t: Float[torch.Tensor, "n_features mode
 def save_similarity_graph(sae, dataset, output_dir, step):
     decoder_weights = sae.decoder.weight
 
-    # Get parent vectors
-    parent_vecs = dataset.features
 
-    child_vecs = rearrange(parent_vecs, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
+    child_vecs = rearrange(dataset.features, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
     all_child_vecs = rearrange(child_vecs, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
 
     similarity = calculate_cosine_sim(torch.transpose(decoder_weights, 0,1), all_child_vecs)
