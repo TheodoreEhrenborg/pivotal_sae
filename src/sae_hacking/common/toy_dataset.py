@@ -1,4 +1,3 @@
-
 import torch
 from beartype import beartype
 from jaxtyping import Bool, Float, jaxtyped
@@ -21,7 +20,9 @@ class ToyDataset:
         # TODO "torch.norm is deprecated and may be removed in a future PyTorch release. Its documentation and behavior may be incorrect, and it is no longer actively maintained."
         self.features = self.features / self.features.norm(dim=1, keepdim=True)
 
-        raw_perturbations = torch.randn(self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS)
+        raw_perturbations = torch.randn(
+            self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS
+        )
         self.perturbations = (
             self.PERTURBATION_SIZE
             * raw_perturbations

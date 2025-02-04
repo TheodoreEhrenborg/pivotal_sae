@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from einops import repeat, rearrange
 import time
 from argparse import ArgumentParser, Namespace
 
@@ -9,6 +8,7 @@ import torch
 import torch.nn.functional as F
 from beartype import beartype
 from coolname import generate_slug
+from einops import rearrange
 from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
@@ -93,18 +93,30 @@ def get_reconstruction_loss(
     # TODO DRY this
     return ((act - sae_act) ** 2).mean()
 
+
 @jaxtyped(typechecker=beartype)
-def calculate_cosine_sim(decoder_weights: Float[torch.Tensor, "model_dim n_features"], all_child_vecs : Float[torch.Tensor, "total_num_children model_dim"]) -> Float[torch.Tensor, "n_features total_num_children"]:
+def calculate_cosine_sim(
+    decoder_weights: Float[torch.Tensor, "model_dim n_features"],
+    all_child_vecs: Float[torch.Tensor, "total_num_children model_dim"],
+) -> Float[torch.Tensor, "n_features total_num_children"]:
     return F.cosine_similarity(
-        rearrange(decoder_weights, "model_dim n_features -> n_features 1 model_dim"), all_child_vecs.unsqueeze(0), dim=2
+        rearrange(decoder_weights, "model_dim n_features -> n_features 1 model_dim"),
+        all_child_vecs.unsqueeze(0),
+        dim=2,
     )
+
 
 def save_similarity_graph(sae, dataset, output_dir, step):
     decoder_weights = sae.decoder.weight
 
-
-    child_vecs = rearrange(dataset.features, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
-    all_child_vecs = rearrange(child_vecs, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
+    child_vecs = (
+        rearrange(dataset.features, "n_features n_dim -> n_features 1 n_dim")
+        + dataset.perturbations
+    )
+    all_child_vecs = rearrange(
+        child_vecs,
+        "n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim",
+    )
 
     similarity = calculate_cosine_sim(decoder_weights, all_child_vecs)
 
@@ -125,7 +137,9 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     plt.ylabel("Decoder Weight Vectors")
 
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(
+        f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight"
+    )
     plt.close()
 
 
