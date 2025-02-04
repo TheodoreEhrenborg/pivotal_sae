@@ -94,9 +94,9 @@ def get_reconstruction_loss(
     return ((act - sae_act) ** 2).mean()
 
 @jaxtyped(typechecker=beartype)
-def calculate_cosine_sim(decoder_weights_t: Float[torch.Tensor, "n_features model_dim"], all_child_vecs : Float[torch.Tensor, "total_num_children model_dim"]) -> Float[torch.Tensor, "n_features total_num_children"]:
+def calculate_cosine_sim(decoder_weights: Float[torch.Tensor, "model_dim n_features"], all_child_vecs : Float[torch.Tensor, "total_num_children model_dim"]) -> Float[torch.Tensor, "n_features total_num_children"]:
     return F.cosine_similarity(
-        decoder_weights_t.unsqueeze(1), all_child_vecs.unsqueeze(0), dim=2
+        rearrange(decoder_weights, "model_dim n_features -> n_features 1 model_dim"), all_child_vecs.unsqueeze(0), dim=2
     )
 
 def save_similarity_graph(sae, dataset, output_dir, step):
@@ -106,7 +106,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     child_vecs = rearrange(dataset.features, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
     all_child_vecs = rearrange(child_vecs, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
 
-    similarity = calculate_cosine_sim(torch.transpose(decoder_weights, 0,1), all_child_vecs)
+    similarity = calculate_cosine_sim(decoder_weights, all_child_vecs)
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
