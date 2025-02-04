@@ -105,20 +105,8 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     # Get parent vectors
     parent_vecs = dataset.features
 
-    # Create normalized child vectors
-    child_vecs = []
-    for i in range(dataset.N_CHILDREN_PER_PARENT):
-        children = parent_vecs + dataset.perturbations[:, i, :]
-        child_vecs.append(children)
-
-    # Concatenate children only
-    all_child_vecs = torch.cat(child_vecs, dim=0)
-
-    child_vecs2 = rearrange(parent_vecs, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
-    all_child_vecs2 = rearrange(child_vecs2, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
-    print(all_child_vecs.size())
-    print(all_child_vecs2.size())
-    assert torch.allclose(all_child_vecs, all_child_vecs2)
+    child_vecs = rearrange(parent_vecs, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
+    all_child_vecs = rearrange(child_vecs, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
 
     similarity = calculate_cosine_sim(torch.transpose(decoder_weights, 0,1), all_child_vecs)
 
