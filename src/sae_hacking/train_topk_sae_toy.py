@@ -114,7 +114,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     # Concatenate children only
     all_child_vecs = torch.cat(child_vecs, dim=0)
 
-    child_vecs2 = repeat(parent_vecs, 'n_features n_dim -> n_features children_per_parent n_dim', children_per_parent=dataset.N_CHILDREN_PER_PARENT) + dataset.perturbations
+    child_vecs2 = rearrange(parent_vecs, 'n_features n_dim -> n_features 1 n_dim') + dataset.perturbations
     all_child_vecs2 = rearrange(child_vecs2, 'n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim')
     print(all_child_vecs.size())
     print(all_child_vecs2.size())
