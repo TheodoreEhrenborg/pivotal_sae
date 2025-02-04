@@ -110,8 +110,6 @@ def calculate_cosine_sim(
 
 
 def save_similarity_graph(sae, dataset, output_dir, step):
-    decoder_weights = sae.decoder.weight
-
     child_vecs = (
         rearrange(dataset.features, "n_features n_dim -> n_features 1 n_dim")
         + dataset.perturbations
@@ -121,7 +119,7 @@ def save_similarity_graph(sae, dataset, output_dir, step):
         "n_features children_per_parent n_dim -> (children_per_parent n_features) n_dim",
     )
 
-    similarity = calculate_cosine_sim(decoder_weights, all_child_vecs)
+    similarity = calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
