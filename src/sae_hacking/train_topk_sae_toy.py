@@ -101,7 +101,10 @@ def calculate_cosine_sim(
 ) -> Float[torch.Tensor, "n_features total_num_children"]:
     return F.cosine_similarity(
         rearrange(decoder_weights, "model_dim n_features -> n_features 1 model_dim"),
-        all_child_vecs.unsqueeze(0),
+        rearrange(
+            all_child_vecs,
+            "total_num_children model_dim -> 1 total_num_children model_dim",
+        ),
         dim=2,
     )
 
