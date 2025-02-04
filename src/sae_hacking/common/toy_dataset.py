@@ -6,7 +6,7 @@ from jaxtyping import Bool, Float, jaxtyped
 
 class ToyDataset:
     N_DIMS = 10
-    N_CHILDREN = 2
+    N_CHILDREN_PER_PARENT = 2
     ACTIVATION_PROB = 0.03
     PERTURBATION_SIZE = 0.2
 
@@ -21,7 +21,7 @@ class ToyDataset:
         # TODO "torch.norm is deprecated and may be removed in a future PyTorch release. Its documentation and behavior may be incorrect, and it is no longer actively maintained."
         self.features = self.features / self.features.norm(dim=1, keepdim=True)
 
-        raw_perturbations = torch.randn(self.n_features, self.N_CHILDREN, self.N_DIMS)
+        raw_perturbations = torch.randn(self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS)
         self.perturbations = (
             self.PERTURBATION_SIZE
             * raw_perturbations
@@ -36,7 +36,7 @@ class ToyDataset:
             torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
         )
         perturbation_choices = torch.randint(
-            0, self.N_CHILDREN, (num_samples, self.n_features)
+            0, self.N_CHILDREN_PER_PARENT, (num_samples, self.n_features)
         )
 
         result = torch.zeros(num_samples, self.N_DIMS)

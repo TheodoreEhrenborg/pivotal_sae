@@ -101,9 +101,9 @@ def save_similarity_graph(sae, dataset, output_dir, step):
 
     # Create normalized child vectors
     child_vecs = []
-    for i in range(dataset.N_CHILDREN):
-        child = parent_vecs + dataset.perturbations[:, i, :]
-        child_vecs.append(child)
+    for i in range(dataset.N_CHILDREN_PER_PARENT):
+        children = parent_vecs + dataset.perturbations[:, i, :]
+        child_vecs.append(children)
 
     # Concatenate children only
     all_child_vecs = torch.cat(child_vecs, dim=0)
