@@ -13,15 +13,16 @@ class ToyDataset:
     perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
 
     @beartype
-    def __init__(self, num_features: int, seed: int) -> None:
+    def __init__(self, num_features: int, seed: int, cuda: bool) -> None:
+        self.device = "cuda" if cuda else "cpu"
         torch.manual_seed(seed)
         self.n_features = num_features
-        self.features = torch.randn(self.n_features, self.N_DIMS)
+        self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
         # TODO "torch.norm is deprecated and may be removed in a future PyTorch release. Its documentation and behavior may be incorrect, and it is no longer actively maintained."
         self.features = self.features / self.features.norm(dim=1, keepdim=True)
 
         raw_perturbations = torch.randn(
-            self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS
+            self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS, device=self.device
         )
         self.perturbations = (
             self.PERTURBATION_SIZE
@@ -37,14 +38,18 @@ class ToyDataset:
         # TODO This check really should make sure each of num_samples has >0 features
         while active_features == 0:
             activations: Bool[torch.Tensor, "num_samples n_features"] = (
-                torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
+                torch.rand(num_samples, self.n_features, device=self.device)
+                < self.ACTIVATION_PROB
             )
             active_features = activations.sum()
         perturbation_choices = torch.randint(
-            0, self.N_CHILDREN_PER_PARENT, (num_samples, self.n_features)
+            0,
+            self.N_CHILDREN_PER_PARENT,
+            (num_samples, self.n_features),
+            device=self.device,
         )
 
-        result = torch.zeros(num_samples, self.N_DIMS)
+        result = torch.zeros(num_samples, self.N_DIMS, device=self.device)
         for i in range(num_samples):
             for j in range(self.n_features):
                 if activations[i, j]:

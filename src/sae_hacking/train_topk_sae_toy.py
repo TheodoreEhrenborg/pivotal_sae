@@ -50,7 +50,9 @@ def main(user_args: Namespace):
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
     writer = SummaryWriter(output_dir)
-    dataset = ToyDataset(seed=1, num_features=user_args.dataset_num_features)
+    dataset = ToyDataset(
+        seed=1, num_features=user_args.dataset_num_features, cuda=user_args.cuda
+    )
 
     sae = setup(
         user_args.sae_hidden_dim,
