@@ -65,6 +65,7 @@ def compute_result(
     perturbations: Float[torch.Tensor, "n_features n_children model_dim"],
     device: torch.device,
 ) -> Float[torch.Tensor, "batch_size model_dim"]:
+    """compute_result2 is the same but faster"""
     result = torch.zeros(activations.shape[0], features.shape[1], device=device)
     for i in range(activations.shape[0]):
         for j in range(activations.shape[1]):
