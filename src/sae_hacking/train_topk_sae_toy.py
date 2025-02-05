@@ -211,17 +211,25 @@ def save_similarity_graph(
         vmin=-1,
         vmax=1,
         square=True,
+        xticklabels=4,
+        yticklabels=3,
     )
 
     num_rows = similarity.shape[0]
+    num_cols = similarity.shape[1]
+    for i in range(2, num_cols, 2):
+        plt.axvline(x=i, color="black", linewidth=1)
     if hierarchical:
         for i in range(3, num_rows, 3):
             plt.axhline(y=i, color="black", linewidth=1)
 
     # Add labels
-    plt.title(f"Decoder Weights vs Child Vectors Similarity, step {step}")
-    plt.xlabel("Child Vectors (Child 1 | Child 2)")
-    plt.ylabel("Decoder Weight Vectors")
+    plt.title(f"Cosine Similarity of decoder weights vs dataset features, step {step}")
+    plt.xlabel("Toy dataset features (sibling features are consecutive)")
+    plt.ylabel(
+        "Decoder Weight Vectors (0 mod 3 is parent weight, 1 or 2 mod 3 is parent weight + child 1 or 2 weight)",
+        fontsize=5,
+    )
 
     plt.tight_layout()
     plt.savefig(
