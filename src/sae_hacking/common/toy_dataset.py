@@ -45,7 +45,7 @@ class ToyDataset:
             device=self.device,
         )
 
-        result = compute_result(
+        result = compute_result2(
             activations,
             perturbation_choices,
             self.features,
