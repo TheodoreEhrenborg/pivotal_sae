@@ -33,9 +33,13 @@ class ToyDataset:
     def generate(
         self, num_samples: int = 1
     ) -> tuple[Float[torch.Tensor, "num_samples {self.N_DIMS}"], Int[torch.Tensor, ""]]:
-        activations: Bool[torch.Tensor, "num_samples n_features"] = (
-            torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
-        )
+        active_features = 0
+        # TODO This check really should make sure each of num_samples has >0 features
+        while active_features == 0:
+            activations: Bool[torch.Tensor, "num_samples n_features"] = (
+                torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
+            )
+            active_features = activations.sum()
         perturbation_choices = torch.randint(
             0, self.N_CHILDREN_PER_PARENT, (num_samples, self.n_features)
         )
