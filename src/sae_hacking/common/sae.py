@@ -227,30 +227,23 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             pre_activations_child1,
             torch.zeros_like(pre_activations_child1),
         )
-
         masked_activations_child2 = torch.where(
             sae_activations != 0.0,
             pre_activations_child2,
             torch.zeros_like(pre_activations_child2),
         )
 
-        # Now take topk of each child
-
-        topk_child1 = torch.topk(masked_activations_child1, self.per_child_k)
-        topk_child2 = torch.topk(masked_activations_child2, self.per_child_k)
-
-        final_activations_child1 = torch.scatter(
-            input=torch.zeros_like(masked_activations_child1),
-            dim=2,
-            index=topk_child1.indices,
-            src=topk_child1.values,
+        # Compare children and keep only the winner where parent is active
+        winners_mask = (masked_activations_child1 > masked_activations_child2)
+        final_activations_child1 = torch.where(
+            winners_mask,
+            masked_activations_child1,
+            torch.zeros_like(masked_activations_child1)
         )
-
-        final_activations_child2 = torch.scatter(
-            input=torch.zeros_like(masked_activations_child2),
-            dim=2,
-            index=topk_child2.indices,
-            src=topk_child2.values,
+        final_activations_child2 = torch.where(
+            ~winners_mask,
+            masked_activations_child2,
+            torch.zeros_like(masked_activations_child2)
         )
 
         reconstructed = (
