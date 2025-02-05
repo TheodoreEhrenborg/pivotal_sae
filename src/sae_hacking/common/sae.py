@@ -165,7 +165,7 @@ class TopkSparseAutoEncoder_v2(torch.nn.Module):
     @jaxtyped(typechecker=beartype)
     def forward(
         self, model_activations: Float[torch.Tensor, "batch_size model_dim"]
-    ) -> Float[torch.Tensor, "batch_size model_dim"]:
+    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], int]:
         pre_activations = self.encoder(model_activations)
         topk = torch.topk(pre_activations, self.k)
         # Just zero out the parts of the decoder matrix that aren't in the topk
@@ -178,5 +178,7 @@ class TopkSparseAutoEncoder_v2(torch.nn.Module):
             src=topk.values,
         )
 
+        num_live_latents = len(topk.indices.unique())
+
         reconstructed = self.decoder(sae_activations)
-        return reconstructed
+        return reconstructed, num_live_latents

@@ -67,7 +67,7 @@ def main(user_args: Namespace):
     for step in trange(user_args.max_step):
         example, num_activated_features = dataset.generate(user_args.batch_size)
         optimizer.zero_grad()
-        reconstructed = sae(example)
+        reconstructed, num_live_latents = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
         rec_loss.backward()
         optimizer.step()
@@ -90,6 +90,13 @@ def main(user_args: Namespace):
                 step,
             )
         writer.add_scalar("lr", lr, step)
+        num_dead_latents = user_args.sae_hidden_dim - num_live_latents
+        writer.add_scalar("Num dead latents", num_dead_latents, step)
+        writer.add_scalar(
+            "Proportion of dead latents",
+            num_dead_latents / user_args.sae_hidden_dim,
+            step,
+        )
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
