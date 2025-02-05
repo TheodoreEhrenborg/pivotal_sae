@@ -189,36 +189,36 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     def __init__(self, sae_hidden_dim: int):
         super().__init__()
         self.sae_hidden_dim = sae_hidden_dim
-        llm_hidden_dim = 768
-        self.encoder = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
-        self.decoder = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
+        model_hidden_dim = 10
+        self.encoder = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
+        self.decoder = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
         # Maybe I should use matrices and bias vectors directly instead
         # of Linear; it might be easier to have that level of control.
-        self.encoder_child1 = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
-        self.decoder_child1 = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
-        self.encoder_child2 = torch.nn.Linear(llm_hidden_dim, sae_hidden_dim)
-        self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, llm_hidden_dim)
-        self.k = 150
-        # Let's guess P(child_i activates | parent activates) should be 50%
-        self.per_child_k = self.k // 2
+        self.encoder_child1 = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
+        self.decoder_child1 = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.encoder_child2 = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
+        self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.k = 3
 
     @jaxtyped(typechecker=beartype)
     def forward(
-        self, llm_activations: Float[torch.Tensor, "1 seq_len 768"]
-    ) -> Float[torch.Tensor, "1 seq_len 768"]:
-        pre_activations = self.encoder(llm_activations)
+        self, model_activations: Float[torch.Tensor, "batch_size model_dim"]
+    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], int]:
+        pre_activations = self.encoder(model_activations)
         topk = torch.topk(pre_activations, self.k)
         sae_activations = torch.scatter(
             input=torch.zeros_like(pre_activations),
-            dim=2,
+            dim=1,
             index=topk.indices,
             src=topk.values,
         )
 
+        num_live_latents = len(topk.indices.unique())
+
         # This is wasting compute and memory because we already know which indices
         # we're going to throw away
-        pre_activations_child1 = self.encoder_child1(llm_activations)
-        pre_activations_child2 = self.encoder_child2(llm_activations)
+        pre_activations_child1 = self.encoder_child1(model_activations)
+        pre_activations_child2 = self.encoder_child2(model_activations)
 
         # Filter down each child to only activate where the parent
         # does
@@ -234,16 +234,16 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         )
 
         # Compare children and keep only the winner where parent is active
-        winners_mask = (masked_activations_child1 > masked_activations_child2)
+        winners_mask = masked_activations_child1 > masked_activations_child2
         final_activations_child1 = torch.where(
             winners_mask,
             masked_activations_child1,
-            torch.zeros_like(masked_activations_child1)
+            torch.zeros_like(masked_activations_child1),
         )
         final_activations_child2 = torch.where(
             ~winners_mask,
             masked_activations_child2,
-            torch.zeros_like(masked_activations_child2)
+            torch.zeros_like(masked_activations_child2),
         )
 
         reconstructed = (
@@ -251,4 +251,4 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             + self.decoder_child1(final_activations_child1)
             + self.decoder_child2(final_activations_child2)
         )
-        return reconstructed
+        return reconstructed, num_live_latents
