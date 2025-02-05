@@ -86,7 +86,9 @@ def main(user_args: Namespace):
                 )
 
         writer.add_scalar(
-            "Activated ground-truth features", num_activated_features, step
+            "Activated ground-truth features",
+            num_activated_features / user_args.batch_size,
+            step,
         )
         if step % 10 == 0:
             writer.add_scalar(
