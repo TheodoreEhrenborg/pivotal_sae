@@ -13,7 +13,10 @@ from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
-from sae_hacking.common.sae import TopkSparseAutoEncoder2Child, TopkSparseAutoEncoder_v2
+from sae_hacking.common.sae import (
+    TopkSparseAutoEncoder2Child_v2,
+    TopkSparseAutoEncoder_v2,
+)
 from sae_hacking.common.toy_dataset import ToyDataset
 
 
@@ -23,8 +26,10 @@ def setup(
     cuda: bool,
     no_internet: bool,
     hierarchical: bool,
-) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child:
-    SAEClass = TopkSparseAutoEncoder2Child if hierarchical else TopkSparseAutoEncoder_v2
+) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
+    SAEClass = (
+        TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
+    )
     print(SAEClass)
     sae = SAEClass(sae_hidden_dim)
     if cuda:
