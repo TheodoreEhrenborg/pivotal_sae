@@ -127,12 +127,32 @@ def get_reconstruction_loss(
 
 
 @jaxtyped(typechecker=beartype)
+def get_decoder_weights(sae_model) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
+    if isinstance(sae_model, TopkSparseAutoEncoder_v2):
+        return sae_model.decoder.weight
+    elif isinstance(sae_model, TopkSparseAutoEncoder2Child_v2):
+        return rearrange(
+            [
+                sae_model.decoder.weight,
+                sae_model.decoder.weight + sae_model.decoder_child1.weight,
+                sae_model.decoder.weight + sae_model.decoder_child2.weight,
+            ],
+            "three_copies model_dim sae_dim -> model_dim (sae_dim three_copies)",
+        )
+    else:
+        raise TypeError(f"Unsupported model type: {type(sae_model)}")
+
+
+@jaxtyped(typechecker=beartype)
 def calculate_cosine_sim(
-    decoder_weights: Float[torch.Tensor, "model_dim sae_dim"],
+    decoder_weights: Float[torch.Tensor, "model_dim expanded_sae_dim"],
     all_child_vecs: Float[torch.Tensor, "total_num_children model_dim"],
-) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+) -> Float[torch.Tensor, "expanded_sae_dim total_num_children"]:
     return F.cosine_similarity(
-        rearrange(decoder_weights, "model_dim sae_dim -> sae_dim 1 model_dim"),
+        rearrange(
+            decoder_weights,
+            "model_dim expanded_sae_dim -> expanded_sae_dim 1 model_dim",
+        ),
         rearrange(
             all_child_vecs,
             "total_num_children model_dim -> 1 total_num_children model_dim",
@@ -151,7 +171,7 @@ def get_similarity(sae, dataset) -> Float[torch.Tensor, "sae_dim total_num_child
         child_vecs,
         "n_features children_per_parent model_dim -> (n_features children_per_parent) model_dim",
     )
-    return calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
+    return calculate_cosine_sim(get_decoder_weights(sae), all_child_vecs)
 
 
 @jaxtyped(typechecker=beartype)
