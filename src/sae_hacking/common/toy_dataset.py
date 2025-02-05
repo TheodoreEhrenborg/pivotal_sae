@@ -31,7 +31,7 @@ class ToyDataset:
 
     @jaxtyped(typechecker=beartype)
     def generate(
-        self, num_samples: int = 1
+        self, num_samples: int
     ) -> tuple[Float[torch.Tensor, "num_samples {self.N_DIMS}"], Int[torch.Tensor, ""]]:
         active_features = 0
         # TODO This check really should make sure each of num_samples has >0 features

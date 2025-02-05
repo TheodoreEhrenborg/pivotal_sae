@@ -41,6 +41,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
+    parser.add_argument("--batch-size", type=int, default=1)
     return parser
 
 
@@ -62,7 +63,7 @@ def main(user_args: Namespace):
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
 
     for step in trange(user_args.max_step):
-        example, num_activated_features = dataset.generate()
+        example, num_activated_features = dataset.generate(user_args.batch_size)
         optimizer.zero_grad()
         reconstructed = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
@@ -101,10 +102,9 @@ def main(user_args: Namespace):
 
 @jaxtyped(typechecker=beartype)
 def get_reconstruction_loss(
-    act: Float[torch.Tensor, "1 projected_dim"],
-    sae_act: Float[torch.Tensor, "1 projected_dim"],
+    act: Float[torch.Tensor, "batch_size model_dim"],
+    sae_act: Float[torch.Tensor, "batch_size model_dim"],
 ) -> Float[torch.Tensor, ""]:
-    # TODO DRY this
     return ((act - sae_act) ** 2).mean()
 
 
@@ -143,6 +143,7 @@ def min_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
         similarity, "sae_dim total_num_children -> total_num_children", "max"
     )
     return per_feature_sim.min()
+
 
 @jaxtyped(typechecker=beartype)
 def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
