@@ -67,13 +67,23 @@ def main(user_args: Namespace):
     for step in trange(user_args.max_step):
         example, num_activated_features = dataset.generate(user_args.batch_size)
         optimizer.zero_grad()
-        reconstructed, num_live_latents = sae(example)
+        reconstructed, _ = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
         rec_loss.backward()
         optimizer.step()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
             save_similarity_graph(sae, dataset, output_dir, step)
+            with torch.no_grad():
+                val_example, _ = dataset.generate(10000)
+                _, num_live_latents = sae(val_example)
+                num_dead_latents = user_args.sae_hidden_dim - num_live_latents
+                writer.add_scalar("Num dead latents", num_dead_latents, step)
+                writer.add_scalar(
+                    "Proportion of dead latents",
+                    num_dead_latents / user_args.sae_hidden_dim,
+                    step,
+                )
 
         writer.add_scalar(
             "Activated ground-truth features", num_activated_features, step
@@ -90,13 +100,6 @@ def main(user_args: Namespace):
                 step,
             )
         writer.add_scalar("lr", lr, step)
-        num_dead_latents = user_args.sae_hidden_dim - num_live_latents
-        writer.add_scalar("Num dead latents", num_dead_latents, step)
-        writer.add_scalar(
-            "Proportion of dead latents",
-            num_dead_latents / user_args.sae_hidden_dim,
-            step,
-        )
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
