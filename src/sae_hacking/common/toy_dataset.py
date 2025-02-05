@@ -14,7 +14,7 @@ class ToyDataset:
 
     @beartype
     def __init__(self, num_features: int, seed: int, cuda: bool) -> None:
-        self.device = "cuda" if cuda else "cpu"
+        self.device = torch.device("cuda" if cuda else "cpu")
         torch.manual_seed(seed)
         self.n_features = num_features
         self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
