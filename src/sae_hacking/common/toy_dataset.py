@@ -73,3 +73,30 @@ def compute_result(
                 )
                 result[i] += perturbed_feature
     return result
+
+@jaxtyped(typechecker=beartype)
+def compute_result2(
+    activations: Bool[torch.Tensor, "batch_size n_features"],
+    perturbation_choices: Int[torch.Tensor, "batch_size n_features"],
+    features: Float[torch.Tensor, "n_features model_dim"],
+    perturbations: Float[torch.Tensor, "n_features n_children model_dim"],
+    device: torch.device,
+) -> Float[torch.Tensor, "batch_size model_dim"]:
+    # Create indices for gathering perturbations
+    batch_size, n_features = activations.shape
+    batch_indices = torch.arange(batch_size, device=device)[:, None].expand(-1, n_features)
+    feature_indices = torch.arange(n_features, device=device)[None, :].expand(batch_size, -1)
+
+    # Gather the selected perturbations for each feature and batch
+    selected_perturbations = perturbations[feature_indices, perturbation_choices]
+
+    # Add the base features to the perturbations
+    perturbed_features = features[None, :, :] + selected_perturbations
+
+    # Mask out non-activated features
+    masked_features = perturbed_features * activations[:, :, None]
+
+    # Sum along the features dimension
+    result = masked_features.sum(dim=1)
+
+    return result
