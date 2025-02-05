@@ -83,22 +83,18 @@ def compute_result2(
     perturbations: Float[torch.Tensor, "n_features n_children model_dim"],
     device: torch.device,
 ) -> Float[torch.Tensor, "batch_size model_dim"]:
+    batch_size, n_features = activations.shape
+    feature_indices = torch.arange(n_features, device=device)
 
-
-    feature_indices = repeat(
-        torch.arange(activations.shape[1], device=device),
-        'n_features -> batch_size n_features',
-        batch_size=activations.shape[0]
-    )
+    # feature_indices is broadcast to match perturbation_choices,
+    # and then they are iterated over in lockstep
+    # See https://numpy.org/doc/2.2/user/basics.indexing.html#integer-array-indexing
     selected_perturbations = perturbations[feature_indices, perturbation_choices]
 
-    features_expanded = repeat(
-        features,
-        'n_features model_dim -> batch_size n_features model_dim',
-        batch_size=activations.shape[0]
-    )
+    model_dim = features.shape[1]
+    assert selected_perturbations.shape == (batch_size, n_features, model_dim)
 
-    perturbed_features = features_expanded + selected_perturbations
+    perturbed_features = features + selected_perturbations
 
     result = einsum(
         perturbed_features,
