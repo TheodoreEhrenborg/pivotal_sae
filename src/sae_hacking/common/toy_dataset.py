@@ -19,8 +19,9 @@ class ToyDataset:
         torch.manual_seed(seed)
         self.n_features = num_features
         self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
-        # TODO "torch.norm is deprecated and may be removed in a future PyTorch release. Its documentation and behavior may be incorrect, and it is no longer actively maintained."
-        self.features = self.features / self.features.norm(dim=1, keepdim=True)
+        self.features = self.features / torch.linalg.vector_norm(
+            self.features, dim=1, keepdim=True
+        )
 
         raw_perturbations = torch.randn(
             self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS, device=self.device
@@ -28,7 +29,7 @@ class ToyDataset:
         self.perturbations = (
             self.PERTURBATION_SIZE
             * raw_perturbations
-            / raw_perturbations.norm(dim=2, keepdim=True)
+            / torch.linalg.vector_norm(raw_perturbations, dim=2, keepdim=True)
         )
 
     @jaxtyped(typechecker=beartype)
