@@ -62,7 +62,7 @@ def main(user_args: Namespace):
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
 
     for step in trange(user_args.max_step):
-        example = dataset.generate()
+        example, num_activated_features = dataset.generate()
         optimizer.zero_grad()
         reconstructed = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
@@ -72,6 +72,9 @@ def main(user_args: Namespace):
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
             save_similarity_graph(sae, dataset, output_dir, step)
 
+        writer.add_scalar(
+            "Activated ground-truth features", num_activated_features, step
+        )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)

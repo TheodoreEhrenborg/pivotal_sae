@@ -1,6 +1,6 @@
 import torch
 from beartype import beartype
-from jaxtyping import Bool, Float, jaxtyped
+from jaxtyping import Bool, Float, Int, jaxtyped
 
 
 class ToyDataset:
@@ -32,7 +32,7 @@ class ToyDataset:
     @jaxtyped(typechecker=beartype)
     def generate(
         self, num_samples: int = 1
-    ) -> Float[torch.Tensor, "num_samples {self.N_DIMS}"]:
+    ) -> tuple[Float[torch.Tensor, "num_samples {self.N_DIMS}"], Int[torch.Tensor, ""]]:
         activations: Bool[torch.Tensor, "num_samples n_features"] = (
             torch.rand(num_samples, self.n_features) < self.ACTIVATION_PROB
         )
@@ -50,4 +50,4 @@ class ToyDataset:
                     )
                     result[i] += perturbed_feature
 
-        return result
+        return result, activations.sum()
