@@ -100,7 +100,10 @@ def compute_result2(
 
     perturbed_features = features_expanded + selected_perturbations
 
-    masked_features = perturbed_features * activations[..., None]
-    result = masked_features.sum(dim=1)
+    result = einsum(
+        perturbed_features,
+        activations.float(),
+        'batch_size n_features model_dim, batch_size n_features -> batch_size model_dim'
+    )
 
     return result
