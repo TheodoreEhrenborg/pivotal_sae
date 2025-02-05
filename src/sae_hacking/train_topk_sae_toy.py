@@ -8,7 +8,7 @@ import torch
 import torch.nn.functional as F
 from beartype import beartype
 from coolname import generate_slug
-from einops import rearrange
+from einops import rearrange, reduce
 from jaxtyping import Float, jaxtyped
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
@@ -75,6 +75,11 @@ def main(user_args: Namespace):
         writer.add_scalar(
             "Activated ground-truth features", num_activated_features, step
         )
+        writer.add_scalar(
+            "Mean_{feature}( Max_{decoder vector} cosine sim)",
+            mean_max_cosine_similarity(sae, dataset),
+            step,
+        )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
@@ -123,6 +128,15 @@ def get_similarity(sae, dataset) -> Float[torch.Tensor, "sae_dim total_num_child
         "n_features children_per_parent model_dim -> (n_features children_per_parent) model_dim",
     )
     return calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
+
+
+@jaxtyped(typechecker=beartype)
+def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
+    similarity = get_similarity(sae, dataset)
+    per_feature_sim = reduce(
+        similarity, "sae_dim total_num_children -> total_num_children", "max"
+    )
+    return per_feature_sim.mean()
 
 
 def save_similarity_graph(sae, dataset, output_dir, step):
