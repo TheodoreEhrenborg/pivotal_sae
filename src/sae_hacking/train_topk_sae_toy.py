@@ -100,11 +100,6 @@ def main(user_args: Namespace):
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
-        writer.add_scalar(
-            "Reconstruction loss per element/train",
-            rec_loss / torch.numel(example),
-            step,
-        )
 
     writer.close()
 
