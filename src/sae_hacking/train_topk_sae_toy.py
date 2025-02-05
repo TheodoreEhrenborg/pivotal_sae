@@ -19,6 +19,8 @@ from sae_hacking.common.sae import (
 )
 from sae_hacking.common.toy_dataset import ToyDataset
 
+SomeSAE = TopkSparseAutoEncoder2Child_v2 | TopkSparseAutoEncoder_v2
+
 
 @beartype
 def setup(
@@ -80,7 +82,9 @@ def main(user_args: Namespace):
         optimizer.step()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
-            save_similarity_graph(sae, dataset, output_dir, step)
+            save_similarity_graph(
+                sae, dataset, output_dir, step, user_args.hierarchical
+            )
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
                 _, num_live_latents = sae(val_example)
@@ -192,7 +196,10 @@ def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
     return per_feature_sim.mean()
 
 
-def save_similarity_graph(sae, dataset, output_dir, step):
+@beartype
+def save_similarity_graph(
+    sae: SomeSAE, dataset: ToyDataset, output_dir: str, step: int, hierarchical: bool
+):
     similarity = get_similarity(sae, dataset)
 
     # Create heatmap
@@ -207,8 +214,9 @@ def save_similarity_graph(sae, dataset, output_dir, step):
     )
 
     num_rows = similarity.shape[0]
-    for i in range(3, num_rows, 3):
-        plt.axhline(y=i, color="black", linewidth=1)
+    if hierarchical:
+        for i in range(3, num_rows, 3):
+            plt.axhline(y=i, color="black", linewidth=1)
 
     # Add labels
     plt.title(f"Decoder Weights vs Child Vectors Similarity, step {step}")
