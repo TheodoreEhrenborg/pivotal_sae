@@ -90,6 +90,8 @@ def main(user_args: Namespace):
             num_activated_features / user_args.batch_size,
             step,
         )
+        # If we calculate this every step,
+        # roughly 40% of the runtime is spent doing that
         if step % 10 == 0:
             writer.add_scalar(
                 "Min_{feature}( Max_{decoder vector} cosine sim)",
