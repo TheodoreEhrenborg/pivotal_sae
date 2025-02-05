@@ -99,11 +99,11 @@ def get_reconstruction_loss(
 
 @jaxtyped(typechecker=beartype)
 def calculate_cosine_sim(
-    decoder_weights: Float[torch.Tensor, "model_dim n_features"],
+    decoder_weights: Float[torch.Tensor, "model_dim sae_dim"],
     all_child_vecs: Float[torch.Tensor, "total_num_children model_dim"],
-) -> Float[torch.Tensor, "n_features total_num_children"]:
+) -> Float[torch.Tensor, "sae_dim total_num_children"]:
     return F.cosine_similarity(
-        rearrange(decoder_weights, "model_dim n_features -> n_features 1 model_dim"),
+        rearrange(decoder_weights, "model_dim sae_dim -> sae_dim 1 model_dim"),
         rearrange(
             all_child_vecs,
             "total_num_children model_dim -> 1 total_num_children model_dim",
@@ -113,16 +113,14 @@ def calculate_cosine_sim(
 
 
 @jaxtyped(typechecker=beartype)
-def get_similarity(
-    sae, dataset
-) -> Float[torch.Tensor, "n_features total_num_children"]:
+def get_similarity(sae, dataset) -> Float[torch.Tensor, "sae_dim total_num_children"]:
     child_vecs = (
-        rearrange(dataset.features, "n_features n_dim -> n_features 1 n_dim")
+        rearrange(dataset.features, "n_features model_dim -> n_features 1 model_dim")
         + dataset.perturbations
     )
     all_child_vecs = rearrange(
         child_vecs,
-        "n_features children_per_parent n_dim -> (n_features children_per_parent) n_dim",
+        "n_features children_per_parent model_dim -> (n_features children_per_parent) model_dim",
     )
     return calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
 
