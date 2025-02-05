@@ -1,4 +1,5 @@
 import torch
+from einops import repeat, einsum
 from beartype import beartype
 from jaxtyping import Bool, Float, Int, jaxtyped
 
@@ -82,21 +83,24 @@ def compute_result2(
     perturbations: Float[torch.Tensor, "n_features n_children model_dim"],
     device: torch.device,
 ) -> Float[torch.Tensor, "batch_size model_dim"]:
-    # Create indices for gathering perturbations
-    batch_size, n_features = activations.shape
-    batch_indices = torch.arange(batch_size, device=device)[:, None].expand(-1, n_features)
-    feature_indices = torch.arange(n_features, device=device)[None, :].expand(batch_size, -1)
 
-    # Gather the selected perturbations for each feature and batch
+
+    feature_indices = repeat(
+        torch.arange(activations.shape[1], device=device),
+        'n_features -> batch_size n_features',
+        batch_size=activations.shape[0]
+    )
     selected_perturbations = perturbations[feature_indices, perturbation_choices]
 
-    # Add the base features to the perturbations
-    perturbed_features = features[None, :, :] + selected_perturbations
+    features_expanded = repeat(
+        features,
+        'n_features model_dim -> batch_size n_features model_dim',
+        batch_size=activations.shape[0]
+    )
 
-    # Mask out non-activated features
-    masked_features = perturbed_features * activations[:, :, None]
+    perturbed_features = features_expanded + selected_perturbations
 
-    # Sum along the features dimension
+    masked_features = perturbed_features * activations[..., None]
     result = masked_features.sum(dim=1)
 
     return result
