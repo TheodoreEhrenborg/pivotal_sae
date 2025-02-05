@@ -1,6 +1,6 @@
 import torch
-from einops import repeat, einsum
 from beartype import beartype
+from einops import einsum
 from jaxtyping import Bool, Float, Int, jaxtyped
 
 
@@ -75,6 +75,7 @@ def compute_result(
                 result[i] += perturbed_feature
     return result
 
+
 @jaxtyped(typechecker=beartype)
 def compute_result2(
     activations: Bool[torch.Tensor, "batch_size n_features"],
@@ -99,7 +100,7 @@ def compute_result2(
     result = einsum(
         perturbed_features,
         activations.float(),
-        'batch_size n_features model_dim, batch_size n_features -> batch_size model_dim'
+        "batch_size n_features model_dim, batch_size n_features -> batch_size model_dim",
     )
 
     return result
