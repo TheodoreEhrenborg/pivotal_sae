@@ -36,6 +36,7 @@ class ToyDataset:
     ) -> tuple[Float[torch.Tensor, "num_samples {self.N_DIMS}"], Int[torch.Tensor, ""]]:
         active_features = 0
         # TODO This check really should make sure each of num_samples has >0 features
+        # i.e. currently this does ~nothing when batching is on
         while active_features == 0:
             activations: Bool[torch.Tensor, "num_samples n_features"] = (
                 torch.rand(num_samples, self.n_features, device=self.device)
