@@ -206,6 +206,10 @@ def save_similarity_graph(sae, dataset, output_dir, step):
         square=True,
     )
 
+    num_rows = similarity.shape[0]
+    for i in range(3, num_rows, 3):
+        plt.axhline(y=i, color="black", linewidth=1)
+
     # Add labels
     plt.title(f"Decoder Weights vs Child Vectors Similarity, step {step}")
     plt.xlabel("Child Vectors (Child 1 | Child 2)")
