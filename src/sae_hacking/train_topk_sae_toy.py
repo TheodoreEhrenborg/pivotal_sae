@@ -75,11 +75,17 @@ def main(user_args: Namespace):
         writer.add_scalar(
             "Activated ground-truth features", num_activated_features, step
         )
-        writer.add_scalar(
-            "Mean_{feature}( Max_{decoder vector} cosine sim)",
-            mean_max_cosine_similarity(sae, dataset),
-            step,
-        )
+        if step % 10 == 0:
+            writer.add_scalar(
+                "Min_{feature}( Max_{decoder vector} cosine sim)",
+                min_max_cosine_similarity(sae, dataset),
+                step,
+            )
+            writer.add_scalar(
+                "Mean_{feature}( Max_{decoder vector} cosine sim)",
+                mean_max_cosine_similarity(sae, dataset),
+                step,
+            )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
@@ -129,6 +135,14 @@ def get_similarity(sae, dataset) -> Float[torch.Tensor, "sae_dim total_num_child
     )
     return calculate_cosine_sim(sae.decoder.weight, all_child_vecs)
 
+
+@jaxtyped(typechecker=beartype)
+def min_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
+    similarity = get_similarity(sae, dataset)
+    per_feature_sim = reduce(
+        similarity, "sae_dim total_num_children -> total_num_children", "max"
+    )
+    return per_feature_sim.min()
 
 @jaxtyped(typechecker=beartype)
 def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
