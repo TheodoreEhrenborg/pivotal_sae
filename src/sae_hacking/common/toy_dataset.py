@@ -45,14 +45,31 @@ class ToyDataset:
             device=self.device,
         )
 
-        result = torch.zeros(batch_size, self.N_DIMS, device=self.device)
-        for i in range(batch_size):
-            for j in range(self.n_features):
-                if activations[i, j]:
-                    perturbed_feature = (
-                        self.features[j]
-                        + self.perturbations[j, perturbation_choices[i, j]]
-                    )
-                    result[i] += perturbed_feature
+        result = compute_result(
+            activations,
+            perturbation_choices,
+            self.features,
+            self.perturbations,
+            self.device,
+        )
 
         return result, activations.sum()
+
+
+@jaxtyped(typechecker=beartype)
+def compute_result(
+    activations: Bool[torch.Tensor, "batch_size n_features"],
+    perturbation_choices: Int[torch.Tensor, "batch_size n_features"],
+    features: Float[torch.Tensor, "n_features model_dim"],
+    perturbations: Float[torch.Tensor, "n_features n_children model_dim"],
+    device: torch.device,
+) -> Float[torch.Tensor, "batch_size model_dim"]:
+    result = torch.zeros(activations.shape[0], features.shape[1], device=device)
+    for i in range(activations.shape[0]):
+        for j in range(activations.shape[1]):
+            if activations[i, j]:
+                perturbed_feature = (
+                    features[j] + perturbations[j, perturbation_choices[i, j]]
+                )
+                result[i] += perturbed_feature
+    return result
