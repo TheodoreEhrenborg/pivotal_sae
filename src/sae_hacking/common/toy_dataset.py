@@ -34,15 +34,10 @@ class ToyDataset:
     def generate(
         self, batch_size: int
     ) -> tuple[Float[torch.Tensor, "batch_size {self.N_DIMS}"], Int[torch.Tensor, ""]]:
-        active_features = 0
-        # TODO This check really should make sure each of batch_size has >0 features
-        # i.e. currently this does ~nothing when batching is on
-        while active_features == 0:
-            activations: Bool[torch.Tensor, "batch_size n_features"] = (
-                torch.rand(batch_size, self.n_features, device=self.device)
-                < self.ACTIVATION_PROB
-            )
-            active_features = activations.sum()
+        activations: Bool[torch.Tensor, "batch_size n_features"] = (
+            torch.rand(batch_size, self.n_features, device=self.device)
+            < self.ACTIVATION_PROB
+        )
         perturbation_choices = torch.randint(
             0,
             self.N_CHILDREN_PER_PARENT,
