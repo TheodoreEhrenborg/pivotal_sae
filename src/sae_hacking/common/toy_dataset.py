@@ -14,9 +14,8 @@ class ToyDataset:
     perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
 
     @beartype
-    def __init__(self, num_features: int, seed: int, cuda: bool) -> None:
+    def __init__(self, num_features: int, cuda: bool) -> None:
         self.device = torch.device("cuda" if cuda else "cpu")
-        torch.manual_seed(seed)
         self.n_features = num_features
         self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
         self.features = self.features / torch.linalg.vector_norm(

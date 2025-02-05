@@ -47,16 +47,18 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=1)
     return parser
 
 
 @beartype
 def main(user_args: Namespace):
+    torch.manual_seed(user_args.seed)
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
     writer = SummaryWriter(output_dir)
     dataset = ToyDataset(
-        seed=1, num_features=user_args.dataset_num_features, cuda=user_args.cuda
+        num_features=user_args.dataset_num_features, cuda=user_args.cuda
     )
 
     sae = setup(
