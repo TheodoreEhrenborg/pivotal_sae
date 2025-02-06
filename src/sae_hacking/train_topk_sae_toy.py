@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 import torch.nn.functional as F
+import yaml
 from beartype import beartype
 from coolname import generate_slug
 from einops import rearrange, reduce
@@ -32,7 +33,6 @@ def setup(
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
-    print(SAEClass)
     sae = SAEClass(sae_hidden_dim)
     if cuda:
         sae.cuda()
@@ -59,6 +59,10 @@ def main(user_args: Namespace):
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
     writer = SummaryWriter(output_dir)
+
+    with open(f"{output_dir}/args.yaml", "w") as f:
+        yaml.dump(vars(user_args), f, default_flow_style=False)
+
     dataset = ToyDataset(
         num_features=user_args.dataset_num_features, cuda=user_args.cuda
     )
