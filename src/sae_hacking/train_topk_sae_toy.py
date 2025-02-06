@@ -166,15 +166,24 @@ def calculate_cosine_sim(
 
 
 @jaxtyped(typechecker=beartype)
-def get_similarity(sae, dataset) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+def get_all_features(
+    dataset: ToyDataset,
+) -> Float[torch.Tensor, "total_num_children model_dim"]:
     child_vecs = (
         rearrange(dataset.features, "n_features model_dim -> n_features 1 model_dim")
         + dataset.perturbations
     )
-    all_child_vecs = rearrange(
+    return rearrange(
         child_vecs,
         "n_features children_per_parent model_dim -> (n_features children_per_parent) model_dim",
     )
+
+
+@jaxtyped(typechecker=beartype)
+def get_similarity(
+    sae: SomeSAE, dataset: ToyDataset
+) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+    all_child_vecs = get_all_features(dataset)
     return calculate_cosine_sim(get_decoder_weights(sae), all_child_vecs)
 
 
