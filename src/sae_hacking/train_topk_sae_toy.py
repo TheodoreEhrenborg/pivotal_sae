@@ -258,7 +258,7 @@ def plot_feature_similarity(
 @beartype
 def save_similarity_graph(
     sae: SomeSAE, dataset: ToyDataset, output_dir: str, step: int, hierarchical: bool
-):
+) -> None:
     similarity = get_similarity(sae, dataset)
 
     # Create heatmap
