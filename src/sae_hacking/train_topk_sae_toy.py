@@ -25,11 +25,7 @@ SomeSAE = TopkSparseAutoEncoder2Child_v2 | TopkSparseAutoEncoder_v2
 
 @beartype
 def setup(
-    sae_hidden_dim: int,
-    cuda: bool,
-    no_internet: bool,
-    hierarchical: bool,
-    model_dim: int,
+    sae_hidden_dim: int, cuda: bool, hierarchical: bool, model_dim: int
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
@@ -72,13 +68,7 @@ def main(args: Namespace):
     )
     plot_feature_similarity(dataset, output_dir)
 
-    sae = setup(
-        args.sae_hidden_dim,
-        args.cuda,
-        False,
-        args.hierarchical,
-        args.model_dim,
-    )
+    sae = setup(args.sae_hidden_dim, args.cuda, args.hierarchical, args.model_dim)
     if args.handcode_sae:
         assert args.hierarchical
         handcode_sae(sae, dataset)
