@@ -180,6 +180,25 @@ def get_all_features(
 
 
 @jaxtyped(typechecker=beartype)
+def get_feature_v_feature_sim(
+    dataset: ToyDataset,
+) -> Float[torch.Tensor, "total_num_children total_num_children"]:
+    # TODO Change name of total_num_children
+    all_child_vecs = get_all_features(dataset)
+    return F.cosine_similarity(
+        rearrange(
+            all_child_vecs,
+            "total_num_children model_dim -> total_num_children 1 model_dim",
+        ),
+        rearrange(
+            all_child_vecs,
+            "total_num_children model_dim -> 1 total_num_children model_dim",
+        ),
+        dim=2,
+    )
+
+
+@jaxtyped(typechecker=beartype)
 def get_similarity(
     sae: SomeSAE, dataset: ToyDataset
 ) -> Float[torch.Tensor, "sae_dim total_num_children"]:
