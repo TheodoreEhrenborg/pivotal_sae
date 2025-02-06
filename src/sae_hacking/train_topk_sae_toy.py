@@ -55,32 +55,30 @@ def make_parser() -> ArgumentParser:
 
 
 @beartype
-def main(user_args: Namespace):
-    torch.manual_seed(user_args.seed)
+def main(args: Namespace):
+    torch.manual_seed(args.seed)
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
     writer = SummaryWriter(output_dir)
 
     with open(f"{output_dir}/args.yaml", "w") as f:
-        yaml.dump(vars(user_args), f, default_flow_style=False)
+        yaml.dump(vars(args), f, default_flow_style=False)
 
-    dataset = ToyDataset(
-        user_args.dataset_num_features, user_args.cuda, user_args.perturbation_size
-    )
+    dataset = ToyDataset(args.dataset_num_features, args.cuda, args.perturbation_size)
     plot_feature_similarity(dataset, output_dir)
 
     sae = setup(
-        user_args.sae_hidden_dim,
-        user_args.cuda,
+        args.sae_hidden_dim,
+        args.cuda,
         False,
-        user_args.hierarchical,
+        args.hierarchical,
     )
 
-    lr = user_args.lr
+    lr = args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
 
-    for step in trange(user_args.max_step):
-        example, num_activated_features = dataset.generate(user_args.batch_size)
+    for step in trange(args.max_step):
+        example, num_activated_features = dataset.generate(args.batch_size)
         optimizer.zero_grad()
         reconstructed, _ = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
@@ -88,23 +86,21 @@ def main(user_args: Namespace):
         optimizer.step()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
-            save_similarity_graph(
-                sae, dataset, output_dir, step, user_args.hierarchical
-            )
+            save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
                 _, num_live_latents = sae(val_example)
-                num_dead_latents = user_args.sae_hidden_dim - num_live_latents
+                num_dead_latents = args.sae_hidden_dim - num_live_latents
                 writer.add_scalar("Num dead latents", num_dead_latents, step)
                 writer.add_scalar(
                     "Proportion of dead latents",
-                    num_dead_latents / user_args.sae_hidden_dim,
+                    num_dead_latents / args.sae_hidden_dim,
                     step,
                 )
 
         writer.add_scalar(
             "Activated ground-truth features",
-            num_activated_features / user_args.batch_size,
+            num_activated_features / args.batch_size,
             step,
         )
         # If we calculate this every step,
@@ -121,7 +117,7 @@ def main(user_args: Namespace):
                 step,
             )
         writer.add_scalar("lr", lr, step)
-        writer.add_scalar("sae_hidden_dim", user_args.sae_hidden_dim, step)
+        writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
 
