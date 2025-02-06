@@ -5,6 +5,7 @@ from jaxtyping import Bool, Float, Int, jaxtyped
 
 
 class ToyDataset:
+    # TODO Standardize this name
     N_DIMS = 10
     N_CHILDREN_PER_PARENT = 2
     ACTIVATION_PROB = 0.03
