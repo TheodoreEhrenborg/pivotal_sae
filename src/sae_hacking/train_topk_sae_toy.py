@@ -125,6 +125,11 @@ def main(args: Namespace):
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
+        writer.add_scalar(
+            "Feature pair detection rate",
+            feature_pair_detection_rate(sae, dataset),
+            step,
+        )
 
     writer.close()
 
@@ -156,44 +161,40 @@ def get_decoder_weights(sae_model) -> Float[torch.Tensor, "model_dim expanded_sa
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
 
 
-def calculate_success_rate(cosine_sim, num_pairs=30):
-    """
-    Calculate success rate based on closest features for each latent pair
+@beartype
+def feature_pair_detection_rate(
+    sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
+):
+    decoder_weights = rearrange(
+        [
+            sae_model.decoder.weight + sae_model.decoder_child1.weight,
+            sae_model.decoder.weight + sae_model.decoder_child2.weight,
+        ],
+        "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+    )
+    num_latent_pairs = decoder_weights.shape[1] // 2
 
-    Args:
-    cosine_sim: 60x60 tensor with latents in rows and features in columns
-    num_pairs: number of pairs (default=30)
+    all_child_vecs = get_all_features(dataset)
+    cosine_sim = calculate_cosine_sim(decoder_weights, all_child_vecs)
 
-    Returns:
-    success_rate: float between 0 and 1
-    """
-    # For each pair of latents (i.e., rows 2k, 2k+1),
-    # find the closest features
     successes = 0
 
-    for k in range(num_pairs):
-        # Get similarities for this latent pair
-        latent1_sims = cosine_sim[
-            2 * k, : num_pairs * 2
-        ]  # Only look at feature columns
-        latent2_sims = cosine_sim[
-            2 * k + 1, : num_pairs * 2
-        ]  # Only look at feature columns
+    for k in range(num_latent_pairs):
+        latent1_sims = cosine_sim[2 * k]
+        latent2_sims = cosine_sim[2 * k + 1]
 
-        # Find indices of closest features
-        closest_to_latent1 = torch.argmax(latent1_sims)
-        closest_to_latent2 = torch.argmax(latent2_sims)
+        closest_feature_to_latent1 = torch.argmax(latent1_sims)
+        closest_feature_to_latent2 = torch.argmax(latent2_sims)
 
-        # Check if they're distinct
-        if closest_to_latent1 != closest_to_latent2:
-            # Check if they form a pair
-            if (
-                abs(closest_to_latent1 - closest_to_latent2) == 1
-                and min(closest_to_latent1, closest_to_latent2) % 2 == 0
-            ):
-                successes += 1
+        # Are these features the two features in a pair?
+        if (
+            closest_feature_to_latent1 != closest_feature_to_latent2
+            and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
+            and min(closest_feature_to_latent1, closest_feature_to_latent2) % 2 == 0
+        ):
+            successes += 1
 
-    return successes / num_pairs
+    return successes / num_latent_pairs
 
 
 @jaxtyped(typechecker=beartype)
