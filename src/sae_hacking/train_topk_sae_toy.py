@@ -66,6 +66,7 @@ def main(user_args: Namespace):
     dataset = ToyDataset(
         num_features=user_args.dataset_num_features, cuda=user_args.cuda
     )
+    plot_feature_similarity(dataset, output_dir)
 
     sae = setup(
         user_args.sae_hidden_dim,
@@ -243,7 +244,7 @@ def plot_feature_similarity(
         vmax=1,
         square=True,
         xticklabels=4,
-        yticklabels=3,
+        yticklabels=4,
     )
 
     plt.title("Cosine similarity between features")
