@@ -49,6 +49,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
+    parser.add_argument("--handcode-sae", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--perturbation_size", type=float, default=0.2)
@@ -78,6 +79,9 @@ def main(args: Namespace):
         args.hierarchical,
         args.model_dim,
     )
+    if args.handcode_sae:
+        assert args.hierarchical
+        handcode_sae(sae, dataset)
 
     lr = args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
@@ -387,6 +391,27 @@ def log_dead_latents(
         num_dead_parent_latents / sae_hidden_dim,
         step,
     )
+
+
+@beartype
+def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> None:
+    sae.encoder.weight.data = dataset.features
+    sae.decoder.weight.data = dataset.features.transpose(0, 1)
+
+    norm_perturbations = dataset.perturbations / torch.linalg.vector_norm(
+        dataset.perturbations, dim=2, keepdim=True
+    )
+    sae.encoder_child1.weight.data = norm_perturbations[:, 0]
+    sae.decoder_child1.weight.data = norm_perturbations[:, 0].transpose(0, 1)
+    sae.encoder_child2.weight.data = norm_perturbations[:, 1]
+    sae.decoder_child2.weight.data = norm_perturbations[:, 1].transpose(0, 1)
+
+    sae.encoder.bias.data = torch.zeros_like(sae.encoder.bias)
+    sae.decoder.bias.data = torch.zeros_like(sae.decoder.bias)
+    sae.encoder_child1.bias.data = torch.zeros_like(sae.encoder_child1.bias)
+    sae.decoder_child1.bias.data = torch.zeros_like(sae.decoder_child1.bias)
+    sae.encoder_child2.bias.data = torch.zeros_like(sae.encoder_child2.bias)
+    sae.decoder_child2.bias.data = torch.zeros_like(sae.decoder_child2.bias)
 
 
 if __name__ == "__main__":
