@@ -225,6 +225,37 @@ def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
 
 
 @beartype
+def plot_feature_similarity(
+    dataset: ToyDataset,
+    output_dir: str,
+) -> None:
+    similarity = get_feature_v_feature_sim(dataset)
+    plt.figure(figsize=(12, 5))
+    sns.heatmap(
+        similarity.cpu().detach().numpy(),
+        cmap="RdYlBu_r",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        square=True,
+        xticklabels=4,
+        yticklabels=3,
+    )
+
+    plt.title("Cosine similarity between features")
+    plt.xlabel("Features")
+    plt.ylabel("Features")
+
+    plt.tight_layout()
+    plt.savefig(
+        f"{output_dir}/feature_vs_feature_similarity_heatmap",
+        dpi=300,
+        bbox_inches="tight",
+    )
+    plt.close()
+
+
+@beartype
 def save_similarity_graph(
     sae: SomeSAE, dataset: ToyDataset, output_dir: str, step: int, hierarchical: bool
 ):
