@@ -144,7 +144,9 @@ def get_reconstruction_loss(
 
 
 @jaxtyped(typechecker=beartype)
-def get_decoder_weights(sae_model) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
+def get_decoder_weights(
+    sae_model: SomeSAE,
+) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
     if isinstance(sae_model, TopkSparseAutoEncoder_v2):
         return sae_model.decoder.weight
     elif isinstance(sae_model, TopkSparseAutoEncoder2Child_v2):
