@@ -385,12 +385,18 @@ def log_dead_latents(
 
 @beartype
 def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> None:
-    sae.encoder.weight.data = dataset.features
-    sae.decoder.weight.data = dataset.features.transpose(0, 1)
+    sae.encoder.weight.data = dataset.features.detach().clone()
+    sae.decoder.weight.data = dataset.features.transpose(0, 1).detach().clone()
 
-    norm_perturbations = dataset.perturbations / torch.linalg.vector_norm(
-        dataset.perturbations, dim=2, keepdim=True
+    norm_perturbations = (
+        (
+            dataset.perturbations
+            / torch.linalg.vector_norm(dataset.perturbations, dim=2, keepdim=True)
+        )
+        .detach()
+        .clone()
     )
+
     sae.encoder_child1.weight.data = norm_perturbations[:, 0]
     sae.decoder_child1.weight.data = norm_perturbations[:, 0].transpose(0, 1)
     sae.encoder_child2.weight.data = norm_perturbations[:, 1]
