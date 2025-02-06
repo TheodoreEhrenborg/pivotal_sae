@@ -121,15 +121,15 @@ def main(args: Namespace):
                 mean_max_cosine_similarity(sae, dataset),
                 step,
             )
+            writer.add_scalar(
+                "Feature pair detection rate",
+                feature_pair_detection_rate(sae, dataset),
+                step,
+            )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
-        writer.add_scalar(
-            "Feature pair detection rate",
-            feature_pair_detection_rate(sae, dataset),
-            step,
-        )
 
     writer.close()
 
