@@ -155,11 +155,10 @@ class TopkSparseAutoEncoder2Child(torch.nn.Module):
 
 class TopkSparseAutoEncoder_v2(torch.nn.Module):
     @beartype
-    def __init__(self, sae_hidden_dim: int):
+    def __init__(self, sae_hidden_dim: int, model_dim: int):
         super().__init__()
-        model_hidden_dim = 10
-        self.encoder = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
-        self.decoder = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.encoder = torch.nn.Linear(model_dim, sae_hidden_dim)
+        self.decoder = torch.nn.Linear(sae_hidden_dim, model_dim)
         self.k = 3
 
     @jaxtyped(typechecker=beartype)
@@ -186,18 +185,17 @@ class TopkSparseAutoEncoder_v2(torch.nn.Module):
 
 class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     @beartype
-    def __init__(self, sae_hidden_dim: int):
+    def __init__(self, sae_hidden_dim: int, model_dim: int):
         super().__init__()
         self.sae_hidden_dim = sae_hidden_dim
-        model_hidden_dim = 10
-        self.encoder = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
-        self.decoder = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.encoder = torch.nn.Linear(model_dim, sae_hidden_dim)
+        self.decoder = torch.nn.Linear(sae_hidden_dim, model_dim)
         # Maybe I should use matrices and bias vectors directly instead
         # of Linear; it might be easier to have that level of control.
-        self.encoder_child1 = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
-        self.decoder_child1 = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
-        self.encoder_child2 = torch.nn.Linear(model_hidden_dim, sae_hidden_dim)
-        self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_hidden_dim)
+        self.encoder_child1 = torch.nn.Linear(model_dim, sae_hidden_dim)
+        self.decoder_child1 = torch.nn.Linear(sae_hidden_dim, model_dim)
+        self.encoder_child2 = torch.nn.Linear(model_dim, sae_hidden_dim)
+        self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_dim)
         self.k = 3
 
     @jaxtyped(typechecker=beartype)

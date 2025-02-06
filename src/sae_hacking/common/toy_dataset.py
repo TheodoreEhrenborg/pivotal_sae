@@ -5,25 +5,25 @@ from jaxtyping import Bool, Float, Int, jaxtyped
 
 
 class ToyDataset:
-    # TODO Standardize this name
-    N_DIMS = 10
     N_CHILDREN_PER_PARENT = 2
     ACTIVATION_PROB = 0.03
 
-    features: Float[torch.Tensor, "n_features n_dim"]
-    perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
+    features: Float[torch.Tensor, "n_features model_dim"]
+    perturbations: Float[torch.Tensor, "n_features n_children model_dim"]
 
     @beartype
-    def __init__(self, num_features: int, cuda: bool, perturbation_size: float) -> None:
+    def __init__(
+        self, num_features: int, cuda: bool, perturbation_size: float, model_dim: int
+    ) -> None:
         self.device = torch.device("cuda" if cuda else "cpu")
         self.n_features = num_features
-        self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
+        self.features = torch.randn(self.n_features, model_dim, device=self.device)
         self.features = self.features / torch.linalg.vector_norm(
             self.features, dim=1, keepdim=True
         )
 
         raw_perturbations = torch.randn(
-            self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS, device=self.device
+            self.n_features, self.N_CHILDREN_PER_PARENT, model_dim, device=self.device
         )
         self.perturbations = (
             perturbation_size
@@ -34,7 +34,7 @@ class ToyDataset:
     @jaxtyped(typechecker=beartype)
     def generate(
         self, batch_size: int
-    ) -> tuple[Float[torch.Tensor, "batch_size {self.N_DIMS}"], Int[torch.Tensor, ""]]:
+    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], Int[torch.Tensor, ""]]:
         activations: Bool[torch.Tensor, "batch_size n_features"] = (
             torch.rand(batch_size, self.n_features, device=self.device)
             < self.ACTIVATION_PROB

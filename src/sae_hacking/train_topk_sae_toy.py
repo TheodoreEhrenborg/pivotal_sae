@@ -29,11 +29,12 @@ def setup(
     cuda: bool,
     no_internet: bool,
     hierarchical: bool,
+    model_dim: int,
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
-    sae = SAEClass(sae_hidden_dim)
+    sae = SAEClass(sae_hidden_dim, model_dim)
     if cuda:
         sae.cuda()
     return sae
@@ -51,6 +52,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--perturbation_size", type=float, default=0.2)
+    parser.add_argument("--model-dim", type=int, default=10)
     return parser
 
 
@@ -64,7 +66,9 @@ def main(args: Namespace):
     with open(f"{output_dir}/args.yaml", "w") as f:
         yaml.dump(vars(args), f, default_flow_style=False)
 
-    dataset = ToyDataset(args.dataset_num_features, args.cuda, args.perturbation_size)
+    dataset = ToyDataset(
+        args.dataset_num_features, args.cuda, args.perturbation_size, args.model_dim
+    )
     plot_feature_similarity(dataset, output_dir)
 
     sae = setup(
@@ -72,6 +76,7 @@ def main(args: Namespace):
         args.cuda,
         False,
         args.hierarchical,
+        args.model_dim,
     )
 
     lr = args.lr
