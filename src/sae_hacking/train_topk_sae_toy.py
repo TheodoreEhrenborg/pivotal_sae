@@ -95,12 +95,12 @@ def main(args: Namespace):
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
                 _, num_live_latents = sae(val_example)
-                num_dead_latents = args.sae_hidden_dim - num_live_latents
-                writer.add_scalar("Num dead latents", num_dead_latents, step)
-                writer.add_scalar(
-                    "Proportion of dead latents",
-                    num_dead_latents / args.sae_hidden_dim,
+                log_dead_latents(
+                    num_live_latents,
+                    args.hierarchical,
+                    writer,
                     step,
+                    args.sae_hidden_dim,
                 )
 
         writer.add_scalar(
@@ -348,6 +348,43 @@ def save_similarity_graph(
         f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight"
     )
     plt.close()
+
+
+@beartype
+def log_dead_latents(
+    num_live_latents: int | tuple[int, int, int],
+    hierarchical: bool,
+    writer: SummaryWriter,
+    step: int,
+    sae_hidden_dim: int,
+) -> None:
+    if hierarchical:
+        num_live_parent_latents, num_live_child1_latents, num_live_child2_latents = (
+            num_live_latents
+        )
+        num_dead_child1_latents = sae_hidden_dim - num_live_child1_latents
+        writer.add_scalar("Num dead child1 latents", num_dead_child1_latents, step)
+        writer.add_scalar(
+            "Proportion of dead child1 latents",
+            num_dead_child1_latents / sae_hidden_dim,
+            step,
+        )
+        num_dead_child2_latents = sae_hidden_dim - num_live_child2_latents
+        writer.add_scalar("Num dead child2 latents", num_dead_child2_latents, step)
+        writer.add_scalar(
+            "Proportion of dead child2 latents",
+            num_dead_child2_latents / sae_hidden_dim,
+            step,
+        )
+    else:
+        num_live_parent_latents = num_live_latents
+    num_dead_parent_latents = sae_hidden_dim - num_live_parent_latents
+    writer.add_scalar("Num dead parent latents", num_dead_parent_latents, step)
+    writer.add_scalar(
+        "Proportion of dead parent latents",
+        num_dead_parent_latents / sae_hidden_dim,
+        step,
+    )
 
 
 if __name__ == "__main__":
