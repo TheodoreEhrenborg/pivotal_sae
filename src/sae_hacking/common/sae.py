@@ -201,7 +201,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     @jaxtyped(typechecker=beartype)
     def forward(
         self, model_activations: Float[torch.Tensor, "batch_size model_dim"]
-    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], int]:
+    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], tuple[int, int, int]]:
         pre_activations = self.encoder(model_activations)
         topk = torch.topk(pre_activations, self.k)
         sae_activations = torch.scatter(
@@ -211,7 +211,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             src=topk.values,
         )
 
-        num_live_latents = len(topk.indices.unique())
+        num_live_parent_latents = len(topk.indices.unique())
 
         # This is wasting compute and memory because we already know which indices
         # we're going to throw away
@@ -243,10 +243,20 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             masked_activations_child2,
             torch.zeros_like(masked_activations_child2),
         )
+        num_live_child1_latents = torch.sum(
+            torch.any(final_activations_child1 != 0, dim=0)
+        ).item()
+        num_live_child2_latents = torch.sum(
+            torch.any(final_activations_child2 != 0, dim=0)
+        ).item()
 
         reconstructed = (
             self.decoder(sae_activations)
             + self.decoder_child1(final_activations_child1)
             + self.decoder_child2(final_activations_child2)
         )
-        return reconstructed, num_live_latents
+        return reconstructed, (
+            num_live_parent_latents,
+            num_live_child1_latents,
+            num_live_child2_latents,
+        )
