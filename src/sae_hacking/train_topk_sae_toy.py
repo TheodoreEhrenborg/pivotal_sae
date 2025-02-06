@@ -145,10 +145,12 @@ def get_decoder_weights(sae_model) -> Float[torch.Tensor, "model_dim expanded_sa
         return rearrange(
             [
                 sae_model.decoder.weight,
+                sae_model.decoder_child1.weight,
+                sae_model.decoder_child2.weight,
                 sae_model.decoder.weight + sae_model.decoder_child1.weight,
                 sae_model.decoder.weight + sae_model.decoder_child2.weight,
             ],
-            "three_copies model_dim sae_dim -> model_dim (sae_dim three_copies)",
+            "five_copies model_dim sae_dim -> model_dim (sae_dim five_copies)",
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
@@ -268,6 +270,8 @@ def save_similarity_graph(
 ) -> None:
     similarity = get_similarity(sae, dataset)
 
+    LATENT_GROUP_SIZE = 5
+
     # Create heatmap
     plt.figure(figsize=(12, 5))
     sns.heatmap(
@@ -278,7 +282,7 @@ def save_similarity_graph(
         vmax=1,
         square=True,
         xticklabels=4,
-        yticklabels=3,
+        yticklabels=LATENT_GROUP_SIZE,
     )
 
     num_rows = similarity.shape[0]
@@ -286,14 +290,14 @@ def save_similarity_graph(
     for i in range(2, num_cols, 2):
         plt.axvline(x=i, color="black", linewidth=1)
     if hierarchical:
-        for i in range(3, num_rows, 3):
+        for i in range(LATENT_GROUP_SIZE, num_rows, LATENT_GROUP_SIZE):
             plt.axhline(y=i, color="black", linewidth=1)
 
     # Add labels
     plt.title(f"Cosine Similarity of decoder weights vs dataset features, step {step}")
     plt.xlabel("Toy dataset features (sibling features are consecutive)")
     plt.ylabel(
-        "Decoder Weight Vectors (0 mod 3 is parent weight, 1 or 2 mod 3 is parent weight + child 1 or 2 weight)",
+        "Decoder Weight Vectors (0 mod 5 is parent weight, 1-2 mod 5 is child 1-2, 3-4 mod 5 is parent weight + child 1-2 weight)",
         fontsize=5,
     )
 
