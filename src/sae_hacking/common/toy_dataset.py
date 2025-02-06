@@ -9,13 +9,12 @@ class ToyDataset:
     N_DIMS = 10
     N_CHILDREN_PER_PARENT = 2
     ACTIVATION_PROB = 0.03
-    PERTURBATION_SIZE = 0.2
 
     features: Float[torch.Tensor, "n_features n_dim"]
     perturbations: Float[torch.Tensor, "n_features n_children n_dim"]
 
     @beartype
-    def __init__(self, num_features: int, cuda: bool) -> None:
+    def __init__(self, num_features: int, cuda: bool, perturbation_size: float) -> None:
         self.device = torch.device("cuda" if cuda else "cpu")
         self.n_features = num_features
         self.features = torch.randn(self.n_features, self.N_DIMS, device=self.device)
@@ -27,7 +26,7 @@ class ToyDataset:
             self.n_features, self.N_CHILDREN_PER_PARENT, self.N_DIMS, device=self.device
         )
         self.perturbations = (
-            self.PERTURBATION_SIZE
+            perturbation_size
             * raw_perturbations
             / torch.linalg.vector_norm(raw_perturbations, dim=2, keepdim=True)
         )

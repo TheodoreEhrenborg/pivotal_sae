@@ -50,6 +50,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--perturbation_size", type=float, default=0.2)
     return parser
 
 
@@ -64,7 +65,7 @@ def main(user_args: Namespace):
         yaml.dump(vars(user_args), f, default_flow_style=False)
 
     dataset = ToyDataset(
-        num_features=user_args.dataset_num_features, cuda=user_args.cuda
+        user_args.dataset_num_features, user_args.cuda, user_args.perturbation_size
     )
     plot_feature_similarity(dataset, output_dir)
 
