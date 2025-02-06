@@ -156,6 +156,46 @@ def get_decoder_weights(sae_model) -> Float[torch.Tensor, "model_dim expanded_sa
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
 
 
+def calculate_success_rate(cosine_sim, num_pairs=30):
+    """
+    Calculate success rate based on closest features for each latent pair
+
+    Args:
+    cosine_sim: 60x60 tensor with latents in rows and features in columns
+    num_pairs: number of pairs (default=30)
+
+    Returns:
+    success_rate: float between 0 and 1
+    """
+    # For each pair of latents (i.e., rows 2k, 2k+1),
+    # find the closest features
+    successes = 0
+
+    for k in range(num_pairs):
+        # Get similarities for this latent pair
+        latent1_sims = cosine_sim[
+            2 * k, : num_pairs * 2
+        ]  # Only look at feature columns
+        latent2_sims = cosine_sim[
+            2 * k + 1, : num_pairs * 2
+        ]  # Only look at feature columns
+
+        # Find indices of closest features
+        closest_to_latent1 = torch.argmax(latent1_sims)
+        closest_to_latent2 = torch.argmax(latent2_sims)
+
+        # Check if they're distinct
+        if closest_to_latent1 != closest_to_latent2:
+            # Check if they form a pair
+            if (
+                abs(closest_to_latent1 - closest_to_latent2) == 1
+                and min(closest_to_latent1, closest_to_latent2) % 2 == 0
+            ):
+                successes += 1
+
+    return successes / num_pairs
+
+
 @jaxtyped(typechecker=beartype)
 def calculate_cosine_sim(
     decoder_weights: Float[torch.Tensor, "model_dim expanded_sae_dim"],
