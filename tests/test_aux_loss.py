@@ -9,7 +9,7 @@ def test_auxiliary_loss_implementations():
     torch.manual_seed(42)
 
     # Create sample inputs
-    batch_size = 10
+    batch_size = 11
     n_features = 15
     model_dim = 20
 

@@ -443,7 +443,7 @@ def auxiliary_loss(
 
     # Scale parent weights by activations
     scaled_parent = (
-        decoder_weight.T.unsqueeze(0) * sae_acts_expanded
+        decoder_weight.unsqueeze(0) * sae_acts_expanded
     )  # [batch_size, model_dim, n_features]
 
     # Scale child weights by activations and winner mask
@@ -451,10 +451,10 @@ def auxiliary_loss(
     child2_acts = final_activations_child2.unsqueeze(-2)  # [batch_size, 1, n_features]
 
     scaled_child1 = (
-        decoder_child1_weight.T.unsqueeze(0) * child1_acts
+        decoder_child1_weight.unsqueeze(0) * child1_acts
     )  # [batch_size, model_dim, n_features]
     scaled_child2 = (
-        decoder_child2_weight.T.unsqueeze(0) * child2_acts
+        decoder_child2_weight.unsqueeze(0) * child2_acts
     )  # [batch_size, model_dim, n_features]
 
     # Select appropriate child based on winners_mask
