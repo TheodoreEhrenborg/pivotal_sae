@@ -313,33 +313,24 @@ def update_parent_child_ratio2(
     mask1 = parent_nonzero & child1_nonzero
     mask2 = parent_nonzero & child2_nonzero
 
-    # Calculate ratios where both parent and child are non-zero
-    new_ratios1 = torch.where(
-        mask1,
-        child1_activations / parent_activations,
-        torch.zeros_like(child1_activations),
-    )
-    new_ratios2 = torch.where(
-        mask2,
-        child2_activations / parent_activations,
-        torch.zeros_like(child2_activations),
-    )
+    # For each valid pair, update the EMA
+    for b in range(parent_activations.shape[0]):
+        # Update child1 ratios where valid
+        valid_indices1 = mask1[b]
+        if valid_indices1.any():
+            child1_parent_ratios[valid_indices1] = (
+                1 - EMA_COEFF
+            ) * child1_parent_ratios[valid_indices1] + EMA_COEFF * (
+                child1_activations[b, valid_indices1]
+                / parent_activations[b, valid_indices1]
+            )
 
-    # Take mean across batch dimension for non-zero entries
-    valid_counts1 = mask1.sum(dim=0)
-    valid_counts2 = mask2.sum(dim=0)
-
-    # Update ratios using EMA, but only where we have valid new ratios
-    batch_means1 = torch.sum(new_ratios1, dim=0) / torch.clamp(valid_counts1, min=1)
-    batch_means2 = torch.sum(new_ratios2, dim=0) / torch.clamp(valid_counts2, min=1)
-
-    # Update only where we had valid entries
-    update_mask1 = valid_counts1 > 0
-    update_mask2 = valid_counts2 > 0
-
-    child1_parent_ratios[update_mask1] = (1 - EMA_COEFF) * child1_parent_ratios[
-        update_mask1
-    ] + EMA_COEFF * batch_means1[update_mask1]
-    child2_parent_ratios[update_mask2] = (1 - EMA_COEFF) * child2_parent_ratios[
-        update_mask2
-    ] + EMA_COEFF * batch_means2[update_mask2]
+        # Update child2 ratios where valid
+        valid_indices2 = mask2[b]
+        if valid_indices2.any():
+            child2_parent_ratios[valid_indices2] = (
+                1 - EMA_COEFF
+            ) * child2_parent_ratios[valid_indices2] + EMA_COEFF * (
+                child2_activations[b, valid_indices2]
+                / parent_activations[b, valid_indices2]
+            )
