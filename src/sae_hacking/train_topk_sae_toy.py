@@ -158,7 +158,8 @@ def get_decoder_weights3(
             sae_model.decoder.weight
             + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
         ],
-        "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+        "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+        copies=2,
     )
 
 
@@ -174,7 +175,8 @@ def get_decoder_weights2(
                 sae_model.decoder.weight + sae_model.decoder_child1.weight,
                 sae_model.decoder.weight + sae_model.decoder_child2.weight,
             ],
-            "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+            "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+            copies=2,
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
@@ -246,7 +248,8 @@ def feature_pair_detection_rate(
             sae_model.decoder.weight + sae_model.decoder_child1.weight,
             sae_model.decoder.weight + sae_model.decoder_child2.weight,
         ],
-        "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+        "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+        copies=2,
     )
     num_latent_pairs = decoder_weights.shape[1] // 2
 
