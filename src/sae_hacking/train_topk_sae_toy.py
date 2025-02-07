@@ -25,12 +25,16 @@ SomeSAE = TopkSparseAutoEncoder2Child_v2 | TopkSparseAutoEncoder_v2
 
 @beartype
 def setup(
-    sae_hidden_dim: int, cuda: bool, hierarchical: bool, model_dim: int
+    sae_hidden_dim: int,
+    cuda: bool,
+    hierarchical: bool,
+    model_dim: int,
+    aux_loss_threshold: float,
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
-    sae = SAEClass(sae_hidden_dim, model_dim)
+    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold)
     if cuda:
         sae.cuda()
     return sae
@@ -50,6 +54,8 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--perturbation_size", type=float, default=0.2)
     parser.add_argument("--model-dim", type=int, default=10)
+    parser.add_argument("--aux-loss-threshold", type=float, default=0.5)
+    parser.add_argument("--aux-loss-coeff", type=float, default=1)
     return parser
 
 
@@ -68,7 +74,13 @@ def main(args: Namespace):
     )
     plot_feature_similarity(dataset, output_dir)
 
-    sae = setup(args.sae_hidden_dim, args.cuda, args.hierarchical, args.model_dim)
+    sae = setup(
+        args.sae_hidden_dim,
+        args.cuda,
+        args.hierarchical,
+        args.model_dim,
+        args.aux_loss_threshold,
+    )
     if args.handcode_sae:
         assert args.hierarchical
         handcode_sae(sae, dataset)
@@ -82,7 +94,7 @@ def main(args: Namespace):
         optimizer.zero_grad()
         reconstructed, _, aux_loss = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
-        total_loss = aux_loss + rec_loss
+        total_loss = args.aux_loss_coeff * aux_loss + rec_loss
         total_loss.backward()
         optimizer.step()
         sae.eval()
