@@ -374,7 +374,7 @@ def auxiliary_loss(
     # Get active feature indices per batch element
     for batch_idx in range(batch_size):
         # Get features active for this batch element
-        active_indices = torch.nonzero(sae_activations[batch_idx] != 0).squeeze()
+        active_indices = torch.nonzero(sae_activations[batch_idx]).squeeze()
 
         for feat_idx in active_indices:
             # Get parent weights and activation for this feature
@@ -396,9 +396,7 @@ def auxiliary_loss(
 
             # Calculate cosine similarity between parent and (parent + child)
             combined_weights = scaled_parent + scaled_child
-            cos_sim = F.cosine_similarity(
-                scaled_parent.unsqueeze(0), combined_weights.unsqueeze(0)
-            )
+            cos_sim = F.cosine_similarity(scaled_parent, combined_weights)
 
             # Add to loss if similarity is too low
             if cos_sim < 0.5:
