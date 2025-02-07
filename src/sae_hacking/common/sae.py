@@ -271,6 +271,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         )
 
 
+@jaxtyped(typechecker=beartype)
 def update_parent_child_ratio(
     parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
     child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
@@ -293,6 +294,7 @@ def update_parent_child_ratio(
                 ] + EMA_COEFF * child2_activations[b, s] / parent_activations[b, s]
 
 
+@jaxtyped(typechecker=beartype)
 def update_parent_child_ratio2(
     parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
     child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
