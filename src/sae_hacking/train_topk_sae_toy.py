@@ -80,9 +80,10 @@ def main(args: Namespace):
         sae.train()
         example, num_activated_features = dataset.generate(args.batch_size)
         optimizer.zero_grad()
-        reconstructed, _, _ = sae(example)
+        reconstructed, _, aux_loss = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
-        rec_loss.backward()
+        total_loss = aux_loss + rec_loss
+        total_loss.backward()
         optimizer.step()
         sae.eval()
         if step % 5000 == 0:
@@ -135,8 +136,9 @@ def main(args: Namespace):
                 )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
-        writer.add_scalar("Total loss/train", rec_loss, step)
+        writer.add_scalar("Total loss/train", total_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
+        writer.add_scalar("Auxiliary loss/train", aux_loss, step)
 
     writer.close()
 
