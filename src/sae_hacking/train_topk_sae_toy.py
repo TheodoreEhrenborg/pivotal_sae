@@ -138,6 +138,24 @@ def get_reconstruction_loss(
 
 
 @jaxtyped(typechecker=beartype)
+def get_decoder_weights2(
+    sae_model: SomeSAE,
+) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
+    if isinstance(sae_model, TopkSparseAutoEncoder_v2):
+        return sae_model.decoder.weight
+    elif isinstance(sae_model, TopkSparseAutoEncoder2Child_v2):
+        return rearrange(
+            [
+                sae_model.decoder.weight + sae_model.decoder_child1.weight,
+                sae_model.decoder.weight + sae_model.decoder_child2.weight,
+            ],
+            "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+        )
+    else:
+        raise TypeError(f"Unsupported model type: {type(sae_model)}")
+
+
+@jaxtyped(typechecker=beartype)
 def get_decoder_weights(
     sae_model: SomeSAE,
 ) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
@@ -246,6 +264,14 @@ def get_feature_v_feature_sim(
 
 
 @jaxtyped(typechecker=beartype)
+def get_similarity2(
+    sae: SomeSAE, dataset: ToyDataset
+) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+    all_child_vecs = get_all_features(dataset)
+    return calculate_cosine_sim(get_decoder_weights2(sae), all_child_vecs)
+
+
+@jaxtyped(typechecker=beartype)
 def get_similarity(
     sae: SomeSAE, dataset: ToyDataset
 ) -> Float[torch.Tensor, "sae_dim total_num_children"]:
@@ -255,7 +281,7 @@ def get_similarity(
 
 @jaxtyped(typechecker=beartype)
 def min_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
-    similarity = get_similarity(sae, dataset)
+    similarity = get_similarity2(sae, dataset)
     per_feature_sim = reduce(
         similarity, "sae_dim total_num_children -> total_num_children", "max"
     )
@@ -264,7 +290,7 @@ def min_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
 
 @jaxtyped(typechecker=beartype)
 def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
-    similarity = get_similarity(sae, dataset)
+    similarity = get_similarity2(sae, dataset)
     per_feature_sim = reduce(
         similarity, "sae_dim total_num_children -> total_num_children", "max"
     )
