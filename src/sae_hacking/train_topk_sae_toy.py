@@ -148,10 +148,10 @@ def get_decoder_weights3(
 ) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
     return rearrange(
         [
-            sae_model.decoder.weight * sae_model.child1_parent_ratios
-            + sae_model.decoder_child1.weight,
-            sae_model.decoder.weight * sae_model.child2_parent_ratios
-            + sae_model.decoder_child2.weight,
+            sae_model.decoder.weight
+            + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+            sae_model.decoder.weight
+            + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
         ],
         "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
     )
