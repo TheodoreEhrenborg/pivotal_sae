@@ -202,9 +202,12 @@ def get_decoder_weights(
                 + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
                 sae_model.decoder.weight
                 + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
+                sae_model.encoder.weight.transpose(0, 1),
+                sae_model.encoder_child1.weight.transpose(0, 1),
+                sae_model.encoder_child2.weight.transpose(0, 1),
             ],
             "copies model_dim sae_dim -> model_dim (sae_dim copies)",
-            copies=7,
+            copies=10,
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
@@ -417,7 +420,7 @@ def save_similarity_graph(
 ) -> None:
     similarity = get_similarity(sae, dataset)
 
-    LATENT_GROUP_SIZE = 7
+    LATENT_GROUP_SIZE = 10
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
