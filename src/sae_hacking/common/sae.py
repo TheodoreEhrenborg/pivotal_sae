@@ -296,48 +296,6 @@ def update_parent_child_ratio(
                 ] + EMA_COEFF * child2_activations[b, s] / parent_activations[b, s]
 
 
-@jaxtyped(typechecker=beartype)
-def update_parent_child_ratio2(
-    parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child2_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child1_parent_ratios: Float[torch.Tensor, " sae_dim"],
-    child2_parent_ratios: Float[torch.Tensor, " sae_dim"],
-) -> None:
-    EMA_COEFF = 0.01
-
-    # Create masks for non-zero parent and child activations
-    parent_nonzero = parent_activations != 0
-    child1_nonzero = child1_activations != 0
-    child2_nonzero = child2_activations != 0
-
-    # Combined masks
-    mask1 = parent_nonzero & child1_nonzero
-    mask2 = parent_nonzero & child2_nonzero
-
-    # For each valid pair, update the EMA
-    for b in range(parent_activations.shape[0]):
-        # Update child1 ratios where valid
-        valid_indices1 = mask1[b]
-        if valid_indices1.any():
-            child1_parent_ratios[valid_indices1] = (
-                1 - EMA_COEFF
-            ) * child1_parent_ratios[valid_indices1] + EMA_COEFF * (
-                child1_activations[b, valid_indices1]
-                / parent_activations[b, valid_indices1]
-            )
-
-        # Update child2 ratios where valid
-        valid_indices2 = mask2[b]
-        if valid_indices2.any():
-            child2_parent_ratios[valid_indices2] = (
-                1 - EMA_COEFF
-            ) * child2_parent_ratios[valid_indices2] + EMA_COEFF * (
-                child2_activations[b, valid_indices2]
-                / parent_activations[b, valid_indices2]
-            )
-
-
 # TODO This needs to be tested
 def update_parent_child_ratio3(
     parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
