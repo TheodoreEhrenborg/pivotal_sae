@@ -297,13 +297,15 @@ def update_parent_child_ratio(
                     child2_activations[b, s] / parent_activations[b, s]
                 )
         if child1_new_ratios:
-            child1_parent_ratios[s] = (1 - EMA_COEFF) * child1_parent_ratios[
-                s
-            ] + EMA_COEFF * sum(child1_new_ratios) / len(child1_new_ratios)
+            # Adjust the moving average by more if there were more nonzero activations
+            # in this batch
+            child1_parent_ratios[s] = (
+                1 - EMA_COEFF * len(child1_new_ratios)
+            ) * child1_parent_ratios[s] + EMA_COEFF * sum(child1_new_ratios)
         if child2_new_ratios:
-            child2_parent_ratios[s] = (1 - EMA_COEFF) * child2_parent_ratios[
-                s
-            ] + EMA_COEFF * sum(child2_new_ratios) / len(child2_new_ratios)
+            child2_parent_ratios[s] = (
+                1 - EMA_COEFF * len(child2_new_ratios)
+            ) * child2_parent_ratios[s] + EMA_COEFF * sum(child2_new_ratios)
 
 
 @jaxtyped(typechecker=beartype)
@@ -349,9 +351,13 @@ def update_parent_child_ratio3(
     update_mask1 = valid_counts1 > 0
     update_mask2 = valid_counts2 > 0
 
-    child1_parent_ratios[update_mask1] = (1 - EMA_COEFF) * child1_parent_ratios[
+    child1_parent_ratios[update_mask1] = (
+        1 - EMA_COEFF * valid_counts1[update_mask1]
+    ) * child1_parent_ratios[update_mask1] + EMA_COEFF * batch_means1[
         update_mask1
-    ] + EMA_COEFF * batch_means1[update_mask1]
-    child2_parent_ratios[update_mask2] = (1 - EMA_COEFF) * child2_parent_ratios[
+    ] * valid_counts1[update_mask1]
+    child2_parent_ratios[update_mask2] = (
+        1 - EMA_COEFF * valid_counts2[update_mask2]
+    ) * child2_parent_ratios[update_mask2] + EMA_COEFF * batch_means2[
         update_mask2
-    ] + EMA_COEFF * batch_means2[update_mask2]
+    ] * valid_counts2[update_mask2]
