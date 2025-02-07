@@ -377,7 +377,7 @@ def update_parent_child_ratio3(
 
 
 @jaxtyped(typechecker=beartype)
-def auxiliary_loss(
+def auxiliary_loss_reference(
     sae_activations: Float[torch.Tensor, "batch_size n_features"],
     model_activations: Float[torch.Tensor, "batch_size model_dim"],
     winners_mask: Bool[torch.Tensor, "batch_size n_features"],
@@ -415,7 +415,7 @@ def auxiliary_loss(
 
             # Calculate cosine similarity between parent and (parent + child)
             combined_weights = scaled_parent + scaled_child
-            cos_sim = F.cosine_similarity(scaled_parent, combined_weights)
+            cos_sim = F.cosine_similarity(scaled_parent, combined_weights, dim=0)
 
             # Add to loss if similarity is too low
             if cos_sim < 0.5:
@@ -423,5 +423,65 @@ def auxiliary_loss(
 
     # Average across batch
     aux_loss = aux_loss / batch_size
+
+    return aux_loss
+
+
+@jaxtyped(typechecker=beartype)
+def auxiliary_loss(
+    sae_activations: Float[torch.Tensor, "batch_size n_features"],
+    model_activations: Float[torch.Tensor, "batch_size model_dim"],
+    winners_mask: Bool[torch.Tensor, "batch_size n_features"],
+    final_activations_child1: Float[torch.Tensor, "batch_size n_features"],
+    final_activations_child2: Float[torch.Tensor, "batch_size n_features"],
+    decoder_weight: Float[torch.Tensor, "model_dim n_features"],
+    decoder_child1_weight: Float[torch.Tensor, "model_dim n_features"],
+    decoder_child2_weight: Float[torch.Tensor, "model_dim n_features"],
+) -> Float[torch.Tensor, ""]:
+    # Expand activations for broadcasting
+    sae_acts_expanded = sae_activations.unsqueeze(-2)  # [batch_size, 1, n_features]
+
+    # Scale parent weights by activations
+    scaled_parent = (
+        decoder_weight.T.unsqueeze(0) * sae_acts_expanded
+    )  # [batch_size, model_dim, n_features]
+
+    # Scale child weights by activations and winner mask
+    child1_acts = final_activations_child1.unsqueeze(-2)  # [batch_size, 1, n_features]
+    child2_acts = final_activations_child2.unsqueeze(-2)  # [batch_size, 1, n_features]
+
+    scaled_child1 = (
+        decoder_child1_weight.T.unsqueeze(0) * child1_acts
+    )  # [batch_size, model_dim, n_features]
+    scaled_child2 = (
+        decoder_child2_weight.T.unsqueeze(0) * child2_acts
+    )  # [batch_size, model_dim, n_features]
+
+    # Select appropriate child based on winners_mask
+    winners_mask_expanded = winners_mask.unsqueeze(1)  # [batch_size, 1, n_features]
+    scaled_child = torch.where(winners_mask_expanded, scaled_child1, scaled_child2)
+
+    # Calculate combined weights
+    combined_weights = (
+        scaled_parent + scaled_child
+    )  # [batch_size, model_dim, n_features]
+
+    # Calculate cosine similarity using torch.nn.functional
+    cos_sim = F.cosine_similarity(
+        scaled_parent.transpose(1, 2),  # [batch_size, n_features, model_dim]
+        combined_weights.transpose(1, 2),  # [batch_size, n_features, model_dim]
+        dim=2,  # compute similarity along model_dim
+    )  # [batch_size, n_features]
+
+    # Calculate loss only for active features
+    active_mask = sae_activations > 0
+    similarity_loss = torch.maximum(
+        torch.tensor(0.0, device=cos_sim.device), 0.5 - cos_sim
+    )
+    masked_loss = similarity_loss * active_mask
+
+    # Average across batch and features
+    total_active = active_mask.sum()
+    aux_loss = masked_loss.sum() / (total_active + 1e-8)
 
     return aux_loss
