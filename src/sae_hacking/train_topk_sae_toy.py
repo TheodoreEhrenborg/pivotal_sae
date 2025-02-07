@@ -126,6 +126,11 @@ def main(args: Namespace):
                     feature_pair_detection_rate(sae, dataset),
                     step,
                 )
+                writer.add_scalar(
+                    "Adjusted feature pair detection rate",
+                    adjusted_feature_pair_detection_rate(sae, dataset),
+                    step,
+                )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", rec_loss, step)
@@ -194,6 +199,37 @@ def get_decoder_weights(
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
+
+
+@beartype
+def adjusted_feature_pair_detection_rate(
+    sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
+) -> float:
+    # TODO DRY this
+    decoder_weights = get_decoder_weights3(sae_model)
+    num_latent_pairs = decoder_weights.shape[1] // 2
+
+    all_child_vecs = get_all_features(dataset)
+    cosine_sim = calculate_cosine_sim(decoder_weights, all_child_vecs)
+
+    successes = 0
+
+    for k in range(num_latent_pairs):
+        latent1_sims = cosine_sim[2 * k]
+        latent2_sims = cosine_sim[2 * k + 1]
+
+        closest_feature_to_latent1 = torch.argmax(latent1_sims)
+        closest_feature_to_latent2 = torch.argmax(latent2_sims)
+
+        # Check if these features are the two features in a pair
+        if (
+            closest_feature_to_latent1 != closest_feature_to_latent2
+            and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
+            and min(closest_feature_to_latent1, closest_feature_to_latent2) % 2 == 0
+        ):
+            successes += 1
+
+    return successes / num_latent_pairs
 
 
 @beartype
