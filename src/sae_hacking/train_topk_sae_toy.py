@@ -161,7 +161,7 @@ def get_decoder_weights(
 @beartype
 def feature_pair_detection_rate(
     sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
-):
+) -> float:
     decoder_weights = rearrange(
         [
             sae_model.decoder.weight + sae_model.decoder_child1.weight,
