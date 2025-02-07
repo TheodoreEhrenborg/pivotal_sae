@@ -198,8 +198,8 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_dim)
         self.k = 3
         # TODO The device should be configurable
-        self.child1_parent_ratios = torch.zeros(sae_hidden_dim).cuda()
-        self.child2_parent_ratios = torch.zeros(sae_hidden_dim).cuda()
+        self.child1_parent_ratios = torch.ones(sae_hidden_dim).cuda()
+        self.child2_parent_ratios = torch.ones(sae_hidden_dim).cuda()
 
     @jaxtyped(typechecker=beartype)
     def forward(
