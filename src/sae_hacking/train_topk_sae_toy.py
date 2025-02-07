@@ -438,10 +438,10 @@ def save_similarity_graph(
     num_rows = similarity.shape[0]
     num_cols = similarity.shape[1]
     for i in range(2, num_cols, 2):
-        plt.axvline(x=i, color="black", linewidth=1)
+        plt.axvline(x=i, color="black", linewidth=0.5)
     if hierarchical:
         for i in range(LATENT_GROUP_SIZE, num_rows, LATENT_GROUP_SIZE):
-            plt.axhline(y=i, color="black", linewidth=1)
+            plt.axhline(y=i, color="black", linewidth=0.5)
 
     # Add labels
     plt.title(f"Cosine Similarity of decoder weights vs dataset features, step {step}")
@@ -453,7 +453,7 @@ def save_similarity_graph(
 
     plt.tight_layout()
     plt.savefig(
-        f"{output_dir}/similarity_heatmap{step}.png", dpi=600, bbox_inches="tight"
+        f"{output_dir}/similarity_heatmap{step}.png", dpi=1200, bbox_inches="tight"
     )
     plt.close()
 
