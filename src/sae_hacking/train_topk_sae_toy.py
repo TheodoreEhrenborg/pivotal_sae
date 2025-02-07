@@ -80,7 +80,7 @@ def main(args: Namespace):
         sae.train()
         example, num_activated_features = dataset.generate(args.batch_size)
         optimizer.zero_grad()
-        reconstructed, _ = sae(example)
+        reconstructed, _, _ = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
         rec_loss.backward()
         optimizer.step()
@@ -90,7 +90,7 @@ def main(args: Namespace):
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
-                _, num_live_latents = sae(val_example)
+                _, num_live_latents, _ = sae(val_example)
                 log_dead_latents(
                     num_live_latents,
                     args.hierarchical,

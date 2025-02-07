@@ -203,7 +203,11 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     @jaxtyped(typechecker=beartype)
     def forward(
         self, model_activations: Float[torch.Tensor, "batch_size model_dim"]
-    ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], tuple[int, int, int]]:
+    ) -> tuple[
+        Float[torch.Tensor, "batch_size model_dim"],
+        tuple[int, int, int],
+        Float[torch.Tensor, ""],
+    ]:
         pre_activations = self.encoder(model_activations)
         topk = torch.topk(pre_activations, self.k)
         sae_activations = torch.scatter(
@@ -266,10 +270,25 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
                     self.child1_parent_ratios,
                     self.child2_parent_ratios,
                 )
-        return reconstructed, (
-            num_live_parent_latents,
-            num_live_child1_latents,
-            num_live_child2_latents,
+
+        aux_loss = auxiliary_loss(
+            sae_activations,
+            model_activations,
+            winners_mask,
+            final_activations_child1,
+            final_activations_child2,
+            self.decoder.weight,
+            self.decoder_child1.weight,
+            self.decoder_child2.weight,
+        )
+        return (
+            reconstructed,
+            (
+                num_live_parent_latents,
+                num_live_child1_latents,
+                num_live_child2_latents,
+            ),
+            aux_loss,
         )
 
 
