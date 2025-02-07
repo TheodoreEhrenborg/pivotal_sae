@@ -412,7 +412,7 @@ def save_similarity_graph(
 ) -> None:
     similarity = get_similarity(sae, dataset)
 
-    LATENT_GROUP_SIZE = 5
+    LATENT_GROUP_SIZE = 7
 
     # Create heatmap
     plt.figure(figsize=(12, 5))
@@ -445,7 +445,7 @@ def save_similarity_graph(
 
     plt.tight_layout()
     plt.savefig(
-        f"{output_dir}/similarity_heatmap{step}.png", dpi=300, bbox_inches="tight"
+        f"{output_dir}/similarity_heatmap{step}.png", dpi=600, bbox_inches="tight"
     )
     plt.close()
 
