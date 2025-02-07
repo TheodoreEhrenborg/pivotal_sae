@@ -194,8 +194,13 @@ def get_decoder_weights(
                 sae_model.decoder_child2.weight,
                 sae_model.decoder.weight + sae_model.decoder_child1.weight,
                 sae_model.decoder.weight + sae_model.decoder_child2.weight,
+                sae_model.decoder.weight
+                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+                sae_model.decoder.weight
+                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
             ],
-            "five_copies model_dim sae_dim -> model_dim (sae_dim five_copies)",
+            "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+            copies=7,
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
@@ -436,7 +441,7 @@ def save_similarity_graph(
     plt.ylabel(
         "Decoder Weight Vectors (0 mod 5 is parent weight, 1-2 mod 5 is child 1-2, 3-4 mod 5 is parent weight + child 1-2 weight)",
         fontsize=5,
-    )
+    )  # TODO No longer correct
 
     plt.tight_layout()
     plt.savefig(
