@@ -1,6 +1,6 @@
 import torch
 
-from sae_hacking.common.sae import update_parent_child_ratio, update_parent_child_ratio2
+from sae_hacking.common.sae import update_parent_child_ratio, update_parent_child_ratio3
 
 
 def test_update_parent_child_ratio():
@@ -36,7 +36,7 @@ def test_update_parent_child_ratio():
         child2_parent_ratios_original,
     )
 
-    update_parent_child_ratio2(
+    update_parent_child_ratio3(
         parent_activations,
         child1_activations,
         child2_activations,

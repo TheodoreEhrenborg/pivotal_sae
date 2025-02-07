@@ -284,19 +284,29 @@ def update_parent_child_ratio(
     # TODO Maybe this should be a method
     batch_size, sae_dim = parent_activations.shape
     EMA_COEFF = 0.01
-    for b in range(batch_size):
-        for s in range(sae_dim):
+    for s in range(sae_dim):
+        child1_new_ratios = []
+        child2_new_ratios = []
+        for b in range(batch_size):
             if parent_activations[b, s] != 0 and child1_activations[b, s] != 0:
-                child1_parent_ratios[s] = (1 - EMA_COEFF) * child1_parent_ratios[
-                    s
-                ] + EMA_COEFF * child1_activations[b, s] / parent_activations[b, s]
+                child1_new_ratios.append(
+                    child1_activations[b, s] / parent_activations[b, s]
+                )
             if parent_activations[b, s] != 0 and child2_activations[b, s] != 0:
-                child2_parent_ratios[s] = (1 - EMA_COEFF) * child2_parent_ratios[
-                    s
-                ] + EMA_COEFF * child2_activations[b, s] / parent_activations[b, s]
+                child2_new_ratios.append(
+                    child2_activations[b, s] / parent_activations[b, s]
+                )
+        if child1_new_ratios:
+            child1_parent_ratios[s] = (1 - EMA_COEFF) * child1_parent_ratios[
+                s
+            ] + EMA_COEFF * sum(child1_new_ratios) / len(child1_new_ratios)
+        if child2_new_ratios:
+            child2_parent_ratios[s] = (1 - EMA_COEFF) * child2_parent_ratios[
+                s
+            ] + EMA_COEFF * sum(child2_new_ratios) / len(child2_new_ratios)
 
 
-# TODO This needs to be tested
+@jaxtyped(typechecker=beartype)
 def update_parent_child_ratio3(
     parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
     child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
