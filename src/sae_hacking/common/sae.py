@@ -257,7 +257,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             + self.decoder_child1(final_activations_child1)
             + self.decoder_child2(final_activations_child2)
         )
-        update_parent_child_ratio(
+        update_parent_child_ratio2(
             sae_activations,
             final_activations_child1,
             final_activations_child2,
