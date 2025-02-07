@@ -221,7 +221,7 @@ def feature_pair_detection_rate(
         closest_feature_to_latent1 = torch.argmax(latent1_sims)
         closest_feature_to_latent2 = torch.argmax(latent2_sims)
 
-        # Are these features the two features in a pair?
+        # Check if these features are the two features in a pair
         if (
             closest_feature_to_latent1 != closest_feature_to_latent2
             and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
