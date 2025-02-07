@@ -77,12 +77,14 @@ def main(args: Namespace):
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
 
     for step in trange(args.max_step):
+        sae.train()
         example, num_activated_features = dataset.generate(args.batch_size)
         optimizer.zero_grad()
         reconstructed, _ = sae(example)
         rec_loss = get_reconstruction_loss(reconstructed, example)
         rec_loss.backward()
         optimizer.step()
+        sae.eval()
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
