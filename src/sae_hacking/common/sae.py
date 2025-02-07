@@ -380,6 +380,7 @@ def update_parent_child_ratio3(
 
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss_reference(
+    # TODO Fix the test
     sae_activations: Float[torch.Tensor, "batch_size n_features"],
     model_activations: Float[torch.Tensor, "batch_size model_dim"],
     winners_mask: Bool[torch.Tensor, "batch_size n_features"],
@@ -432,6 +433,7 @@ def auxiliary_loss_reference(
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss(
     sae_activations: Float[torch.Tensor, "batch_size n_features"],
+    # TODO Unused variable
     model_activations: Float[torch.Tensor, "batch_size model_dim"],
     winners_mask: Bool[torch.Tensor, "batch_size n_features"],
     final_activations_child1: Float[torch.Tensor, "batch_size n_features"],
