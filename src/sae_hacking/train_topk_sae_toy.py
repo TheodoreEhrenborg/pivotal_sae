@@ -117,6 +117,11 @@ def main(args: Namespace):
             )
             if args.hierarchical:
                 writer.add_scalar(
+                    "Adjusted Mean_{feature}( Max_{decoder vector} cosine sim)",
+                    adjusted_mean_max_cosine_similarity(sae, dataset),
+                    step,
+                )
+                writer.add_scalar(
                     "Feature pair detection rate",
                     feature_pair_detection_rate(sae, dataset),
                     step,
@@ -135,6 +140,21 @@ def get_reconstruction_loss(
     sae_act: Float[torch.Tensor, "batch_size model_dim"],
 ) -> Float[torch.Tensor, ""]:
     return ((act - sae_act) ** 2).mean()
+
+
+@jaxtyped(typechecker=beartype)
+def get_decoder_weights3(
+    sae_model: TopkSparseAutoEncoder2Child_v2,
+) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
+    return rearrange(
+        [
+            sae_model.decoder.weight * sae_model.child1_parent_ratios
+            + sae_model.decoder_child1.weight,
+            sae_model.decoder.weight * sae_model.child2_parent_ratios
+            + sae_model.decoder_child2.weight,
+        ],
+        "two_copies model_dim sae_dim -> model_dim (sae_dim two_copies)",
+    )
 
 
 @jaxtyped(typechecker=beartype)
@@ -295,6 +315,23 @@ def mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
         similarity, "sae_dim total_num_children -> total_num_children", "max"
     )
     return per_feature_sim.mean()
+
+
+@jaxtyped(typechecker=beartype)
+def adjusted_mean_max_cosine_similarity(sae, dataset) -> Float[torch.Tensor, ""]:
+    similarity = adjusted_get_similarity(sae, dataset)
+    per_feature_sim = reduce(
+        similarity, "sae_dim total_num_children -> total_num_children", "max"
+    )
+    return per_feature_sim.mean()
+
+
+@jaxtyped(typechecker=beartype)
+def adjusted_get_similarity(
+    sae: SomeSAE, dataset: ToyDataset
+) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+    all_child_vecs = get_all_features(dataset)
+    return calculate_cosine_sim(get_decoder_weights3(sae), all_child_vecs)
 
 
 @beartype
