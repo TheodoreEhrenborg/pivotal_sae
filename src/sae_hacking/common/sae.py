@@ -197,6 +197,8 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         self.encoder_child2 = torch.nn.Linear(model_dim, sae_hidden_dim)
         self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_dim)
         self.k = 3
+        self.child1_parent_ratios = torch.zeros(sae_hidden_dim)
+        self.child2_parent_ratios = torch.zeros(sae_hidden_dim)
 
     @jaxtyped(typechecker=beartype)
     def forward(
@@ -255,8 +257,37 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
             + self.decoder_child1(final_activations_child1)
             + self.decoder_child2(final_activations_child2)
         )
+        update_parent_child_ratio(
+            sae_activations,
+            final_activations_child1,
+            final_activations_child2,
+            self.child1_parent_ratios,
+            self.child2_parent_ratios,
+        )
         return reconstructed, (
             num_live_parent_latents,
             num_live_child1_latents,
             num_live_child2_latents,
         )
+
+
+def update_parent_child_ratio(
+    parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
+    child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
+    child2_activations: Float[torch.Tensor, "batch_size sae_dim"],
+    child1_parent_ratios: Float[torch.Tensor, " sae_dim"],
+    child2_parent_ratios: Float[torch.Tensor, " sae_dim"],
+) -> None:
+    # TODO Maybe this should be a method
+    batch_size, sae_dim = parent_activations.shape
+    EMA_COEFF = 0.01
+    for b in range(batch_size):
+        for s in range(sae_dim):
+            if parent_activations[b, s] != 0 and child1_activations[b, s] != 0:
+                child1_parent_ratios[s] = (1 - EMA_COEFF) * child1_parent_ratios[
+                    s
+                ] + EMA_COEFF * child1_activations[b, s] / parent_activations[b, s]
+            if parent_activations[b, s] != 0 and child2_activations[b, s] != 0:
+                child2_parent_ratios[s] = (1 - EMA_COEFF) * child2_parent_ratios[
+                    s
+                ] + EMA_COEFF * child2_activations[b, s] / parent_activations[b, s]
