@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-
-
 import torch
+import torch.nn.functional as F
 from beartype import beartype
-from jaxtyping import Float, jaxtyped
+from jaxtyping import Bool, Float, jaxtyped
 
 
 class ReluSparseAutoEncoder(torch.nn.Module):
@@ -356,3 +355,56 @@ def update_parent_child_ratio3(
     child2_parent_ratios[update_mask2] = (1 - EMA_COEFF) * child2_parent_ratios[
         update_mask2
     ] + EMA_COEFF * batch_means2[update_mask2]
+
+
+@jaxtyped(typechecker=beartype)
+def auxiliary_loss(
+    sae_activations: Float[torch.Tensor, "batch_size n_features"],
+    model_activations: Float[torch.Tensor, "batch_size model_dim"],
+    winners_mask: Bool[torch.Tensor, "batch_size n_features"],
+    final_activations_child1: Float[torch.Tensor, "batch_size n_features"],
+    final_activations_child2: Float[torch.Tensor, "batch_size n_features"],
+    decoder_weight: Float[torch.Tensor, "model_dim n_features"],
+    decoder_child1_weight: Float[torch.Tensor, "model_dim n_features"],
+    decoder_child2_weight: Float[torch.Tensor, "model_dim n_features"],
+) -> Float[torch.Tensor, ""]:
+    batch_size = sae_activations.shape[0]
+    aux_loss = torch.tensor(0.0, device=model_activations.device)
+
+    # Get active feature indices per batch element
+    for batch_idx in range(batch_size):
+        # Get features active for this batch element
+        active_indices = torch.nonzero(sae_activations[batch_idx] != 0).squeeze()
+
+        for feat_idx in active_indices:
+            # Get parent weights and activation for this feature
+            parent_weights = decoder_weight[:, feat_idx]
+            parent_scale = sae_activations[batch_idx, feat_idx]
+            scaled_parent = parent_weights * parent_scale
+
+            # Determine which child won for this feature
+            is_child1_winner = winners_mask[batch_idx, feat_idx]
+
+            if is_child1_winner:
+                child_weights = decoder_child1_weight[:, feat_idx]
+                child_scale = final_activations_child1[batch_idx, feat_idx]
+            else:
+                child_weights = decoder_child2_weight[:, feat_idx]
+                child_scale = final_activations_child2[batch_idx, feat_idx]
+
+            scaled_child = child_weights * child_scale
+
+            # Calculate cosine similarity between parent and (parent + child)
+            combined_weights = scaled_parent + scaled_child
+            cos_sim = F.cosine_similarity(
+                scaled_parent.unsqueeze(0), combined_weights.unsqueeze(0)
+            )
+
+            # Add to loss if similarity is too low
+            if cos_sim < 0.5:
+                aux_loss += 0.5 - cos_sim
+
+    # Average across batch
+    aux_loss = aux_loss / batch_size
+
+    return aux_loss
