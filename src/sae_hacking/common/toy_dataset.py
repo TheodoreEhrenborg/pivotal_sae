@@ -35,10 +35,19 @@ class ToyDataset:
     def generate(
         self, batch_size: int
     ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], Int[torch.Tensor, ""]]:
-        activations: Bool[torch.Tensor, "batch_size n_features"] = (
-            torch.rand(batch_size, self.n_features, device=self.device)
-            < self.ACTIVATION_PROB
+        k = 3
+        activations = torch.zeros(
+            batch_size, self.n_features, dtype=torch.bool, device=self.device
         )
+        perm = torch.stack(
+            [
+                torch.randperm(self.n_features, device=self.device)
+                for _ in range(batch_size)
+            ]
+        )
+        selected_indices = perm[:, :k]
+        activations[torch.arange(batch_size).unsqueeze(1), selected_indices] = True
+
         perturbation_choices = torch.randint(
             0,
             self.N_CHILDREN_PER_PARENT,
