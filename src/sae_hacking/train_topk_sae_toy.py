@@ -55,7 +55,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--perturbation_size", type=float, default=0.2)
     parser.add_argument("--model-dim", type=int, default=10)
     parser.add_argument("--aux-loss-threshold", type=float, default=0.5)
-    parser.add_argument("--aux-loss-coeff", type=float, default=1)
+    parser.add_argument("--aux-loss-coeff", type=float, default=0.0)
     return parser
 
 
