@@ -111,6 +111,9 @@ def main(args: Namespace):
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
+            save_legible_similarity_graph(
+                sae, dataset, output_dir, step, args.hierarchical
+            )
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
                 _, num_live_latents, _ = sae(val_example)
@@ -203,6 +206,28 @@ def get_decoder_weights2(
             ],
             "copies model_dim sae_dim -> model_dim (sae_dim copies)",
             copies=2,
+        )
+    else:
+        raise TypeError(f"Unsupported model type: {type(sae_model)}")
+
+
+@jaxtyped(typechecker=beartype)
+def get_decoder_weights4(
+    sae_model: SomeSAE,
+) -> Float[torch.Tensor, "model_dim expanded_sae_dim"]:
+    if isinstance(sae_model, TopkSparseAutoEncoder_v2):
+        return sae_model.decoder.weight
+    elif isinstance(sae_model, TopkSparseAutoEncoder2Child_v2):
+        return rearrange(
+            [
+                sae_model.decoder.weight,
+                sae_model.decoder.weight
+                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+                sae_model.decoder.weight
+                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
+            ],
+            "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+            copies=3,
         )
     else:
         raise TypeError(f"Unsupported model type: {type(sae_model)}")
@@ -365,6 +390,14 @@ def get_similarity2(
 
 
 @jaxtyped(typechecker=beartype)
+def get_similarity4(
+    sae: SomeSAE, dataset: ToyDataset
+) -> Float[torch.Tensor, "sae_dim total_num_children"]:
+    all_child_vecs = get_all_features(dataset)
+    return calculate_cosine_sim(get_decoder_weights4(sae), all_child_vecs)
+
+
+@jaxtyped(typechecker=beartype)
 def get_similarity(
     sae: SomeSAE, dataset: ToyDataset
 ) -> Float[torch.Tensor, "sae_dim total_num_children"]:
@@ -434,6 +467,49 @@ def plot_feature_similarity(
         f"{output_dir}/feature_vs_feature_similarity_heatmap",
         dpi=300,
         bbox_inches="tight",
+    )
+    plt.close()
+
+
+@beartype
+def save_legible_similarity_graph(
+    sae: SomeSAE, dataset: ToyDataset, output_dir: str, step: int, hierarchical: bool
+) -> None:
+    similarity = get_similarity4(sae, dataset)
+
+    LATENT_GROUP_SIZE = 3
+
+    plt.figure(figsize=(12, 5))
+    sns.heatmap(
+        similarity.cpu().detach().numpy(),
+        cmap="RdYlBu_r",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        square=True,
+        xticklabels=4,
+        yticklabels=LATENT_GROUP_SIZE,
+    )
+
+    num_rows = similarity.shape[0]
+    num_cols = similarity.shape[1]
+    for i in range(2, num_cols, 2):
+        plt.axvline(x=i, color="black", linewidth=0.5)
+    if hierarchical:
+        for i in range(LATENT_GROUP_SIZE, num_rows, LATENT_GROUP_SIZE):
+            plt.axhline(y=i, color="black", linewidth=0.5)
+
+    # Add labels
+    plt.title(f"Cosine Similarity of decoder weights vs dataset features, step {step}")
+    plt.xlabel("Toy dataset features (sibling features are consecutive)")
+    plt.ylabel(
+        "Decoder Weight Vectors (0 mod 3 is parent weight, 1-2 mod 3 is parent weight + scaled child 1-2 weight)",
+        fontsize=5,
+    )
+
+    plt.tight_layout()
+    plt.savefig(
+        f"{output_dir}/v2_similarity_heatmap{step}.png", dpi=1200, bbox_inches="tight"
     )
     plt.close()
 
