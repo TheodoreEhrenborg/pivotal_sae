@@ -6,14 +6,18 @@ from jaxtyping import Bool, Float, Int, jaxtyped
 
 class ToyDataset:
     N_CHILDREN_PER_PARENT = 2
-    ACTIVATION_PROB = 0.03
 
     features: Float[torch.Tensor, "n_features model_dim"]
     perturbations: Float[torch.Tensor, "n_features n_children model_dim"]
 
     @beartype
     def __init__(
-        self, num_features: int, cuda: bool, perturbation_size: float, model_dim: int
+        self,
+        num_features: int,
+        cuda: bool,
+        perturbation_size: float,
+        model_dim: int,
+        k: int,
     ) -> None:
         self.device = torch.device("cuda" if cuda else "cpu")
         self.n_features = num_features
@@ -30,12 +34,12 @@ class ToyDataset:
             * raw_perturbations
             / torch.linalg.vector_norm(raw_perturbations, dim=2, keepdim=True)
         )
+        self.k = k
 
     @jaxtyped(typechecker=beartype)
     def generate(
         self, batch_size: int
     ) -> tuple[Float[torch.Tensor, "batch_size model_dim"], Int[torch.Tensor, ""]]:
-        k = 3
         activations = torch.zeros(
             batch_size, self.n_features, dtype=torch.bool, device=self.device
         )
@@ -45,7 +49,7 @@ class ToyDataset:
                 for _ in range(batch_size)
             ]
         )
-        selected_indices = perm[:, :k]
+        selected_indices = perm[:, : self.k]
         activations[torch.arange(batch_size).unsqueeze(1), selected_indices] = True
 
         perturbation_choices = torch.randint(

@@ -31,11 +31,12 @@ def setup(
     model_dim: int,
     aux_loss_threshold: float,
     aux_loss_coeff: float,
+    k: int,
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
-    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold, aux_loss_coeff)
+    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold, aux_loss_coeff, k)
     if cuda:
         sae.cuda()
     return sae
@@ -57,6 +58,8 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--model-dim", type=int, default=10)
     parser.add_argument("--aux-loss-threshold", type=float, default=0.5)
     parser.add_argument("--aux-loss-coeff", type=float, default=0.0)
+    parser.add_argument("--dataset-k", type=int, default=3)
+    parser.add_argument("--sae-k", type=int, default=3)
     return parser
 
 
@@ -71,7 +74,11 @@ def main(args: Namespace):
         yaml.dump(vars(args), f, default_flow_style=False)
 
     dataset = ToyDataset(
-        args.dataset_num_features, args.cuda, args.perturbation_size, args.model_dim
+        args.dataset_num_features,
+        args.cuda,
+        args.perturbation_size,
+        args.model_dim,
+        args.dataset_k,
     )
     plot_feature_similarity(dataset, output_dir)
 
@@ -82,6 +89,7 @@ def main(args: Namespace):
         args.model_dim,
         args.aux_loss_threshold,
         args.aux_loss_coeff,
+        args.sae_k,
     )
     if args.handcode_sae:
         assert args.hierarchical
