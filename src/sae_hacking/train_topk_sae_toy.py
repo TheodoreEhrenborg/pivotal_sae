@@ -30,11 +30,12 @@ def setup(
     hierarchical: bool,
     model_dim: int,
     aux_loss_threshold: float,
+    aux_loss_coeff: float,
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
-    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold)
+    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold, aux_loss_coeff)
     if cuda:
         sae.cuda()
     return sae
@@ -80,6 +81,7 @@ def main(args: Namespace):
         args.hierarchical,
         args.model_dim,
         args.aux_loss_threshold,
+        args.aux_loss_coeff,
     )
     if args.handcode_sae:
         assert args.hierarchical

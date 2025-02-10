@@ -184,7 +184,13 @@ class TopkSparseAutoEncoder_v2(torch.nn.Module):
 
 class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     @beartype
-    def __init__(self, sae_hidden_dim: int, model_dim: int, aux_loss_threshold: float):
+    def __init__(
+        self,
+        sae_hidden_dim: int,
+        model_dim: int,
+        aux_loss_threshold: float,
+        aux_loss_coeff: float,
+    ):
         super().__init__()
         self.sae_hidden_dim = sae_hidden_dim
         self.encoder = torch.nn.Linear(model_dim, sae_hidden_dim)
@@ -200,6 +206,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         self.child1_parent_ratios = torch.ones(sae_hidden_dim).cuda()
         self.child2_parent_ratios = torch.ones(sae_hidden_dim).cuda()
         self.aux_loss_threshold = aux_loss_threshold
+        self.use_aux_loss = aux_loss_coeff != 0
 
     @jaxtyped(typechecker=beartype)
     def forward(
@@ -272,17 +279,22 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
                     self.child2_parent_ratios,
                 )
 
-        aux_loss = auxiliary_loss(
-            sae_activations,
-            model_activations,
-            winners_mask,
-            final_activations_child1,
-            final_activations_child2,
-            self.decoder.weight,
-            self.decoder_child1.weight,
-            self.decoder_child2.weight,
-            self.aux_loss_threshold,
+        aux_loss = (
+            auxiliary_loss(
+                sae_activations,
+                model_activations,
+                winners_mask,
+                final_activations_child1,
+                final_activations_child2,
+                self.decoder.weight,
+                self.decoder_child1.weight,
+                self.decoder_child2.weight,
+                self.aux_loss_threshold,
+            )
+            if self.use_aux_loss
+            else torch.tensor(0.0)
         )
+
         return (
             reconstructed,
             (
