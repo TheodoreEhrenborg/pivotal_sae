@@ -29,7 +29,6 @@ def setup(
     cuda: bool,
     hierarchical: bool,
     model_dim: int,
-    aux_loss_threshold: float,
     aux_loss_coeff: float,
     k: int,
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
@@ -37,7 +36,7 @@ def setup(
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
     # TODO Pretty sure this is broken for the non-hierarchical SAE
-    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold, aux_loss_coeff, k)
+    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_coeff, k)
     if cuda:
         sae.cuda()
     return sae
@@ -57,7 +56,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--perturbation_size", type=float, default=0.2)
     parser.add_argument("--model-dim", type=int, default=10)
-    parser.add_argument("--aux-loss-threshold", type=float, default=0.5)
     parser.add_argument("--aux-loss-coeff", type=float, default=0.0)
     parser.add_argument("--dataset-k", type=int, default=3)
     parser.add_argument("--sae-k", type=int, default=3)
@@ -88,7 +86,6 @@ def main(args: Namespace):
         args.cuda,
         args.hierarchical,
         args.model_dim,
-        args.aux_loss_threshold,
         args.aux_loss_coeff,
         args.sae_k,
     )

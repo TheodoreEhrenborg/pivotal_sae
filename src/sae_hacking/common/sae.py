@@ -188,7 +188,6 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         self,
         sae_hidden_dim: int,
         model_dim: int,
-        aux_loss_threshold: float,
         aux_loss_coeff: float,
         k: int,
     ):
@@ -206,7 +205,6 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         # TODO The device should be configurable
         self.child1_parent_ratios = torch.ones(sae_hidden_dim).cuda()
         self.child2_parent_ratios = torch.ones(sae_hidden_dim).cuda()
-        self.aux_loss_threshold = aux_loss_threshold
         self.use_aux_loss = aux_loss_coeff != 0
 
     @jaxtyped(typechecker=beartype)
@@ -290,7 +288,6 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
                 self.decoder.weight,
                 self.decoder_child1.weight,
                 self.decoder_child2.weight,
-                self.aux_loss_threshold,
             )
             if self.use_aux_loss
             else torch.tensor(0.0)
@@ -433,9 +430,7 @@ def auxiliary_loss_reference(
             combined_weights = scaled_parent + scaled_child
             cos_sim = F.cosine_similarity(scaled_parent, combined_weights, dim=0)
 
-            # Add to loss if similarity is too low
-            if cos_sim < 0.5:
-                aux_loss += 0.5 - cos_sim
+            aux_loss -= cos_sim
 
     # Average across batch
     aux_loss = aux_loss / batch_size
@@ -454,7 +449,6 @@ def auxiliary_loss(
     decoder_weight: Float[torch.Tensor, "model_dim n_features"],
     decoder_child1_weight: Float[torch.Tensor, "model_dim n_features"],
     decoder_child2_weight: Float[torch.Tensor, "model_dim n_features"],
-    aux_loss_threshold: float,
 ) -> Float[torch.Tensor, ""]:
     # Expand activations for broadcasting
     sae_acts_expanded = sae_activations.unsqueeze(-2)  # [batch_size, 1, n_features]
@@ -493,9 +487,7 @@ def auxiliary_loss(
 
     # Calculate loss only for active features
     active_mask = sae_activations > 0
-    similarity_loss = torch.maximum(
-        torch.tensor(0.0, device=cos_sim.device), aux_loss_threshold - cos_sim
-    )
+    similarity_loss = -cos_sim
     masked_loss = similarity_loss * active_mask
 
     # Average across batch and features
