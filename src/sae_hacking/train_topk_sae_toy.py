@@ -36,6 +36,7 @@ def setup(
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
+    # TODO Pretty sure this is broken for the non-hierarchical SAE
     sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_threshold, aux_loss_coeff, k)
     if cuda:
         sae.cuda()
