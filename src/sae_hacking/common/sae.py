@@ -494,8 +494,7 @@ def auxiliary_loss(
     similarity_loss_BF = -cos_sim_BF
     masked_loss_BF = similarity_loss_BF * active_mask_BF
 
-    # Average across batch and features
-    total_active = active_mask_BF.sum()
-    aux_loss = masked_loss_BF.sum() / (total_active + 1e-8)
+    batch_size = sae_activations_BF.shape[0]
+    aux_loss = masked_loss_BF.sum() / batch_size
 
     return aux_loss
