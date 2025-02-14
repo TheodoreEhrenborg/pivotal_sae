@@ -281,7 +281,6 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         aux_loss = (
             auxiliary_loss(
                 sae_activations,
-                model_activations,
                 winners_mask,
                 final_activations_child1,
                 final_activations_child2,
@@ -391,7 +390,6 @@ def update_parent_child_ratio3(
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss_reference(
     sae_activations_BF: Float[torch.Tensor, "B F"],
-    model_activations_BM: Float[torch.Tensor, "B M"],
     winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
     final_activations_child1_BF: Float[torch.Tensor, "B F"],
     final_activations_child2_BF: Float[torch.Tensor, "B F"],
@@ -400,7 +398,7 @@ def auxiliary_loss_reference(
     decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
 ) -> Float[torch.Tensor, ""]:
     batch_size = sae_activations_BF.shape[0]
-    aux_loss = torch.tensor(0.0, device=model_activations_BM.device)
+    aux_loss = torch.tensor(0.0, device=sae_activations_BF.device)
 
     # Get active feature indices per batch element
     for batch_idx in range(batch_size):
@@ -447,8 +445,6 @@ def auxiliary_loss_reference(
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss(
     sae_activations_BF: Float[torch.Tensor, "B F"],
-    # TODO Unused variable
-    model_activations_BM: Float[torch.Tensor, "B M"],
     winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
     final_activations_child1_BF: Float[torch.Tensor, "B F"],
     final_activations_child2_BF: Float[torch.Tensor, "B F"],

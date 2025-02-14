@@ -14,7 +14,6 @@ def test_auxiliary_loss_implementations():
     model_dim = 20
 
     sae_activations = torch.rand(batch_size, n_features).to(dtype=torch.float32)
-    model_activations = torch.rand(batch_size, model_dim).to(dtype=torch.float32)
     winners_mask = torch.randint(0, 2, (batch_size, n_features)).to(dtype=torch.bool)
     final_activations_child1 = torch.rand(batch_size, n_features).to(
         dtype=torch.float32
@@ -29,7 +28,6 @@ def test_auxiliary_loss_implementations():
     # Compute losses using both implementations
     loss_reference = auxiliary_loss_reference(
         sae_activations,
-        model_activations,
         winners_mask,
         final_activations_child1,
         final_activations_child2,
@@ -40,7 +38,6 @@ def test_auxiliary_loss_implementations():
 
     loss_vectorized = auxiliary_loss(
         sae_activations,
-        model_activations,
         winners_mask,
         final_activations_child1,
         final_activations_child2,
