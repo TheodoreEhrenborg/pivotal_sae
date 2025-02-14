@@ -490,9 +490,9 @@ def auxiliary_loss(
     )  # [B, F]
 
     # Calculate loss only for active features
-    active_mask_BF = sae_activations_BF > 0
+    active_mask_bool_BF = sae_activations_BF > 0
     similarity_loss_BF = -cos_sim_BF
-    masked_loss_BF = similarity_loss_BF * active_mask_BF
+    masked_loss_BF = similarity_loss_BF * active_mask_bool_BF
 
     batch_size = sae_activations_BF.shape[0]
     aux_loss = masked_loss_BF.sum() / batch_size
