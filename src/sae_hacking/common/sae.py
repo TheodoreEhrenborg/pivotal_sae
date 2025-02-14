@@ -452,40 +452,29 @@ def auxiliary_loss(
     decoder_child1_weight_MF: Float[torch.Tensor, "M F"],
     decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
 ) -> Float[torch.Tensor, ""]:
-    # Expand activations for broadcasting
-    sae_acts_B1F = sae_activations_BF.unsqueeze(1)  # [B, 1, F]
+    sae_acts_B1F = sae_activations_BF.unsqueeze(1)
 
-    # Scale parent weights by activations
-    scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_acts_B1F  # [B, M, F]
+    scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_acts_B1F
 
-    # Scale child weights by activations and winner mask
-    child1_acts_B1F = final_activations_child1_BF.unsqueeze(-2)  # [B, 1, F]
-    child2_acts_B1F = final_activations_child2_BF.unsqueeze(-2)  # [B, 1, F]
+    child1_acts_B1F = final_activations_child1_BF.unsqueeze(-2)
+    child2_acts_B1F = final_activations_child2_BF.unsqueeze(-2)
 
-    scaled_child1_BMF = (
-        decoder_child1_weight_MF.unsqueeze(0) * child1_acts_B1F
-    )  # [B, M, F]
-    scaled_child2_BMF = (
-        decoder_child2_weight_MF.unsqueeze(0) * child2_acts_B1F
-    )  # [B, M, F]
+    scaled_child1_BMF = decoder_child1_weight_MF.unsqueeze(0) * child1_acts_B1F
+    scaled_child2_BMF = decoder_child2_weight_MF.unsqueeze(0) * child2_acts_B1F
 
-    # Select appropriate child based on winners_mask
-    winners_mask_B1F = winners_mask_bool_BF.unsqueeze(1)  # [B, 1, F]
+    winners_mask_B1F = winners_mask_bool_BF.unsqueeze(1)
     scaled_child_BMF = torch.where(
         winners_mask_B1F, scaled_child1_BMF, scaled_child2_BMF
     )
 
-    # Calculate combined weights
-    combined_weights_BMF = scaled_parent_BMF + scaled_child_BMF  # [B, M, F]
+    combined_weights_BMF = scaled_parent_BMF + scaled_child_BMF
 
-    # Calculate cosine similarity
     cos_sim_BF = F.cosine_similarity(
-        scaled_parent_BMF.transpose(1, 2),  # [B, F, M]
-        combined_weights_BMF.transpose(1, 2),  # [B, F, M]
-        dim=2,  # compute similarity along M
-    )  # [B, F]
+        scaled_parent_BMF.transpose(1, 2),
+        combined_weights_BMF.transpose(1, 2),
+        dim=2,
+    )
 
-    # Calculate loss only for active features
     active_mask_bool_BF = sae_activations_BF > 0
     similarity_loss_BF = -cos_sim_BF
     masked_loss_BF = similarity_loss_BF * active_mask_bool_BF
