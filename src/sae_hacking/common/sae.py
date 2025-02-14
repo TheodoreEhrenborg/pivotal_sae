@@ -452,19 +452,17 @@ def auxiliary_loss(
     decoder_child1_weight_MF: Float[torch.Tensor, "M F"],
     decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
 ) -> Float[torch.Tensor, ""]:
-    sae_acts_B1F = sae_activations_BF.unsqueeze(1)
+    scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_activations_BF.unsqueeze(1)
 
-    scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_acts_B1F
+    scaled_child1_BMF = decoder_child1_weight_MF.unsqueeze(
+        0
+    ) * final_activations_child1_BF.unsqueeze(1)
+    scaled_child2_BMF = decoder_child2_weight_MF.unsqueeze(
+        0
+    ) * final_activations_child2_BF.unsqueeze(1)
 
-    child1_acts_B1F = final_activations_child1_BF.unsqueeze(-2)
-    child2_acts_B1F = final_activations_child2_BF.unsqueeze(-2)
-
-    scaled_child1_BMF = decoder_child1_weight_MF.unsqueeze(0) * child1_acts_B1F
-    scaled_child2_BMF = decoder_child2_weight_MF.unsqueeze(0) * child2_acts_B1F
-
-    winners_mask_B1F = winners_mask_bool_BF.unsqueeze(1)
     scaled_child_BMF = torch.where(
-        winners_mask_B1F, scaled_child1_BMF, scaled_child2_BMF
+        winners_mask_bool_BF.unsqueeze(1), scaled_child1_BMF, scaled_child2_BMF
     )
 
     combined_weights_BMF = scaled_parent_BMF + scaled_child_BMF
