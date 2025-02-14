@@ -467,11 +467,7 @@ def auxiliary_loss(
 
     combined_weights_BMF = scaled_parent_BMF + scaled_child_BMF
 
-    cos_sim_BF = F.cosine_similarity(
-        scaled_parent_BMF.transpose(1, 2),
-        combined_weights_BMF.transpose(1, 2),
-        dim=2,
-    )
+    cos_sim_BF = F.cosine_similarity(scaled_parent_BMF, combined_weights_BMF, dim=1)
 
     active_mask_bool_BF = sae_activations_BF > 0
     similarity_loss_BF = -cos_sim_BF
