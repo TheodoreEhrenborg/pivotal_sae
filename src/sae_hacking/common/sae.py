@@ -435,11 +435,6 @@ def auxiliary_loss_reference(
     return aux_loss
 
 
-# Dimension naming convention
-# B: batch size
-# M: model dimension
-# F: number of features/neurons
-# 1: singleton dimension (for broadcasting)
 
 
 @jaxtyped(typechecker=beartype)

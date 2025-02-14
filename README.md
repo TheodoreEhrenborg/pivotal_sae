@@ -27,3 +27,9 @@ To run uv in this case, use the provided Dockerfile:
 ## History
 
 Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many files deleted
+
+# Dimension naming convention
+- B: batch size
+- M: model dimension
+- F: number of SAE latents
+- 1: singleton dimension (for broadcasting)
