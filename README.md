@@ -31,5 +31,6 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 # Dimension naming convention
 - B: batch size
 - M: model dimension
-- F: number of SAE latents
+- F: SAE hidden dim
+- G: total number of SAE latents (i.e. a multiple of F)
 - 1: singleton dimension (for broadcasting)

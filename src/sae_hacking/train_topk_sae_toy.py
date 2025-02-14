@@ -109,6 +109,8 @@ def main(args: Namespace):
         if step % 5000 == 0:
             torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
+            if args.hierarchical:
+                save_latent_similarity_graph(sae, output_dir, step)
             save_legible_similarity_graph(
                 sae, dataset, output_dir, step, args.hierarchical
             )
@@ -401,6 +403,17 @@ def get_similarity4(
 
 
 @jaxtyped(typechecker=beartype)
+def get_similarity5(sae: SomeSAE) -> Float[torch.Tensor, "G G"]:
+    decoder_weights_MG = get_decoder_weights4(sae)
+    return F.cosine_similarity(
+        decoder_weights_MG.unsqueeze(1), decoder_weights_MG.unsqueeze(2), dim=0
+    )
+
+
+# TODO total_num_children means child features, right?
+
+
+@jaxtyped(typechecker=beartype)
 def get_similarity(
     sae: SomeSAE, dataset: ToyDataset
 ) -> Float[torch.Tensor, "sae_dim total_num_children"]:
@@ -480,6 +493,48 @@ def plot_feature_similarity(
         dpi=300,
         bbox_inches="tight",
     )
+    plt.close()
+
+
+@beartype
+def save_latent_similarity_graph(sae: SomeSAE, output_dir: str, step: int) -> None:
+    similarity = get_similarity5(sae)
+
+    LATENT_GROUP_SIZE = 3
+
+    plt.figure(figsize=(12, 5))
+    sns.heatmap(
+        similarity.cpu().detach().numpy(),
+        cmap="RdYlBu_r",
+        center=0,
+        vmin=-1,
+        vmax=1,
+        square=True,
+        xticklabels=LATENT_GROUP_SIZE,
+        yticklabels=LATENT_GROUP_SIZE,
+    )
+
+    num_rows = similarity.shape[0]
+    num_cols = similarity.shape[1]
+    assert num_rows == num_cols
+
+    for i in range(LATENT_GROUP_SIZE, num_rows, LATENT_GROUP_SIZE):
+        plt.axhline(y=i, color="black", linewidth=0.5)
+    for i in range(LATENT_GROUP_SIZE, num_rows, LATENT_GROUP_SIZE):
+        plt.axvline(x=i, color="black", linewidth=0.5)
+
+    plt.title(f"Cosine Similarity of decoder weights vs themselves, step {step}")
+    plt.xlabel(
+        "Decoder Weight Vectors (0 mod 3 is parent weight, 1-2 mod 3 is parent weight + scaled child 1-2 weight)",
+        fontsize=5,
+    )
+    plt.ylabel(
+        "Decoder Weight Vectors (0 mod 3 is parent weight, 1-2 mod 3 is parent weight + scaled child 1-2 weight)",
+        fontsize=5,
+    )
+
+    plt.tight_layout()
+    plt.savefig(f"{output_dir}/latent_heatmap{step}.png", dpi=1200, bbox_inches="tight")
     plt.close()
 
 

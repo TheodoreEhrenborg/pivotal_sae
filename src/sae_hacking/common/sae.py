@@ -435,8 +435,6 @@ def auxiliary_loss_reference(
     return aux_loss
 
 
-
-
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss(
     sae_activations_BF: Float[torch.Tensor, "B F"],
