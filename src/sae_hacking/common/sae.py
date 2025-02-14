@@ -392,7 +392,7 @@ def update_parent_child_ratio3(
 def auxiliary_loss_reference(
     sae_activations_BF: Float[torch.Tensor, "B F"],
     model_activations_BM: Float[torch.Tensor, "B M"],
-    winners_mask_BF: Bool[torch.Tensor, "B F"],
+    winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
     final_activations_child1_BF: Float[torch.Tensor, "B F"],
     final_activations_child2_BF: Float[torch.Tensor, "B F"],
     decoder_weight_MF: Float[torch.Tensor, "M F"],
@@ -414,7 +414,7 @@ def auxiliary_loss_reference(
             scaled_parent_M = parent_weights_M * parent_scale
 
             # Determine which child won for this feature
-            is_child1_winner = winners_mask_BF[batch_idx, feat_idx]
+            is_child1_winner = winners_mask_bool_BF[batch_idx, feat_idx]
 
             if is_child1_winner:
                 child_weights_M = decoder_child1_weight_MF[:, feat_idx]
@@ -449,7 +449,7 @@ def auxiliary_loss(
     sae_activations_BF: Float[torch.Tensor, "B F"],
     # TODO Unused variable
     model_activations_BM: Float[torch.Tensor, "B M"],
-    winners_mask_BF: Bool[torch.Tensor, "B F"],
+    winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
     final_activations_child1_BF: Float[torch.Tensor, "B F"],
     final_activations_child2_BF: Float[torch.Tensor, "B F"],
     decoder_weight_MF: Float[torch.Tensor, "M F"],
@@ -457,7 +457,7 @@ def auxiliary_loss(
     decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
 ) -> Float[torch.Tensor, ""]:
     # Expand activations for broadcasting
-    sae_acts_B1F = sae_activations_BF.unsqueeze(-2)  # [B, 1, F]
+    sae_acts_B1F = sae_activations_BF.unsqueeze(1)  # [B, 1, F]
 
     # Scale parent weights by activations
     scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_acts_B1F  # [B, M, F]
@@ -474,7 +474,7 @@ def auxiliary_loss(
     )  # [B, M, F]
 
     # Select appropriate child based on winners_mask
-    winners_mask_B1F = winners_mask_BF.unsqueeze(1)  # [B, 1, F]
+    winners_mask_B1F = winners_mask_bool_BF.unsqueeze(1)  # [B, 1, F]
     scaled_child_BMF = torch.where(
         winners_mask_B1F, scaled_child1_BMF, scaled_child2_BMF
     )
