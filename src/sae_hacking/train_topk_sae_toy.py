@@ -112,7 +112,7 @@ def main(args: Namespace):
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
             if args.hierarchical:
                 save_latent_similarity_graph(sae, output_dir, step)
-                plot_norms(sae)
+                plot_norms(sae, step, output_dir)
             save_legible_similarity_graph(
                 sae, dataset, output_dir, step, args.hierarchical
             )
@@ -692,7 +692,7 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 
 
 @beartype
-def plot_norms(sae: TopkSparseAutoEncoder2Child_v2) -> None:
+def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) -> None:
     weights_MG = get_decoder_weights4(sae)
     weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
 
@@ -708,7 +708,7 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2) -> None:
     plt.ylabel("Norm Value")
     plt.title("Weight Norms with Group Separators")
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"{output_dir}/norms_{step}.png", dpi=1200, bbox_inches="tight")
 
 
 if __name__ == "__main__":
