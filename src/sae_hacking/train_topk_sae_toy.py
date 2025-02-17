@@ -693,7 +693,17 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 
 @beartype
 def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) -> None:
-    weights_MG = get_decoder_weights4(sae)
+    weights_MG = rearrange(
+        [
+            sae.decoder.weight,
+            sae.decoder_child1.weight * sae.child1_parent_ratios,
+            sae.decoder_child2.weight * sae.child2_parent_ratios,
+            sae.decoder.weight + sae.decoder_child1.weight * sae.child1_parent_ratios,
+            sae.decoder.weight + sae.decoder_child2.weight * sae.child2_parent_ratios,
+        ],
+        "copies model_dim sae_dim -> model_dim (sae_dim copies)",
+        copies=5,
+    )
     weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
 
     LATENT_GROUP_SIZE = 3
