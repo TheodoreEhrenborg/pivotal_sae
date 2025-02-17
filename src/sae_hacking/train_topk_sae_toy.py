@@ -112,6 +112,7 @@ def main(args: Namespace):
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
             if args.hierarchical:
                 save_latent_similarity_graph(sae, output_dir, step)
+                plot_norms(sae)
             save_legible_similarity_graph(
                 sae, dataset, output_dir, step, args.hierarchical
             )
@@ -688,6 +689,26 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
     sae.decoder_child1.bias.data = torch.zeros_like(sae.decoder_child1.bias)
     sae.encoder_child2.bias.data = torch.zeros_like(sae.encoder_child2.bias)
     sae.decoder_child2.bias.data = torch.zeros_like(sae.decoder_child2.bias)
+
+
+@beartype
+def plot_norms(sae: TopkSparseAutoEncoder2Child_v2) -> None:
+    weights_MG = get_decoder_weights4(sae)
+    weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
+
+    LATENT_GROUP_SIZE = 3
+    plt.figure(figsize=(10, 6))
+    plt.bar(range(len(weights_norm_G)), weights_norm_G)
+
+    # Add vertical lines after every 3rd bar
+    for i in range(LATENT_GROUP_SIZE, len(weights_norm_G), LATENT_GROUP_SIZE):
+        plt.axvline(x=i - 0.5, color="red", linestyle="--", alpha=0.5)
+
+    plt.xlabel("Weight Index")
+    plt.ylabel("Norm Value")
+    plt.title("Weight Norms with Group Separators")
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
