@@ -11,6 +11,7 @@ from beartype import beartype
 from coolname import generate_slug
 from einops import rearrange, reduce
 from jaxtyping import Float, jaxtyped
+from safetensors.torch import save_model
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -107,7 +108,7 @@ def main(args: Namespace):
         optimizer.step()
         sae.eval()
         if step % 5000 == 0:
-            torch.save(sae.state_dict(), f"{output_dir}/{step}.pt")
+            save_model(sae, f"{output_dir}/{step}.safetensors")
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
             if args.hierarchical:
                 save_latent_similarity_graph(sae, output_dir, step)
