@@ -698,7 +698,7 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2) -> None:
 
     LATENT_GROUP_SIZE = 3
     plt.figure(figsize=(10, 6))
-    plt.bar(range(len(weights_norm_G)), weights_norm_G)
+    plt.bar(range(len(weights_norm_G)), weights_norm_G.cpu().detach())
 
     # Add vertical lines after every 3rd bar
     for i in range(LATENT_GROUP_SIZE, len(weights_norm_G), LATENT_GROUP_SIZE):
