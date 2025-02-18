@@ -29,10 +29,10 @@ To run uv in this case, use the provided Dockerfile:
 Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many files deleted
 
 # Dimension naming convention
+- 1: singleton dimension (for broadcasting)
+- A: Number of parent features in the dataset
 - B: batch size
-- M: model dimension
+- C: Number of child features in the dataset
 - F: SAE hidden dim
 - G: total number of SAE latents (i.e. a multiple of F)
-- A: Number of parent features in the dataset
-- C: Number of child features in the dataset
-- 1: singleton dimension (for broadcasting)
+- M: model dimension
