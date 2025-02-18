@@ -33,7 +33,8 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - A: Number of parent features in the dataset
 - B: batch size
 - C: Number of child features in the dataset
-- F: SAE hidden dim
-- G: some multiple of F
-- H: total number of SAE children (multiple of F, less than G)
+- E: SAE hidden dim
+- F: reserved for torch.nn.functional
+- G: some multiple of E
+- H: total number of SAE children (multiple of E, less than G)
 - M: model dimension

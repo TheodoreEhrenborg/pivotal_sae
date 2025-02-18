@@ -276,31 +276,31 @@ def get_decoder_weights(
 def adjusted_feature_pair_detection_rate(
     sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
 ) -> float:
-    successes_Bool_F = adjusted_feature_pair_detection_aux(sae_model, dataset)
-    return float(successes_Bool_F.sum() / F)
+    successes_Bool_E = adjusted_feature_pair_detection_aux(sae_model, dataset)
+    return float(successes_Bool_E.sum() / len(successes_Bool_E))
 
 
 @jaxtyped(typechecker=beartype)
 def adjusted_feature_pair_detection_aux(
     sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
-) -> Bool[torch.Tensor, "F"]:
+) -> Bool[torch.Tensor, " E"]:
     # TODO DRY this
     decoder_weights_MH = get_decoder_weights3(sae_model)
-    F = decoder_weights_MH.shape[1] // 2
+    E = decoder_weights_MH.shape[1] // 2
 
     all_child_vecs_CM = get_all_features(dataset)
     cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
 
-    return find_successes(cosine_sim_HC, F)
+    return find_successes(cosine_sim_HC, E)
 
 
 @jaxtyped(typechecker=beartype)
 def find_successes(
-    cosine_sim_HC: Float[torch.Tensor, "H C"], F: int
-) -> Bool[torch.Tensor, "{F}"]:
-    successes_Bool_F = torch.zeros(F, dtype=torch.bool)
+    cosine_sim_HC: Float[torch.Tensor, "H C"], E: int
+) -> Bool[torch.Tensor, " {E}"]:
+    successes_Bool_E = torch.zeros(E, dtype=torch.bool)
 
-    for latent_idx in range(F):
+    for latent_idx in range(E):
         latent1_sims_C = cosine_sim_HC[2 * latent_idx]
         latent2_sims_C = cosine_sim_HC[2 * latent_idx + 1]
 
@@ -313,8 +313,8 @@ def find_successes(
             and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
             and min(closest_feature_to_latent1, closest_feature_to_latent2) % 2 == 0
         ):
-            successes_Bool_F[latent_idx] = True
-    return successes_Bool_F
+            successes_Bool_E[latent_idx] = True
+    return successes_Bool_E
 
 
 @beartype
@@ -712,7 +712,7 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 def plot_norms(
     sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str, dataset: ToyDataset
 ) -> None:
-    successes_Bool_F = adjusted_feature_pair_detection_aux(sae, dataset)
+    successes_Bool_E = adjusted_feature_pair_detection_aux(sae, dataset)
 
     LATENT_GROUP_SIZE = 7
     weights_MG = rearrange(
@@ -731,7 +731,7 @@ def plot_norms(
     weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
 
     successes_Bool_G = repeat(
-        successes_Bool_F, "F -> (F repeat)", repeat=LATENT_GROUP_SIZE
+        successes_Bool_E, "E -> (E repeat)", repeat=LATENT_GROUP_SIZE
     )
     colors = ["blue" if x else "red" for x in successes_Bool_G.cpu()]
 
