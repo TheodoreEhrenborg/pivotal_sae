@@ -755,16 +755,16 @@ def save_sorted_similarity_graph(
         child_avg_C = torch.mean(child_sims_2C, dim=0)
 
         # Reshape to feature pairs and get average across pairs
-        feature_pair_avgs_B = torch.zeros(n_feature_pairs)
+        feature_pair_avgs_A = torch.zeros(n_feature_pairs)
         for feat_idx in available_features:
             feat_start = feat_idx * 2
-            feature_pair_avgs_B[feat_idx] = torch.mean(
+            feature_pair_avgs_A[feat_idx] = torch.mean(
                 child_avg_C[feat_start : feat_start + 2]
             )
 
         # Find best available feature pair
         best_feature = max(
-            available_features, key=lambda i: feature_pair_avgs_B[i].item()
+            available_features, key=lambda i: feature_pair_avgs_A[i].item()
         )
         matches.append((group_idx, best_feature))
         available_features.remove(best_feature)

@@ -33,6 +33,6 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - M: model dimension
 - F: SAE hidden dim
 - G: total number of SAE latents (i.e. a multiple of F)
-- B: Number of parent features in the dataset
+- A: Number of parent features in the dataset
 - C: Number of child features in the dataset
 - 1: singleton dimension (for broadcasting)
