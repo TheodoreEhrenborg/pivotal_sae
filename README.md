@@ -34,6 +34,6 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - B: batch size
 - C: Number of child features in the dataset
 - F: SAE hidden dim
-- G: total number of SAE latents (a multiple of F)
+- G: some multiple of F
 - H: total number of SAE children (multiple of F, less than G)
 - M: model dimension
