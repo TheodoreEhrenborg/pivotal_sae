@@ -43,14 +43,10 @@ class ToyDataset:
         activations = torch.zeros(
             batch_size, self.n_features, dtype=torch.bool, device=self.device
         )
-        perm = torch.stack(
-            [
-                torch.randperm(self.n_features, device=self.device)
-                for _ in range(batch_size)
-            ]
-        )
-        selected_indices = perm[:, : self.k]
-        activations[torch.arange(batch_size).unsqueeze(1), selected_indices] = True
+        selected_indices_BK = torch.argsort(
+            torch.rand(batch_size, self.n_features, device=self.device), dim=1
+        )[:, : self.k]
+        activations[torch.arange(batch_size).unsqueeze(1), selected_indices_BK] = True
 
         perturbation_choices = torch.randint(
             0,

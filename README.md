@@ -37,4 +37,5 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - F: reserved for torch.nn.functional
 - G: some multiple of E
 - H: total number of SAE children (multiple of E, less than G)
+- K: k in topk
 - M: model dimension
