@@ -283,7 +283,7 @@ def adjusted_feature_pair_detection_rate(
     all_child_vecs_CM = get_all_features(dataset)
     cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
 
-    successes = 0
+    successes = torch.zeros(F, dtype=torch.bool)
 
     for latent_idx in range(F):
         latent1_sims_C = cosine_sim_HC[2 * latent_idx]
@@ -298,9 +298,9 @@ def adjusted_feature_pair_detection_rate(
             and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
             and min(closest_feature_to_latent1, closest_feature_to_latent2) % 2 == 0
         ):
-            successes += 1
+            successes[latent_idx] = True
 
-    return successes / F
+    return successes.sum() / F
 
 
 @beartype
