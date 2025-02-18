@@ -276,6 +276,14 @@ def get_decoder_weights(
 def adjusted_feature_pair_detection_rate(
     sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
 ) -> float:
+    successes_Bool_F = adjusted_feature_pair_detection_aux(sae_model, dataset)
+    return float(successes_Bool_F.sum() / F)
+
+
+@jaxtyped(typechecker=beartype)
+def adjusted_feature_pair_detection_aux(
+    sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
+) -> Bool[torch.Tensor, "F"]:
     # TODO DRY this
     decoder_weights_MH = get_decoder_weights3(sae_model)
     F = decoder_weights_MH.shape[1] // 2
@@ -283,9 +291,7 @@ def adjusted_feature_pair_detection_rate(
     all_child_vecs_CM = get_all_features(dataset)
     cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
 
-    successes_Bool_F = find_successes(cosine_sim_HC, F)
-
-    return float(successes_Bool_F.sum() / F)
+    return find_successes(cosine_sim_HC, F)
 
 
 @jaxtyped(typechecker=beartype)
