@@ -696,7 +696,6 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 
 @beartype
 def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) -> None:
-    print("starting to plot norms")
     LATENT_GROUP_SIZE = 7
     weights_MG = rearrange(
         [
@@ -724,7 +723,6 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) 
     plt.title("Weight Norms with Group Separators")
     plt.tight_layout()
     plt.savefig(f"{output_dir}/norms_{step}.png", bbox_inches="tight")
-    print("Done plotting norms")
 
 
 @beartype
