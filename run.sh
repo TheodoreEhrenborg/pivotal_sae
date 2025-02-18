@@ -9,6 +9,7 @@ fi
 docker run -it --rm \
 	$@ \
 	-v $HOME/.cache/huggingface:/root/.cache/huggingface \
+	-v $HOME/.config/vastai:/root/.config/vastai \
 	-v $(pwd):/code \
 	-v $HOME/.cache/uv:/root/.cache/uv \
 	-v $HOME/.local/share/uv:/root/.local/share/uv $FISH_MOUNT \
