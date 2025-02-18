@@ -130,6 +130,8 @@ def main(args: Namespace):
                     args.sae_hidden_dim,
                 )
 
+        # py-spy claims the next line is slow,
+        # but I don't see an improvement when I take it out
         writer.add_scalar(
             "Activated ground-truth features",
             num_activated_features / args.batch_size,
