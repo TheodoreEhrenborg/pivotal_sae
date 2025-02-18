@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import yaml
 from beartype import beartype
 from coolname import generate_slug
-from einops import rearrange, reduce
+from einops import rearrange, reduce, repeat
 from jaxtyping import Bool, Float, jaxtyped
 from safetensors.torch import save_model
 from torch.utils.tensorboard import SummaryWriter
@@ -115,7 +115,7 @@ def main(args: Namespace):
             )
             if args.hierarchical:
                 save_latent_similarity_graph(sae, output_dir, step)
-                plot_norms(sae, step, output_dir)
+                plot_norms(sae, step, output_dir, dataset)
             save_legible_similarity_graph(
                 sae, dataset, output_dir, step, args.hierarchical
             )
@@ -709,7 +709,11 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 
 
 @beartype
-def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) -> None:
+def plot_norms(
+    sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str, dataset: ToyDataset
+) -> None:
+    successes_Bool_F = adjusted_feature_pair_detection_aux(sae, dataset)
+
     LATENT_GROUP_SIZE = 7
     weights_MG = rearrange(
         [
@@ -726,8 +730,13 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) 
     )
     weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
 
+    successes_Bool_G = repeat(
+        successes_Bool_F, "F -> (F repeat)", repeat=LATENT_GROUP_SIZE
+    )
+    colors = ["blue" if x else "red" for x in successes_Bool_G.cpu()]
+
     plt.figure(figsize=(10, 6))
-    plt.bar(range(len(weights_norm_G)), weights_norm_G.cpu().detach())
+    plt.bar(range(len(weights_norm_G)), weights_norm_G.cpu().detach(), color=colors)
 
     for i in range(LATENT_GROUP_SIZE, len(weights_norm_G), LATENT_GROUP_SIZE):
         plt.axvline(x=i - 0.5, color="red", linestyle="--", alpha=0.5)
