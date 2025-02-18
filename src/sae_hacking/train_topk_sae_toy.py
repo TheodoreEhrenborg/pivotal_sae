@@ -277,20 +277,20 @@ def adjusted_feature_pair_detection_rate(
     sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
 ) -> float:
     # TODO DRY this
-    decoder_weights = get_decoder_weights3(sae_model)
-    num_latent_pairs = decoder_weights.shape[1] // 2
+    decoder_weights_MH = get_decoder_weights3(sae_model)
+    F = decoder_weights_MH.shape[1] // 2
 
-    all_child_vecs = get_all_features(dataset)
-    cosine_sim = calculate_cosine_sim(decoder_weights, all_child_vecs)
+    all_child_vecs_CM = get_all_features(dataset)
+    cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
 
     successes = 0
 
-    for k in range(num_latent_pairs):
-        latent1_sims = cosine_sim[2 * k]
-        latent2_sims = cosine_sim[2 * k + 1]
+    for latent_idx in range(F):
+        latent1_sims_C = cosine_sim_HC[2 * latent_idx]
+        latent2_sims_C = cosine_sim_HC[2 * latent_idx + 1]
 
-        closest_feature_to_latent1 = torch.argmax(latent1_sims)
-        closest_feature_to_latent2 = torch.argmax(latent2_sims)
+        closest_feature_to_latent1 = torch.argmax(latent1_sims_C)
+        closest_feature_to_latent2 = torch.argmax(latent2_sims_C)
 
         # Check if these features are the two features in a pair
         if (
@@ -300,7 +300,7 @@ def adjusted_feature_pair_detection_rate(
         ):
             successes += 1
 
-    return successes / num_latent_pairs
+    return successes / F
 
 
 @beartype
