@@ -110,6 +110,9 @@ def main(args: Namespace):
         if step % 5000 == 0:
             save_model(sae, f"{output_dir}/{step}.safetensors")
             save_similarity_graph(sae, dataset, output_dir, step, args.hierarchical)
+            save_sorted_similarity_graph(
+                sae, dataset, output_dir, step, args.hierarchical
+            )
             if args.hierarchical:
                 save_latent_similarity_graph(sae, output_dir, step)
                 plot_norms(sae, step, output_dir)
@@ -728,16 +731,16 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) 
 def save_sorted_similarity_graph(
     sae: SomeSAE, dataset: ToyDataset, output_dir: str, step: int, hierarchical: bool
 ) -> None:
-    similarity = get_similarity4(sae, dataset)
+    similarity_GC = get_similarity4(sae, dataset)
     LATENT_GROUP_SIZE = 3
 
     # Keep on CPU but stay in torch
-    sim = similarity.cpu().detach()
+    sim_GC = similarity_GC.cpu().detach()
 
     # Get dimensions
-    n_weights = sim.shape[0]
-    n_features = sim.shape[1]
-    n_groups = n_weights // LATENT_GROUP_SIZE
+    n_latents = sim_GC.shape[0]
+    n_features = sim_GC.shape[1]
+    n_latent_groups = n_latents // LATENT_GROUP_SIZE
     n_feature_pairs = n_features // 2
 
     # For each latent group, calculate average child similarity for each feature pair
@@ -745,23 +748,23 @@ def save_sorted_similarity_graph(
     available_features = set(range(n_feature_pairs))
 
     # Calculate matches for each latent group
-    for group_idx in range(n_groups):
+    for group_idx in range(n_latent_groups):
         start_idx = group_idx * LATENT_GROUP_SIZE
         # Get average of child similarities (indices 1 and 2 within group)
-        child_sims = sim[start_idx + 1 : start_idx + LATENT_GROUP_SIZE]
-        child_avg = torch.mean(child_sims, dim=0)
+        child_sims_2C = sim_GC[start_idx + 1 : start_idx + LATENT_GROUP_SIZE]
+        child_avg_C = torch.mean(child_sims_2C, dim=0)
 
         # Reshape to feature pairs and get average across pairs
-        feature_pair_avgs = torch.zeros(n_feature_pairs)
+        feature_pair_avgs_B = torch.zeros(n_feature_pairs)
         for feat_idx in available_features:
             feat_start = feat_idx * 2
-            feature_pair_avgs[feat_idx] = torch.mean(
-                child_avg[feat_start : feat_start + 2]
+            feature_pair_avgs_B[feat_idx] = torch.mean(
+                child_avg_C[feat_start : feat_start + 2]
             )
 
         # Find best available feature pair
         best_feature = max(
-            available_features, key=lambda i: feature_pair_avgs[i].item()
+            available_features, key=lambda i: feature_pair_avgs_B[i].item()
         )
         matches.append((group_idx, best_feature))
         available_features.remove(best_feature)
@@ -770,24 +773,24 @@ def save_sorted_similarity_graph(
     matches.sort(key=lambda x: x[1])
 
     # Create new sorted similarity matrix
-    new_sim = torch.zeros_like(sim)
+    new_sim_GC = torch.zeros_like(sim_GC)
     for new_group_idx, (old_group_idx, _) in enumerate(matches):
         # Place the latent group
         old_group_start = old_group_idx * LATENT_GROUP_SIZE
         new_group_start = new_group_idx * LATENT_GROUP_SIZE
 
         # Copy the group's similarities with all features
-        new_sim[new_group_start : new_group_start + LATENT_GROUP_SIZE, :] = sim[
+        new_sim_GC[new_group_start : new_group_start + LATENT_GROUP_SIZE, :] = sim_GC[
             old_group_start : old_group_start + LATENT_GROUP_SIZE, :
         ]
 
     # Convert to numpy for plotting
-    final_sim_np = new_sim.numpy()
+    final_sim_np_GC = new_sim_GC.numpy()
 
     # Plot
     plt.figure(figsize=(12, 5))
     sns.heatmap(
-        final_sim_np,
+        final_sim_np_GC,
         cmap="RdYlBu_r",
         center=0,
         vmin=-1,
@@ -801,14 +804,14 @@ def save_sorted_similarity_graph(
     for i in range(2, n_features, 2):
         plt.axvline(x=i, color="black", linewidth=0.5)
     if hierarchical:
-        for i in range(LATENT_GROUP_SIZE, n_weights, LATENT_GROUP_SIZE):
+        for i in range(LATENT_GROUP_SIZE, n_latents, LATENT_GROUP_SIZE):
             plt.axhline(y=i, color="black", linewidth=0.5)
 
     # Add labels
     plt.title(f"Cosine Similarity of decoder weights vs dataset features, step {step}")
     plt.xlabel("Toy dataset features (sibling features are consecutive)")
     plt.ylabel(
-        "Decoder Weight Vectors (0 mod 3 is parent weight, 1-2 mod 3 is parent weight + scaled child 1-2 weight)",
+        "Rearranged decoder Weight Vectors (0 mod 3 is parent weight, 1-2 mod 3 is parent weight + scaled child 1-2 weight)",
         fontsize=5,
     )
 
