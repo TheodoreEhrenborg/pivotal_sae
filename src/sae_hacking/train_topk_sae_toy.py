@@ -693,24 +693,26 @@ def handcode_sae(sae: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset) -> No
 
 @beartype
 def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) -> None:
+    print("starting to plot norms")
+    LATENT_GROUP_SIZE = 7
     weights_MG = rearrange(
         [
             sae.decoder.weight,
+            sae.decoder_child1.weight,
+            sae.decoder_child2.weight,
             sae.decoder_child1.weight * sae.child1_parent_ratios,
             sae.decoder_child2.weight * sae.child2_parent_ratios,
             sae.decoder.weight + sae.decoder_child1.weight * sae.child1_parent_ratios,
             sae.decoder.weight + sae.decoder_child2.weight * sae.child2_parent_ratios,
         ],
         "copies model_dim sae_dim -> model_dim (sae_dim copies)",
-        copies=5,
+        copies=LATENT_GROUP_SIZE,
     )
     weights_norm_G = torch.linalg.vector_norm(weights_MG, dim=0)
 
-    LATENT_GROUP_SIZE = 3
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(weights_norm_G)), weights_norm_G.cpu().detach())
 
-    # Add vertical lines after every 3rd bar
     for i in range(LATENT_GROUP_SIZE, len(weights_norm_G), LATENT_GROUP_SIZE):
         plt.axvline(x=i - 0.5, color="red", linestyle="--", alpha=0.5)
 
@@ -718,7 +720,8 @@ def plot_norms(sae: TopkSparseAutoEncoder2Child_v2, step: int, output_dir: str) 
     plt.ylabel("Norm Value")
     plt.title("Weight Norms with Group Separators")
     plt.tight_layout()
-    plt.savefig(f"{output_dir}/norms_{step}.png", dpi=1200, bbox_inches="tight")
+    plt.savefig(f"{output_dir}/norms_{step}.png", bbox_inches="tight")
+    print("Done plotting norms")
 
 
 if __name__ == "__main__":
