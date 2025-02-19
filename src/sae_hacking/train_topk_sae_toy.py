@@ -171,6 +171,11 @@ def main(args: Namespace):
                     adjusted_feature_pair_detection_rate(sae, dataset),
                     step,
                 )
+                writer.add_scalar(
+                    "Adjusted single feature detection rate",
+                    adjusted_single_feature_detection_rate(sae, dataset),
+                    step,
+                )
         writer.add_scalar("lr", lr, step)
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", total_loss, step)
@@ -315,6 +320,46 @@ def find_feature_pair_successes(
             and abs(closest_feature_to_latent1 - closest_feature_to_latent2) == 1
             and min(closest_feature_to_latent1, closest_feature_to_latent2) % 2 == 0
         ):
+            successes_Bool_E[latent_idx] = True
+    return successes_Bool_E
+
+
+@beartype
+def adjusted_single_feature_detection_rate(
+    sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
+) -> float:
+    successes_Bool_E = adjusted_single_feature_detection_aux(sae_model, dataset)
+    return float(successes_Bool_E.sum() / len(successes_Bool_E))
+
+
+@jaxtyped(typechecker=beartype)
+def adjusted_single_feature_detection_aux(
+    sae_model: TopkSparseAutoEncoder2Child_v2, dataset: ToyDataset
+) -> Bool[torch.Tensor, " E"]:
+    # TODO DRY this
+    decoder_weights_MH = get_decoder_weights3(sae_model)
+    E = decoder_weights_MH.shape[1] // 2
+
+    all_child_vecs_CM = get_all_features(dataset)
+    cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
+
+    return find_single_feature_successes(cosine_sim_HC, E)
+
+
+@jaxtyped(typechecker=beartype)
+def find_single_feature_successes(
+    cosine_sim_HC: Float[torch.Tensor, "H C"], E: int
+) -> Bool[torch.Tensor, " {E}"]:
+    successes_Bool_E = torch.zeros(E, dtype=torch.bool)
+
+    for latent_idx in range(E):
+        latent1_sims_C = cosine_sim_HC[2 * latent_idx]
+        latent2_sims_C = cosine_sim_HC[2 * latent_idx + 1]
+
+        closest_feature_to_latent1 = torch.argmax(latent1_sims_C)
+        closest_feature_to_latent2 = torch.argmax(latent2_sims_C)
+
+        if closest_feature_to_latent1 == closest_feature_to_latent2:
             successes_Bool_E[latent_idx] = True
     return successes_Bool_E
 
