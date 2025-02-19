@@ -389,37 +389,37 @@ def update_parent_child_ratio3(
 
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss_reference(
-    sae_activations_BF: Float[torch.Tensor, "B F"],
-    winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
-    final_activations_child1_BF: Float[torch.Tensor, "B F"],
-    final_activations_child2_BF: Float[torch.Tensor, "B F"],
-    decoder_weight_MF: Float[torch.Tensor, "M F"],
-    decoder_child1_weight_MF: Float[torch.Tensor, "M F"],
-    decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
+    sae_activations_BE: Float[torch.Tensor, "B E"],
+    winners_mask_bool_BE: Bool[torch.Tensor, "B E"],
+    final_activations_child1_BE: Float[torch.Tensor, "B E"],
+    final_activations_child2_BE: Float[torch.Tensor, "B E"],
+    decoder_weight_ME: Float[torch.Tensor, "M E"],
+    decoder_child1_weight_ME: Float[torch.Tensor, "M E"],
+    decoder_child2_weight_ME: Float[torch.Tensor, "M E"],
 ) -> Float[torch.Tensor, ""]:
-    batch_size = sae_activations_BF.shape[0]
-    aux_loss = torch.tensor(0.0, device=sae_activations_BF.device)
+    batch_size = sae_activations_BE.shape[0]
+    aux_loss = torch.tensor(0.0, device=sae_activations_BE.device)
 
     # Get active feature indices per batch element
     for batch_idx in range(batch_size):
         # Get features active for this batch element
-        active_indices = torch.nonzero(sae_activations_BF[batch_idx]).squeeze()
+        active_indices = torch.nonzero(sae_activations_BE[batch_idx]).squeeze()
 
         for feat_idx in active_indices:
             # Get parent weights and activation for this feature
-            parent_weights_M = decoder_weight_MF[:, feat_idx]
-            parent_scale = sae_activations_BF[batch_idx, feat_idx]
+            parent_weights_M = decoder_weight_ME[:, feat_idx]
+            parent_scale = sae_activations_BE[batch_idx, feat_idx]
             scaled_parent_M = parent_weights_M * parent_scale
 
             # Determine which child won for this feature
-            is_child1_winner = winners_mask_bool_BF[batch_idx, feat_idx]
+            is_child1_winner = winners_mask_bool_BE[batch_idx, feat_idx]
 
             if is_child1_winner:
-                child_weights_M = decoder_child1_weight_MF[:, feat_idx]
-                child_scale = final_activations_child1_BF[batch_idx, feat_idx]
+                child_weights_M = decoder_child1_weight_ME[:, feat_idx]
+                child_scale = final_activations_child1_BE[batch_idx, feat_idx]
             else:
-                child_weights_M = decoder_child2_weight_MF[:, feat_idx]
-                child_scale = final_activations_child2_BF[batch_idx, feat_idx]
+                child_weights_M = decoder_child2_weight_ME[:, feat_idx]
+                child_scale = final_activations_child2_BE[batch_idx, feat_idx]
 
             scaled_child_M = child_weights_M * child_scale
 
@@ -437,36 +437,36 @@ def auxiliary_loss_reference(
 
 @jaxtyped(typechecker=beartype)
 def auxiliary_loss(
-    sae_activations_BF: Float[torch.Tensor, "B F"],
-    winners_mask_bool_BF: Bool[torch.Tensor, "B F"],
-    final_activations_child1_BF: Float[torch.Tensor, "B F"],
-    final_activations_child2_BF: Float[torch.Tensor, "B F"],
-    decoder_weight_MF: Float[torch.Tensor, "M F"],
-    decoder_child1_weight_MF: Float[torch.Tensor, "M F"],
-    decoder_child2_weight_MF: Float[torch.Tensor, "M F"],
+    sae_activations_BE: Float[torch.Tensor, "B E"],
+    winners_mask_bool_BE: Bool[torch.Tensor, "B E"],
+    final_activations_child1_BE: Float[torch.Tensor, "B E"],
+    final_activations_child2_BE: Float[torch.Tensor, "B E"],
+    decoder_weight_ME: Float[torch.Tensor, "M E"],
+    decoder_child1_weight_ME: Float[torch.Tensor, "M E"],
+    decoder_child2_weight_ME: Float[torch.Tensor, "M E"],
 ) -> Float[torch.Tensor, ""]:
-    scaled_parent_BMF = decoder_weight_MF.unsqueeze(0) * sae_activations_BF.unsqueeze(1)
+    scaled_parent_BME = decoder_weight_ME.unsqueeze(0) * sae_activations_BE.unsqueeze(1)
 
-    scaled_child1_BMF = decoder_child1_weight_MF.unsqueeze(
+    scaled_child1_BME = decoder_child1_weight_ME.unsqueeze(
         0
-    ) * final_activations_child1_BF.unsqueeze(1)
-    scaled_child2_BMF = decoder_child2_weight_MF.unsqueeze(
+    ) * final_activations_child1_BE.unsqueeze(1)
+    scaled_child2_BME = decoder_child2_weight_ME.unsqueeze(
         0
-    ) * final_activations_child2_BF.unsqueeze(1)
+    ) * final_activations_child2_BE.unsqueeze(1)
 
-    scaled_child_BMF = torch.where(
-        winners_mask_bool_BF.unsqueeze(1), scaled_child1_BMF, scaled_child2_BMF
+    scaled_child_BME = torch.where(
+        winners_mask_bool_BE.unsqueeze(1), scaled_child1_BME, scaled_child2_BME
     )
 
-    combined_weights_BMF = scaled_parent_BMF + scaled_child_BMF
+    combined_weights_BME = scaled_parent_BME + scaled_child_BME
 
-    cos_sim_BF = F.cosine_similarity(scaled_parent_BMF, combined_weights_BMF, dim=1)
+    cos_sim_BE = F.cosine_similarity(scaled_parent_BME, combined_weights_BME, dim=1)
 
-    active_mask_bool_BF = sae_activations_BF > 0
-    similarity_loss_BF = -cos_sim_BF
-    masked_loss_BF = similarity_loss_BF * active_mask_bool_BF
+    active_mask_bool_BE = sae_activations_BE > 0
+    similarity_loss_BE = -cos_sim_BE
+    masked_loss_BE = similarity_loss_BE * active_mask_bool_BE
 
-    batch_size = sae_activations_BF.shape[0]
-    aux_loss = masked_loss_BF.sum() / batch_size
+    batch_size = sae_activations_BE.shape[0]
+    aux_loss = masked_loss_BE.sum() / batch_size
 
     return aux_loss
