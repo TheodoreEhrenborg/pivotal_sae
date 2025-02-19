@@ -293,11 +293,11 @@ def adjusted_feature_pair_detection_aux(
     all_child_vecs_CM = get_all_features(dataset)
     cosine_sim_HC = calculate_cosine_sim(decoder_weights_MH, all_child_vecs_CM)
 
-    return find_successes(cosine_sim_HC, E)
+    return find_feature_pair_successes(cosine_sim_HC, E)
 
 
 @jaxtyped(typechecker=beartype)
-def find_successes(
+def find_feature_pair_successes(
     cosine_sim_HC: Float[torch.Tensor, "H C"], E: int
 ) -> Bool[torch.Tensor, " {E}"]:
     successes_Bool_E = torch.zeros(E, dtype=torch.bool)
