@@ -748,6 +748,7 @@ def plot_norms(
     plt.title("Weight Norms with Group Separators")
     plt.tight_layout()
     plt.savefig(f"{output_dir}/norms_{step}.png", bbox_inches="tight")
+    plt.close()
 
 
 @beartype
