@@ -200,9 +200,9 @@ def get_decoder_weights3(
     return rearrange(
         [
             sae_model.decoder.weight
-            + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+            + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios_E,
             sae_model.decoder.weight
-            + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
+            + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios_E,
         ],
         "copies model_dim sae_dim -> model_dim (sae_dim copies)",
         copies=2,
@@ -239,9 +239,9 @@ def get_decoder_weights4(
             [
                 sae_model.decoder.weight,
                 sae_model.decoder.weight
-                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios_E,
                 sae_model.decoder.weight
-                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
+                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios_E,
             ],
             "copies model_dim sae_dim -> model_dim (sae_dim copies)",
             copies=3,
@@ -265,9 +265,9 @@ def get_decoder_weights(
                 sae_model.decoder.weight + sae_model.decoder_child1.weight,
                 sae_model.decoder.weight + sae_model.decoder_child2.weight,
                 sae_model.decoder.weight
-                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios,
+                + sae_model.decoder_child1.weight * sae_model.child1_parent_ratios_E,
                 sae_model.decoder.weight
-                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios,
+                + sae_model.decoder_child2.weight * sae_model.child2_parent_ratios_E,
                 sae_model.encoder.weight.transpose(0, 1),
                 sae_model.encoder_child1.weight.transpose(0, 1),
                 sae_model.encoder_child2.weight.transpose(0, 1),
@@ -767,10 +767,10 @@ def plot_norms(
             sae.decoder.weight,
             sae.decoder_child1.weight,
             sae.decoder_child2.weight,
-            sae.decoder_child1.weight * sae.child1_parent_ratios,
-            sae.decoder_child2.weight * sae.child2_parent_ratios,
-            sae.decoder.weight + sae.decoder_child1.weight * sae.child1_parent_ratios,
-            sae.decoder.weight + sae.decoder_child2.weight * sae.child2_parent_ratios,
+            sae.decoder_child1.weight * sae.child1_parent_ratios_E,
+            sae.decoder_child2.weight * sae.child2_parent_ratios_E,
+            sae.decoder.weight + sae.decoder_child1.weight * sae.child1_parent_ratios_E,
+            sae.decoder.weight + sae.decoder_child2.weight * sae.child2_parent_ratios_E,
         ],
         "copies model_dim sae_dim -> model_dim (sae_dim copies)",
         copies=LATENT_GROUP_SIZE,
