@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import socket
 import time
 from argparse import ArgumentParser, Namespace
@@ -65,13 +66,21 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
+def get_hostname():
+    vast_label_path = "/root/.vast_containerlabel"
+    if os.path.exists(vast_label_path):
+        with open(vast_label_path, "r") as f:
+            return f.read().strip()
+    return socket.gethostname()
+
+
 def get_info():
     repo = Repo(".")
     commit = repo.head.commit
     return {
         "commit": commit.hexsha[:7],
         "message": commit.message.strip(),
-        "hostname": socket.gethostname(),
+        "hostname": get_hostname(),
     }
 
 
