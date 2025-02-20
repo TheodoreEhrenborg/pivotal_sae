@@ -410,24 +410,18 @@ def auxiliary_loss_reference(
         for feat_idx in active_indices:
             # Get parent weights and activation for this feature
             parent_weights_M = decoder_weight_ME[:, feat_idx]
-            parent_scale = sae_activations_BE[batch_idx, feat_idx]
-            scaled_parent_M = parent_weights_M * parent_scale
 
             # Determine which child won for this feature
             is_child1_winner = winners_mask_bool_BE[batch_idx, feat_idx]
 
             if is_child1_winner:
                 child_weights_M = decoder_child1_weight_ME[:, feat_idx]
-                child_scale = final_activations_child1_BE[batch_idx, feat_idx]
             else:
                 child_weights_M = decoder_child2_weight_ME[:, feat_idx]
-                child_scale = final_activations_child2_BE[batch_idx, feat_idx]
-
-            scaled_child_M = child_weights_M * child_scale
 
             # Calculate cosine similarity between parent and (parent + child)
-            combined_weights_M = scaled_parent_M + scaled_child_M
-            cos_sim = F.cosine_similarity(scaled_parent_M, combined_weights_M, dim=0)
+            combined_weights_M = parent_weights_M + child_weights_M
+            cos_sim = F.cosine_similarity(parent_weights_M, combined_weights_M, dim=0)
 
             aux_loss -= cos_sim
 
@@ -447,22 +441,15 @@ def auxiliary_loss(
     decoder_child1_weight_ME: Float[torch.Tensor, "M E"],
     decoder_child2_weight_ME: Float[torch.Tensor, "M E"],
 ) -> Float[torch.Tensor, ""]:
-    scaled_parent_BME = decoder_weight_ME.unsqueeze(0) * sae_activations_BE.unsqueeze(1)
-
-    scaled_child1_BME = decoder_child1_weight_ME.unsqueeze(
-        0
-    ) * final_activations_child1_BE.unsqueeze(1)
-    scaled_child2_BME = decoder_child2_weight_ME.unsqueeze(
-        0
-    ) * final_activations_child2_BE.unsqueeze(1)
-
-    scaled_child_BME = torch.where(
-        winners_mask_bool_BE.unsqueeze(1), scaled_child1_BME, scaled_child2_BME
+    child_BME = torch.where(
+        winners_mask_bool_BE.unsqueeze(1),
+        decoder_child1_weight_ME,
+        decoder_child2_weight_ME,
     )
 
-    combined_weights_BME = scaled_parent_BME + scaled_child_BME
+    combined_weights_BME = decoder_weight_ME + child_BME
 
-    cos_sim_BE = F.cosine_similarity(scaled_parent_BME, combined_weights_BME, dim=1)
+    cos_sim_BE = F.cosine_similarity(decoder_weight_ME, combined_weights_BME, dim=1)
 
     active_mask_bool_BE = sae_activations_BE > 0
     similarity_loss_BE = -cos_sim_BE
