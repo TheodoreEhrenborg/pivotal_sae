@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import socket
 import time
 from argparse import ArgumentParser, Namespace
 
@@ -10,6 +11,7 @@ import yaml
 from beartype import beartype
 from coolname import generate_slug
 from einops import rearrange, reduce, repeat
+from git import Repo
 from jaxtyping import Bool, Float, jaxtyped
 from safetensors.torch import save_model
 from torch.utils.tensorboard import SummaryWriter
@@ -63,6 +65,16 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
+def get_info():
+    repo = Repo(".")
+    commit = repo.head.commit
+    return {
+        "commit": commit.hexsha[:7],
+        "message": commit.message.strip(),
+        "hostname": socket.gethostname(),
+    }
+
+
 @beartype
 def main(args: Namespace):
     torch.manual_seed(args.seed)
@@ -71,7 +83,7 @@ def main(args: Namespace):
     writer = SummaryWriter(output_dir)
 
     with open(f"{output_dir}/args.yaml", "w") as f:
-        yaml.dump(vars(args), f, default_flow_style=False)
+        yaml.dump(vars(args) | get_info(), f, default_flow_style=False)
 
     dataset = ToyDataset(
         args.dataset_num_features,
