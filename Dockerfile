@@ -1,6 +1,7 @@
-FROM ubuntu:22.04
-
-RUN apt-get update && apt-get install -y fish curl nvtop htop
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
+# This dockerfile is meant for local development.
+# For running on a vast.ai server, it's more reliable
+# to start with ubuntu:24.04 and then run setup.sh
+FROM ubuntu:24.04
 WORKDIR /code
+COPY setup.sh setup.sh
+RUN ./setup.sh
