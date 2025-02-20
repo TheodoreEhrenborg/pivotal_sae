@@ -203,22 +203,22 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         self.decoder_child2 = torch.nn.Linear(sae_hidden_dim, model_dim)
         self.k = k
         # TODO The device should be configurable
-        self.child1_parent_ratios = torch.ones(sae_hidden_dim).cuda()
-        self.child2_parent_ratios = torch.ones(sae_hidden_dim).cuda()
+        self.child1_parent_ratios_E = torch.ones(sae_hidden_dim).cuda()
+        self.child2_parent_ratios_E = torch.ones(sae_hidden_dim).cuda()
         self.use_aux_loss = aux_loss_coeff != 0
 
     @jaxtyped(typechecker=beartype)
     def forward(
-        self, model_activations: Float[torch.Tensor, "batch_size model_dim"]
+        self, model_activations_BM: Float[torch.Tensor, "B M"]
     ) -> tuple[
-        Float[torch.Tensor, "batch_size model_dim"],
+        Float[torch.Tensor, "B M"],
         tuple[int, int, int],
         Float[torch.Tensor, ""],
     ]:
-        pre_activations = self.encoder(model_activations)
-        topk = torch.topk(pre_activations, self.k)
-        sae_activations = torch.scatter(
-            input=torch.zeros_like(pre_activations),
+        pre_activations_BE = self.encoder(model_activations_BM)
+        topk = torch.topk(pre_activations_BE, self.k)
+        sae_activations_BE = torch.scatter(
+            input=torch.zeros_like(pre_activations_BE),
             dim=1,
             index=topk.indices,
             src=topk.values,
@@ -228,62 +228,64 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
 
         # This is wasting compute and memory because we already know which indices
         # we're going to throw away
-        pre_activations_child1 = self.encoder_child1(model_activations)
-        pre_activations_child2 = self.encoder_child2(model_activations)
+        pre_activations_child1_BE = self.encoder_child1(model_activations_BM)
+        pre_activations_child2_BE = self.encoder_child2(model_activations_BM)
 
         # Filter down each child to only activate where the parent
         # does
-        masked_activations_child1 = torch.where(
-            sae_activations != 0.0,
-            pre_activations_child1,
-            torch.zeros_like(pre_activations_child1),
+        masked_activations_child1_BE = torch.where(
+            sae_activations_BE != 0.0,
+            pre_activations_child1_BE,
+            torch.zeros_like(pre_activations_child1_BE),
         )
-        masked_activations_child2 = torch.where(
-            sae_activations != 0.0,
-            pre_activations_child2,
-            torch.zeros_like(pre_activations_child2),
+        masked_activations_child2_BE = torch.where(
+            sae_activations_BE != 0.0,
+            pre_activations_child2_BE,
+            torch.zeros_like(pre_activations_child2_BE),
         )
 
         # Compare children and keep only the winner where parent is active
-        winners_mask = masked_activations_child1 > masked_activations_child2
-        final_activations_child1 = torch.where(
-            winners_mask,
-            masked_activations_child1,
-            torch.zeros_like(masked_activations_child1),
+        winners_mask_Bool_BE = (
+            masked_activations_child1_BE > masked_activations_child2_BE
         )
-        final_activations_child2 = torch.where(
-            ~winners_mask,
-            masked_activations_child2,
-            torch.zeros_like(masked_activations_child2),
+        final_activations_child1_BE = torch.where(
+            winners_mask_Bool_BE,
+            masked_activations_child1_BE,
+            torch.zeros_like(masked_activations_child1_BE),
+        )
+        final_activations_child2_BE = torch.where(
+            ~winners_mask_Bool_BE,
+            masked_activations_child2_BE,
+            torch.zeros_like(masked_activations_child2_BE),
         )
         num_live_child1_latents = torch.sum(
-            torch.any(final_activations_child1 != 0, dim=0)
+            torch.any(final_activations_child1_BE != 0, dim=0)
         ).item()
         num_live_child2_latents = torch.sum(
-            torch.any(final_activations_child2 != 0, dim=0)
+            torch.any(final_activations_child2_BE != 0, dim=0)
         ).item()
 
-        reconstructed = (
-            self.decoder(sae_activations)
-            + self.decoder_child1(final_activations_child1)
-            + self.decoder_child2(final_activations_child2)
+        reconstructed_BM = (
+            self.decoder(sae_activations_BE)
+            + self.decoder_child1(final_activations_child1_BE)
+            + self.decoder_child2(final_activations_child2_BE)
         )
         if self.training:
             with torch.no_grad():
                 update_parent_child_ratio3(
-                    sae_activations,
-                    final_activations_child1,
-                    final_activations_child2,
-                    self.child1_parent_ratios,
-                    self.child2_parent_ratios,
+                    sae_activations_BE,
+                    final_activations_child1_BE,
+                    final_activations_child2_BE,
+                    self.child1_parent_ratios_E,
+                    self.child2_parent_ratios_E,
                 )
 
         aux_loss = (
             auxiliary_loss(
-                sae_activations,
-                winners_mask,
-                final_activations_child1,
-                final_activations_child2,
+                sae_activations_BE,
+                winners_mask_Bool_BE,
+                final_activations_child1_BE,
+                final_activations_child2_BE,
                 self.decoder.weight,
                 self.decoder_child1.weight,
                 self.decoder_child2.weight,
@@ -293,7 +295,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
         )
 
         return (
-            reconstructed,
+            reconstructed_BM,
             (
                 num_live_parent_latents,
                 num_live_child1_latents,
@@ -338,18 +340,18 @@ def update_parent_child_ratio(
 
 @jaxtyped(typechecker=beartype)
 def update_parent_child_ratio3(
-    parent_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child1_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child2_activations: Float[torch.Tensor, "batch_size sae_dim"],
-    child1_parent_ratios: Float[torch.Tensor, " sae_dim"],
-    child2_parent_ratios: Float[torch.Tensor, " sae_dim"],
+    parent_activations_BE: Float[torch.Tensor, "B E"],
+    child1_activations_BE: Float[torch.Tensor, "B E"],
+    child2_activations_BE: Float[torch.Tensor, "B E"],
+    child1_parent_ratios_E: Float[torch.Tensor, " E"],
+    child2_parent_ratios_E: Float[torch.Tensor, " E"],
 ) -> None:
     EMA_COEFF = 0.01
 
     # Create masks for non-zero parent and child activations
-    parent_nonzero = parent_activations != 0
-    child1_nonzero = child1_activations != 0
-    child2_nonzero = child2_activations != 0
+    parent_nonzero = parent_activations_BE != 0
+    child1_nonzero = child1_activations_BE != 0
+    child2_nonzero = child2_activations_BE != 0
 
     # Combined masks
     mask1 = parent_nonzero & child1_nonzero
@@ -358,13 +360,13 @@ def update_parent_child_ratio3(
     # Calculate ratios where both parent and child are non-zero
     new_ratios1 = torch.where(
         mask1,
-        child1_activations / parent_activations,
-        torch.zeros_like(child1_activations),
+        child1_activations_BE / parent_activations_BE,
+        torch.zeros_like(child1_activations_BE),
     )
     new_ratios2 = torch.where(
         mask2,
-        child2_activations / parent_activations,
-        torch.zeros_like(child2_activations),
+        child2_activations_BE / parent_activations_BE,
+        torch.zeros_like(child2_activations_BE),
     )
 
     # Take mean across batch dimension for non-zero entries
@@ -379,10 +381,10 @@ def update_parent_child_ratio3(
     update_mask1 = valid_counts1 > 0
     update_mask2 = valid_counts2 > 0
 
-    child1_parent_ratios[update_mask1] = (1 - EMA_COEFF) * child1_parent_ratios[
+    child1_parent_ratios_E[update_mask1] = (1 - EMA_COEFF) * child1_parent_ratios_E[
         update_mask1
     ] + EMA_COEFF * batch_means1[update_mask1]
-    child2_parent_ratios[update_mask2] = (1 - EMA_COEFF) * child2_parent_ratios[
+    child2_parent_ratios_E[update_mask2] = (1 - EMA_COEFF) * child2_parent_ratios_E[
         update_mask2
     ] + EMA_COEFF * batch_means2[update_mask2]
 
