@@ -282,10 +282,10 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
 
         aux_loss = (
             auxiliary_loss(
-                sae_activations_BE,
-                winners_mask_Bool_BE,
-                final_activations_child1_BE,
-                final_activations_child2_BE,
+                sae_activations_BE.detach(),
+                winners_mask_Bool_BE.detach(),
+                final_activations_child1_BE.detach(),
+                final_activations_child2_BE.detach(),
                 self.decoder.weight,
                 self.decoder_child1.weight,
                 self.decoder_child2.weight,
