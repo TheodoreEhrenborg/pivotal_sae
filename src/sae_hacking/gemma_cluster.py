@@ -120,7 +120,7 @@ def main():
         cluster_size = np.sum(cluster_labels == i)
         if cluster_size > 1:
             print(f"\nCluster {i} size: {cluster_size}")
-            cluster_indices = np.where(cluster_labels == i)[0][:3]
+            cluster_indices = np.where(cluster_labels == i)[0]
             for idx in cluster_indices:
                 print(f"{idx}: {get_description(idx)}")
             # Print first 3 descriptions from this cluster as examples
