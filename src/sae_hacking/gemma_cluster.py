@@ -95,7 +95,7 @@ def main():
     model_cut = AgglomerativeClustering(
         distance_threshold=distance_threshold,
         n_clusters=500,
-        linkage="single",
+        linkage="complete",
         metric="cosine",
     )
     cluster_labels = model_cut.fit_predict(decoder_vectors_EM)
