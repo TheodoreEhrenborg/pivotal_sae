@@ -63,16 +63,7 @@ def main(args: Namespace) -> None:
         labels=[f"label {i}" for i in range(E)],
         no_plot=True
     )
-    if True:
-        for i in dn['icoord']:
-            for j in range(len(i)-1):
-                plt.plot([i[j], i[j+1]], [dn['dcoord'][dn['icoord'].index(i)][j],
-                        dn['dcoord'][dn['icoord'].index(i)][j+1]], 'k-', linewidth=0.5)
-        plt.xticks(dn['leaves'],
-          [f"label {i}" for i in dn['leaves']],
-          fontsize=6)
 
-    # plt.tick_params(axis='x', labelsize=1)
     plt.savefig(
         "/results/tmp.png",
         dpi=300,
