@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import numpy as np
-import pandas as pd
-import requests
 from huggingface_hub import hf_hub_download
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
@@ -12,7 +10,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 
 # 3. Define dendrogram plotting function
-def plot_dendrogram(model, feature_descriptions, **kwargs):
+def plot_dendrogram(model, **kwargs):
     counts = np.zeros(model.children_.shape[0])
     n_samples = len(model.labels_)
     for i, merge in enumerate(model.children_):
@@ -29,10 +27,13 @@ def plot_dendrogram(model, feature_descriptions, **kwargs):
     ).astype(float)
 
     # Create abbreviated labels for better visualization
-    labels = [f"{i}: {desc[:30]}..." for i, desc in enumerate(feature_descriptions)]
+    # labels = [f"{i}: {desc[:30]}..." for i, desc in enumerate(feature_descriptions)]
 
     return dendrogram(
-        linkage_matrix, labels=labels, leaf_rotation=45, leaf_font_size=8, **kwargs
+        linkage_matrix,  # labels=labels,
+        leaf_rotation=45,
+        leaf_font_size=8,
+        **kwargs,
     )
 
 
@@ -48,16 +49,16 @@ def main():
     decoder_vectors = params["W_dec"].T
 
     # 2. Get neuron descriptions
-    url = "TODO"  # Fill in correct Neuronpedia API endpoint
-    headers = {"Content-Type": "application/json"}
+    # url = "TODO"  # Fill in correct Neuronpedia API endpoint
+    # headers = {"Content-Type": "application/json"}
 
-    response = requests.get(url, headers=headers)
-    data = response.json()
-    explanations_df = pd.DataFrame(data)
-    explanations_df.rename(columns={"index": "feature"}, inplace=True)
-    explanations_df["description"] = explanations_df["description"].apply(
-        lambda x: x.lower()
-    )
+    # response = requests.get(url, headers=headers)
+    # data = response.json()
+    # explanations_df = pd.DataFrame(data)
+    # explanations_df.rename(columns={"index": "feature"}, inplace=True)
+    # explanations_df["description"] = explanations_df["description"].apply(
+    #    lambda x: x.lower()
+    # )
 
     # 4. Perform clustering and visualization
     model = AgglomerativeClustering(
@@ -75,7 +76,7 @@ def main():
     plt.title("Hierarchical Clustering of Gemma SAE Decoder Vectors")
     plot_dendrogram(
         model,
-        feature_descriptions=explanations_df["description"].tolist(),
+        # feature_descriptions=explanations_df["description"].tolist(),
         truncate_mode="level",
         p=5,
     )
@@ -107,10 +108,10 @@ def main():
         cluster_size = np.sum(cluster_labels == i)
         print(f"\nCluster {i} size: {cluster_size}")
         # Print first 3 descriptions from this cluster as examples
-        cluster_indices = np.where(cluster_labels == i)[0][:3]
-        print("Sample features in this cluster:")
-        for idx in cluster_indices:
-            print(f"  - {explanations_df['description'].iloc[idx]}")
+        # cluster_indices = np.where(cluster_labels == i)[0][:3]
+        # print("Sample features in this cluster:")
+        # for idx in cluster_indices:
+        #    print(f"  - {explanations_df['description'].iloc[idx]}")
 
 
 if __name__ == "__main__":
