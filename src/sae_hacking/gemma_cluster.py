@@ -46,7 +46,8 @@ def main():
     )
 
     params = np.load(path_to_params)
-    decoder_vectors = params["W_dec"].T
+    decoder_vectors_EM = params["W_dec"][0:1000]
+    print(f"{decoder_vectors_EM.shape=}")
 
     # 2. Get neuron descriptions
     # url = "TODO"  # Fill in correct Neuronpedia API endpoint
@@ -69,7 +70,7 @@ def main():
         compute_distances=True,
     )
 
-    model = model.fit(decoder_vectors)
+    model = model.fit(decoder_vectors_EM)
 
     # Visualize
     plt.figure(figsize=(25, 15))
@@ -86,18 +87,18 @@ def main():
     plt.show()
 
     # Print clustering statistics
-    print(f"Number of features: {decoder_vectors.shape[0]}")
-    print(f"Feature vector dimension: {decoder_vectors.shape[1]}")
+    print(f"Number of features: {decoder_vectors_EM.shape[0]}")
+    print(f"Feature vector dimension: {decoder_vectors_EM.shape[1]}")
 
     # Get main clusters at a specific distance threshold
-    distance_threshold = 0.5  # adjust this value as needed
+    distance_threshold = None
     model_cut = AgglomerativeClustering(
         distance_threshold=distance_threshold,
-        n_clusters=None,
+        n_clusters=500,
         linkage="single",
         metric="cosine",
     )
-    cluster_labels = model_cut.fit_predict(decoder_vectors)
+    cluster_labels = model_cut.fit_predict(decoder_vectors_EM)
 
     # Print cluster statistics and sample descriptions from each cluster
     n_clusters = len(np.unique(cluster_labels))
@@ -107,8 +108,9 @@ def main():
     for i in range(n_clusters):
         cluster_size = np.sum(cluster_labels == i)
         print(f"\nCluster {i} size: {cluster_size}")
+        cluster_indices = np.where(cluster_labels == i)[0][:3]
+        print(cluster_indices)
         # Print first 3 descriptions from this cluster as examples
-        # cluster_indices = np.where(cluster_labels == i)[0][:3]
         # print("Sample features in this cluster:")
         # for idx in cluster_indices:
         #    print(f"  - {explanations_df['description'].iloc[idx]}")
