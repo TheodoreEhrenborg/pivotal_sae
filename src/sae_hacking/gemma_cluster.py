@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import asyncio
+
+import aiohttp
 import numpy as np
 import requests
 from beartype import beartype
@@ -46,6 +49,20 @@ def get_description(idx: np.int64) -> str:
     response = requests.get(url)
 
     return response.json()["explanations"][0]["description"]
+
+
+@beartype
+async def get_description_async(idx: np.int64, session: aiohttp.ClientSession) -> str:
+    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/20-gemmascope-res-16k/{idx}"
+    async with session.get(url) as response:
+        data = await response.json()
+        return data["explanations"][0]["description"]
+
+
+async def get_all_descriptions(indices: list[np.int64]) -> list[str]:
+    async with aiohttp.ClientSession() as session:
+        tasks = [get_description_async(idx, session) for idx in indices]
+        return await asyncio.gather(*tasks)
 
 
 def main():
@@ -121,8 +138,9 @@ def main():
         if cluster_size > 1:
             print(f"\nCluster {i} size: {cluster_size}")
             cluster_indices = np.where(cluster_labels == i)[0]
-            for idx in cluster_indices:
-                print(f"{idx}: {get_description(idx)}")
+            descriptions = asyncio.run(get_all_descriptions(cluster_indices))
+            for idx, description in zip(cluster_indices, descriptions, strict=True):
+                print(f"{idx}: {description}")
             # Print first 3 descriptions from this cluster as examples
             # print("Sample features in this cluster:")
             # for idx in cluster_indices:
