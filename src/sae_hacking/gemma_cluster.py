@@ -52,7 +52,7 @@ def get_description(idx: np.int64) -> str:
 
 
 @beartype
-async def get_description_async(idx: np.int64, session: aiohttp.ClientSession) -> str:
+async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
     url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/20-gemmascope-res-16k/{idx}"
     async with session.get(url) as response:
         data = await response.json()
@@ -133,14 +133,15 @@ def main():
     print(
         f"\nNumber of clusters at distance threshold {distance_threshold}: {n_clusters}"
     )
+    print("Getting descriptions from Neuronpedia...")
+    descriptions = asyncio.run(get_all_descriptions(list(range(1000))))
     for i in range(n_clusters):
         cluster_size = np.sum(cluster_labels == i)
         if cluster_size > 1:
             print(f"\nCluster {i} size: {cluster_size}")
             cluster_indices = np.where(cluster_labels == i)[0]
-            descriptions = asyncio.run(get_all_descriptions(cluster_indices))
-            for idx, description in zip(cluster_indices, descriptions, strict=True):
-                print(f"{idx}: {description}")
+            for idx in cluster_indices:
+                print(f"{idx}: {descriptions[idx]}")
             # Print first 3 descriptions from this cluster as examples
             # print("Sample features in this cluster:")
             # for idx in cluster_indices:
