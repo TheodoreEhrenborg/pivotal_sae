@@ -29,18 +29,13 @@ SomeSAE = TopkSparseAutoEncoder2Child_v2 | TopkSparseAutoEncoder_v2
 
 @beartype
 def setup(
-    sae_hidden_dim: int,
-    cuda: bool,
-    hierarchical: bool,
-    model_dim: int,
-    aux_loss_coeff: float,
-    k: int,
+    sae_hidden_dim: int, cuda: bool, hierarchical: bool, model_dim: int, k: int
 ) -> TopkSparseAutoEncoder_v2 | TopkSparseAutoEncoder2Child_v2:
     SAEClass = (
         TopkSparseAutoEncoder2Child_v2 if hierarchical else TopkSparseAutoEncoder_v2
     )
     # TODO Pretty sure this is broken for the non-hierarchical SAE
-    sae = SAEClass(sae_hidden_dim, model_dim, aux_loss_coeff, k)
+    sae = SAEClass(sae_hidden_dim, model_dim, k)
     if cuda:
         sae.cuda()
     return sae
@@ -108,7 +103,6 @@ def main(args: Namespace):
         args.cuda,
         args.hierarchical,
         args.model_dim,
-        args.aux_loss_coeff,
         args.sae_k,
     )
     if args.handcode_sae:
