@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
+import requests
+from beartype import beartype
 from huggingface_hub import hf_hub_download
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
@@ -35,6 +37,15 @@ def plot_dendrogram(model, **kwargs):
         leaf_font_size=8,
         **kwargs,
     )
+
+
+@beartype
+def get_description(idx: np.int64) -> str:
+    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/20-gemmascope-res-16k/{idx}"
+
+    response = requests.get(url)
+
+    return response.json()["explanations"][0]["description"]
 
 
 def main():
@@ -107,13 +118,15 @@ def main():
     )
     for i in range(n_clusters):
         cluster_size = np.sum(cluster_labels == i)
-        print(f"\nCluster {i} size: {cluster_size}")
-        cluster_indices = np.where(cluster_labels == i)[0][:3]
-        print(cluster_indices)
-        # Print first 3 descriptions from this cluster as examples
-        # print("Sample features in this cluster:")
-        # for idx in cluster_indices:
-        #    print(f"  - {explanations_df['description'].iloc[idx]}")
+        if cluster_size > 1:
+            print(f"\nCluster {i} size: {cluster_size}")
+            cluster_indices = np.where(cluster_labels == i)[0][:3]
+            for idx in cluster_indices:
+                print(f"{idx}: {get_description(idx)}")
+            # Print first 3 descriptions from this cluster as examples
+            # print("Sample features in this cluster:")
+            # for idx in cluster_indices:
+            #    print(f"  - {explanations_df['description'].iloc[idx]}")
 
 
 if __name__ == "__main__":
