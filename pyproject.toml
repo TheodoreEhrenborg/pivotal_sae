@@ -25,6 +25,7 @@ dependencies = [
     "vastai>=0.2.8",
     "gitpython>=3.1.44",
     "scikit-learn>=1.6.1",
+    "aiohttp>=3.11.11",
 ]
 readme = "README.md"
 requires-python = ">= 3.9"
