@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
+from argparse import ArgumentParser, Namespace
 
 import aiohttp
 import numpy as np
@@ -12,6 +13,13 @@ from sklearn.cluster import AgglomerativeClustering
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
+
+
+@beartype
+def make_parser() -> ArgumentParser:
+    parser = ArgumentParser()
+    parser.add_argument("--abridge", type=int)
+    return parser
 
 
 # 3. Define dendrogram plotting function
@@ -59,13 +67,15 @@ async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str
         return data["explanations"][0]["description"]
 
 
-async def get_all_descriptions(indices: list[np.int64]) -> list[str]:
+@beartype
+async def get_all_descriptions(indices: list[int]) -> list[str]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_description_async(idx, session) for idx in indices]
         return await asyncio.gather(*tasks)
 
 
-def main():
+@beartype
+def main(args: Namespace) -> None:
     # 1. Download and load the weights
     path_to_params = hf_hub_download(
         repo_id="google/gemma-scope-2b-pt-res",
@@ -75,6 +85,9 @@ def main():
 
     params = np.load(path_to_params)
     decoder_vectors_EM = params["W_dec"][0:1000]
+    if args.abridge:
+        decoder_vectors_EM = decoder_vectors_EM[0 : args.abridge]
+    E = decoder_vectors_EM.shape[0]
     print(f"{decoder_vectors_EM.shape=}")
 
     # 2. Get neuron descriptions
@@ -134,7 +147,7 @@ def main():
         f"\nNumber of clusters at distance threshold {distance_threshold}: {n_clusters}"
     )
     print("Getting descriptions from Neuronpedia...")
-    descriptions = asyncio.run(get_all_descriptions(list(range(1000))))
+    descriptions = asyncio.run(get_all_descriptions(list(range(E))))
     for i in range(n_clusters):
         cluster_size = np.sum(cluster_labels == i)
         if cluster_size > 1:
@@ -149,4 +162,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(make_parser().parse_args())
