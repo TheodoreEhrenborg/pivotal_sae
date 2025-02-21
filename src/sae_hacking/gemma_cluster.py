@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import plotly.express as px
 import asyncio
 from argparse import ArgumentParser, Namespace
 
 import aiohttp
 import matplotlib.pyplot as plt
 import numpy as np
+import plotly.express as px
 from beartype import beartype
 from huggingface_hub import hf_hub_download
 from scipy.cluster import hierarchy
@@ -39,7 +39,6 @@ async def get_all_descriptions(indices: list[int]) -> list[str]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_description_async(idx, session) for idx in indices]
         return await asyncio.gather(*tasks)
-
 
 
 def convert_linkage_to_treemap(Z, labels=None):
@@ -94,6 +93,7 @@ def convert_linkage_to_treemap(Z, labels=None):
 
     return names, parents
 
+
 @beartype
 def main(args: Namespace) -> None:
     path_to_params = hf_hub_download(
@@ -109,13 +109,15 @@ def main(args: Namespace) -> None:
     E = decoder_vectors_EM.shape[0]
     print(f"{decoder_vectors_EM.shape=}")
     Z = hierarchy.linkage(decoder_vectors_EM, "complete")
+
+    descriptions = asyncio.run(get_all_descriptions(list(range(E))))
     plt.figure()
     dn = hierarchy.dendrogram(
         Z,
         p=4,
         truncate_mode="level",
         labels=[f"label {i}" for i in range(E)],
-        no_plot=True
+        no_plot=True,
     )
 
     plt.savefig(
@@ -125,13 +127,12 @@ def main(args: Namespace) -> None:
     )
     plt.close()
 
-    names, parents = convert_linkage_to_treemap(Z)
-    fig = px.treemap(
-    names=names,
-    parents=parents
-)
+    names, parents = convert_linkage_to_treemap(
+        Z, labels=[f"{i}: {d}" for i, d in enumerate(descriptions)]
+    )
+    fig = px.treemap(names=names, parents=parents)
     fig.update_traces(root_color="lightgrey")
-    fig.update_layout(margin = dict(t=50, l=25, r=25, b=25))
+    fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
     fig.write_html("/results/treemap.html")
 
     exit()
@@ -148,7 +149,6 @@ def main(args: Namespace) -> None:
     print(f"\nNumber of clusters: {n_clusters}")
     print("Getting descriptions from Neuronpedia...")
     exit()
-    descriptions = asyncio.run(get_all_descriptions(list(range(E))))
     for i in range(n_clusters):
         cluster_size = np.sum(cluster_labels == i)
         if cluster_size > 1:
