@@ -41,6 +41,8 @@ async def get_all_descriptions(indices: list[int]) -> list[str]:
         return await asyncio.gather(*tasks)
 
 
+# TODO Claude wrote this. It's the sort of leetcode thing that Claude is good at,
+# but I should check it
 def convert_linkage_to_treemap(Z, labels=None):
     """
     Convert scipy linkage matrix Z to lists of names and parents for plotly treemap
