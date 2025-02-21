@@ -43,7 +43,7 @@ def main(args: Namespace) -> None:
     )
 
     params = np.load(path_to_params)
-    decoder_vectors_EM = params["W_dec"][0:1000]
+    decoder_vectors_EM = params["W_dec"]
     if args.abridge:
         decoder_vectors_EM = decoder_vectors_EM[0 : args.abridge]
     E = decoder_vectors_EM.shape[0]
