@@ -3,13 +3,11 @@ import asyncio
 from argparse import ArgumentParser, Namespace
 
 import aiohttp
-import matplotlib.pyplot as plt
 import numpy as np
 import plotly.express as px
 from beartype import beartype
 from huggingface_hub import hf_hub_download
 from scipy.cluster import hierarchy
-from sklearn.cluster import AgglomerativeClustering
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -113,21 +111,6 @@ def main(args: Namespace) -> None:
     Z = hierarchy.linkage(decoder_vectors_EM, "complete")
 
     descriptions = asyncio.run(get_all_descriptions(list(range(E))))
-    plt.figure()
-    dn = hierarchy.dendrogram(
-        Z,
-        p=4,
-        truncate_mode="level",
-        labels=[f"label {i}" for i in range(E)],
-        no_plot=True,
-    )
-
-    plt.savefig(
-        "/results/tmp.png",
-        dpi=300,
-        bbox_inches="tight",
-    )
-    plt.close()
 
     names, parents = convert_linkage_to_treemap(
         Z, labels=[f"{i}: {d}" for i, d in enumerate(descriptions)]
@@ -136,28 +119,6 @@ def main(args: Namespace) -> None:
     fig.update_traces(root_color="lightgrey")
     fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
     fig.write_html("/results/treemap.html")
-
-    exit()
-
-    cluster_model = AgglomerativeClustering(
-        distance_threshold=None,
-        n_clusters=500,
-        linkage="complete",
-        metric="cosine",
-    )
-    cluster_labels = cluster_model.fit_predict(decoder_vectors_EM)
-
-    n_clusters = len(np.unique(cluster_labels))
-    print(f"\nNumber of clusters: {n_clusters}")
-    print("Getting descriptions from Neuronpedia...")
-    exit()
-    for i in range(n_clusters):
-        cluster_size = np.sum(cluster_labels == i)
-        if cluster_size > 1:
-            print(f"\nCluster {i} size: {cluster_size}")
-            cluster_indices = np.where(cluster_labels == i)[0]
-            for idx in cluster_indices:
-                print(f"{idx}: {descriptions[idx]}")
 
 
 if __name__ == "__main__":
