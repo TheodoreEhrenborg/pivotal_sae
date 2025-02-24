@@ -15,7 +15,7 @@ from einops import rearrange, reduce, repeat
 from git import Repo
 from jaxtyping import Bool, Float, jaxtyped
 from safetensors.torch import save_model
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -50,7 +50,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--dataset-num-features", type=int, default=100)
     parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
-    parser.add_argument("--learning-rate-decrease", type=float, default=10.0)
     parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument("--handcode-sae", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
@@ -113,9 +112,7 @@ def main(args: Namespace):
 
     lr = args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
-    scheduler = CosineAnnealingLR(
-        optimizer, T_max=args.max_step, eta_min=args.lr / args.learning_rate_decrease
-    )
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.3, patience=0)
 
     for step in trange(args.max_step):
         sae.train()
@@ -126,7 +123,6 @@ def main(args: Namespace):
         total_loss = args.aux_loss_coeff * aux_loss + rec_loss
         total_loss.backward()
         optimizer.step()
-        scheduler.step()
         sae.eval()
         if step % 5000 == 0:
             save_model(sae, f"{output_dir}/{step}.safetensors")
@@ -155,6 +151,7 @@ def main(args: Namespace):
                 writer.add_scalar("Total loss/val", val_total_loss, step)
                 writer.add_scalar("Reconstruction loss/val", val_rec_loss, step)
                 writer.add_scalar("Auxiliary loss/val", val_aux_loss, step)
+                scheduler.step(val_total_loss)
 
         # py-spy claims the next line is slow,
         # but I don't see an improvement when I take it out
