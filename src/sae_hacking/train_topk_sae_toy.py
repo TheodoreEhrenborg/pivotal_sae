@@ -142,7 +142,7 @@ def main(args: Namespace):
             )
             with torch.no_grad():
                 val_example, _ = dataset.generate(10000)
-                _, num_live_latents, _ = sae(val_example)
+                val_reconstruction, num_live_latents, val_aux_loss = sae(val_example)
                 log_dead_latents(
                     num_live_latents,
                     args.hierarchical,
@@ -150,6 +150,11 @@ def main(args: Namespace):
                     step,
                     args.sae_hidden_dim,
                 )
+                val_rec_loss = get_reconstruction_loss(val_reconstruction, val_example)
+                val_total_loss = args.aux_loss_coeff * val_aux_loss + val_rec_loss
+                writer.add_scalar("Total loss/val", val_total_loss, step)
+                writer.add_scalar("Reconstruction loss/val", val_rec_loss, step)
+                writer.add_scalar("Auxiliary loss/val", val_aux_loss, step)
 
         # py-spy claims the next line is slow,
         # but I don't see an improvement when I take it out
