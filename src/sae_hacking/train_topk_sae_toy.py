@@ -15,6 +15,7 @@ from einops import rearrange, reduce, repeat
 from git import Repo
 from jaxtyping import Bool, Float, jaxtyped
 from safetensors.torch import save_model
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import trange
 
@@ -49,6 +50,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--dataset-num-features", type=int, default=100)
     parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--learning-rate-decrease", type=float, default=10.0)
     parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument("--handcode-sae", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
@@ -111,6 +113,9 @@ def main(args: Namespace):
 
     lr = args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
+    scheduler = CosineAnnealingLR(
+        optimizer, T_max=args.max_step, eta_min=args.lr / args.learning_rate_decrease
+    )
 
     for step in trange(args.max_step):
         sae.train()
@@ -121,6 +126,7 @@ def main(args: Namespace):
         total_loss = args.aux_loss_coeff * aux_loss + rec_loss
         total_loss.backward()
         optimizer.step()
+        scheduler.step()
         sae.eval()
         if step % 5000 == 0:
             save_model(sae, f"{output_dir}/{step}.safetensors")
@@ -191,7 +197,9 @@ def main(args: Namespace):
                     adjusted_single_feature_detection_rate(sae, dataset),
                     step,
                 )
-        writer.add_scalar("lr", lr, step)
+        last_lrs = scheduler.get_last_lr()
+        assert len(last_lrs) == 1
+        writer.add_scalar("lr", last_lrs[0], step)
         writer.add_scalar("sae_hidden_dim", args.sae_hidden_dim, step)
         writer.add_scalar("Total loss/train", total_loss, step)
         writer.add_scalar("Reconstruction loss/train", rec_loss, step)
