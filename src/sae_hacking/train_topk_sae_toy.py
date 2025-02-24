@@ -50,6 +50,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--dataset-num-features", type=int, default=100)
     parser.add_argument("--max-step", type=int, default=100000)
     parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--min_lr", type=float, default=1e-5)
     parser.add_argument("--hierarchical", action="store_true")
     parser.add_argument("--handcode-sae", action="store_true")
     parser.add_argument("--batch-size", type=int, default=1)
@@ -112,7 +113,7 @@ def main(args: Namespace):
 
     lr = args.lr
     optimizer = torch.optim.Adam(sae.parameters(), lr=lr)
-    scheduler = ReduceLROnPlateau(optimizer, factor=0.3, patience=0)
+    scheduler = ReduceLROnPlateau(optimizer, factor=0.3, patience=0, min_lr=args.min_lr)
 
     for step in trange(args.max_step):
         sae.train()
