@@ -19,7 +19,7 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
-def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
+def test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_features):
     def ablate_feature_hook(feature_activations, hook, feature_ids, position=None):
         if position is None:
             feature_activations[:, :, feature_ids] = 0
@@ -30,8 +30,8 @@ def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
 
     ablation_hook = partial(ablate_feature_hook, feature_ids=ablation_features)
 
-    model.add_sae(sae)
-    hook_point = sae.cfg.hook_name + ".hook_sae_acts_post"
+    model.add_sae(ablater_sae)
+    hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
     model.add_hook(hook_point, ablation_hook, "fwd")
 
     test_prompt(prompt, answer, model)
@@ -48,7 +48,7 @@ def main(args: Namespace) -> None:
     # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
     # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
     # We also return the feature sparsities which are stored in HF for convenience.
-    sae, cfg_dict, sparsity = SAE.from_pretrained(
+    ablater_sae, cfg_dict, sparsity = SAE.from_pretrained(
         release=args.sae_release,  # <- Release name
         sae_id=args.sae_id,  # <- SAE id (not always a hook point!)
         device=device,
@@ -61,13 +61,13 @@ def main(args: Namespace) -> None:
     # Generate text with feature ablation
     print("Test Prompt with feature ablation and no error term")
     ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
-    sae.use_error_term = False
-    test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
+    ablater_sae.use_error_term = False
+    test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_feature)
 
     print("Test Prompt with feature ablation and error term")
     ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
-    sae.use_error_term = True
-    test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
+    ablater_sae.use_error_term = True
+    test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_feature)
 
 
 if __name__ == "__main__":
