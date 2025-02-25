@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
 from argparse import ArgumentParser, Namespace
-from collections import abc
 from functools import partial
 
 import aiohttp
 import torch
 from beartype import beartype
-from jaxtyping import Int, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from transformer_lens.utils import test_prompt
 
@@ -54,7 +52,7 @@ def test_prompt_with_ablation(
     vals, inds = torch.topk(
         cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :], 5
     )
-    descriptions = asyncio.run(get_all_descriptions(inds))
+    descriptions = asyncio.run(get_all_descriptions(inds.tolist()))
     for val, ind, description in zip(vals, inds, descriptions, strict=True):
         print(f"Feature {ind} fired {val:.2f}")
         print(f"Description: {description}")
@@ -63,10 +61,8 @@ def test_prompt_with_ablation(
     model.reset_saes()
 
 
-@jaxtyped(typechecker=beartype)
-async def get_description_async(
-    idx: int | Int[torch.Tensor, ""], session: aiohttp.ClientSession
-) -> abc.Coroutine[None, None, str]:
+@beartype
+async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
     url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
     async with session.get(url) as response:
         data = await response.json()
@@ -77,10 +73,8 @@ async def get_description_async(
             raise
 
 
-@jaxtyped(typechecker=beartype)
-async def get_all_descriptions(
-    indices: list[int] | Int[torch.Tensor, " length"],
-) -> abc.Coroutine[None, None, list[str]]:
+@beartype
+async def get_all_descriptions(indices: list[int]) -> list[str]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_description_async(idx, session) for idx in indices]
         return await asyncio.gather(*tasks)
