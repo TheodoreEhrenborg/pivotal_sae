@@ -3,7 +3,7 @@ name = "sae_hacking"
 version = "0.1.0"
 description = "Add your description here"
 dependencies = [
-    "beartype==0.18.5",
+    "beartype>=0.14.1",
     "jaxtyping==0.2.33",
     "tensorboard==2.17.1",
     "coolname==2.2.0",
@@ -21,15 +21,16 @@ dependencies = [
     "einops>=0.8.0",
     "pyyaml>=6.0.2",
     "scipy>=1.13.1",
-    "safetensors>=0.5.2",
+    "safetensors>=0.4.5",
     "vastai>=0.2.8",
     "gitpython>=3.1.44",
     "scikit-learn>=1.6.1",
     "aiohttp>=3.11.11",
-    "plotly>=6.0.0",
+    "plotly>=5.24.1",
+    "sae-lens>=5.5.1",
 ]
 readme = "README.md"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 
 [build-system]
 requires = ["hatchling"]
