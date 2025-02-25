@@ -3,6 +3,7 @@ from argparse import ArgumentParser, Namespace
 from functools import partial
 
 from beartype import beartype
+from sae_lens import SAE, HookedSAETransformer
 from transformer_lens.utils import test_prompt
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
@@ -38,6 +39,17 @@ def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
 
 @beartype
 def main(args: Namespace) -> None:
+    device = "cuda"
+    model = HookedSAETransformer.from_pretrained("gpt2-small", device=device)
+
+    # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
+    # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
+    # We also return the feature sparsities which are stored in HF for convenience.
+    sae, cfg_dict, sparsity = SAE.from_pretrained(
+        release="gpt2-small-res-jb",  # <- Release name
+        sae_id="blocks.7.hook_resid_pre",  # <- SAE id (not always a hook point!)
+        device=device,
+    )
     model.reset_hooks(including_permanent=True)
     prompt = "In the beginning, God created the heavens and the"
     answer = "earth"
