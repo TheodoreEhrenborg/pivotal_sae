@@ -44,6 +44,8 @@ def test_prompt_with_ablation(
     model.add_hook(hook_point, ablation_hook, "fwd")
 
     test_prompt(prompt, answer, model)
+    _, cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+    print(cache["blocks.7.hook_resid_pre.hook_sae_acts_post"][0, -1, :].shape)
 
     model.reset_hooks()
     model.reset_saes()
