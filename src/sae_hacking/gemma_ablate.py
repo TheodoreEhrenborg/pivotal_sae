@@ -13,6 +13,9 @@ from transformer_lens.utils import test_prompt
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
+    parser.add_argument("--model", default="gpt2-small")
+    parser.add_argument("--sae-release", default="gpt2-small-res-jb")
+    parser.add_argument("--sae-id", default="blocks.7.hook_resid_pre")
     return parser
 
 
@@ -40,14 +43,14 @@ def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
 @beartype
 def main(args: Namespace) -> None:
     device = "cuda"
-    model = HookedSAETransformer.from_pretrained("gpt2-small", device=device)
+    model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
     # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
     # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
     # We also return the feature sparsities which are stored in HF for convenience.
     sae, cfg_dict, sparsity = SAE.from_pretrained(
-        release="gpt2-small-res-jb",  # <- Release name
-        sae_id="blocks.7.hook_resid_pre",  # <- SAE id (not always a hook point!)
+        release=args.sae_release,  # <- Release name
+        sae_id=args.sae_id,  # <- SAE id (not always a hook point!)
         device=device,
     )
     model.reset_hooks(including_permanent=True)
