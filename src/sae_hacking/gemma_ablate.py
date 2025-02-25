@@ -14,8 +14,8 @@ from transformer_lens.utils import test_prompt
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--model", default="gpt2-small")
-    parser.add_argument("--sae-release", default="gpt2-small-res-jb")
-    parser.add_argument("--sae-id", default="blocks.7.hook_resid_pre")
+    parser.add_argument("--ablater-sae-release", default="gpt2-small-res-jb")
+    parser.add_argument("--ablater-sae-id", default="blocks.7.hook_resid_pre")
     return parser
 
 
@@ -49,8 +49,8 @@ def main(args: Namespace) -> None:
     # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
     # We also return the feature sparsities which are stored in HF for convenience.
     ablater_sae, cfg_dict, sparsity = SAE.from_pretrained(
-        release=args.sae_release,  # <- Release name
-        sae_id=args.sae_id,  # <- SAE id (not always a hook point!)
+        release=args.ablater_sae_release,  # <- Release name
+        sae_id=args.ablater_sae_id,  # <- SAE id (not always a hook point!)
         device=device,
     )
     model.reset_hooks(including_permanent=True)
