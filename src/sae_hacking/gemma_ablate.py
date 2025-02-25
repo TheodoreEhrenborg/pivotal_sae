@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+import asyncio
 from argparse import ArgumentParser, Namespace
 from functools import partial
 
+import aiohttp
 import torch
 from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
@@ -50,11 +52,32 @@ def test_prompt_with_ablation(
     vals, inds = torch.topk(
         cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :], 5
     )
-    for val, ind in zip(vals, inds):
+    descriptions = asyncio.run(get_all_descriptions(list(inds)))
+    for val, ind, description in zip(vals, inds, descriptions, strict=True):
         print(f"Feature {ind} fired {val:.2f}")
+        print(f"Description: {description}")
 
     model.reset_hooks()
     model.reset_saes()
+
+
+@beartype
+async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
+    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
+    async with session.get(url) as response:
+        data = await response.json()
+        try:
+            return data["explanations"][0]["description"]
+        except:
+            print(data)
+            raise
+
+
+@beartype
+async def get_all_descriptions(indices: list[int]) -> list[str]:
+    async with aiohttp.ClientSession() as session:
+        tasks = [get_description_async(idx, session) for idx in indices]
+        return await asyncio.gather(*tasks)
 
 
 @beartype
