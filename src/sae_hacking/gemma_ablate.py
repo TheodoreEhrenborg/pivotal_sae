@@ -6,6 +6,7 @@ from functools import partial
 import aiohttp
 import torch
 from beartype import beartype
+from jaxtyping import Int, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from transformer_lens.utils import test_prompt
 
@@ -61,8 +62,10 @@ def test_prompt_with_ablation(
     model.reset_saes()
 
 
-@beartype
-async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
+@jaxtyped(typechecker=beartype)
+async def get_description_async(
+    idx: int | Int[torch.tensor, ""], session: aiohttp.ClientSession
+) -> str:
     url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
     async with session.get(url) as response:
         data = await response.json()
@@ -73,8 +76,10 @@ async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str
             raise
 
 
-@beartype
-async def get_all_descriptions(indices: list[int]) -> list[str]:
+@jaxtyped(typechecker=beartype)
+async def get_all_descriptions(
+    indices: list[int] | Int[torch.tensor, " length"],
+) -> list[str]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_description_async(idx, session) for idx in indices]
         return await asyncio.gather(*tasks)
