@@ -53,7 +53,7 @@ def test_prompt_with_ablation(
     vals, inds = torch.topk(
         cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :], 5
     )
-    descriptions = asyncio.run(get_all_descriptions(list(inds)))
+    descriptions = asyncio.run(get_all_descriptions(inds))
     for val, ind, description in zip(vals, inds, descriptions, strict=True):
         print(f"Feature {ind} fired {val:.2f}")
         print(f"Description: {description}")
