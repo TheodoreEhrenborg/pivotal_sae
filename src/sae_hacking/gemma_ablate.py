@@ -18,10 +18,17 @@ def make_parser() -> ArgumentParser:
         "--ablater-sae-release", default="gemma-scope-2b-pt-res-canonical"
     )
     parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument(
+        "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
+    )
+    parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     return parser
 
 
-def test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_features):
+@beartype
+def test_prompt_with_ablation(
+    model, ablater_sae, prompt, answer, ablation_features, reader_sae: SAE
+):
     def ablate_feature_hook(feature_activations, hook, feature_ids, position=None):
         if position is None:
             feature_activations[:, :, feature_ids] = 0
@@ -55,6 +62,9 @@ def main(args: Namespace) -> None:
         sae_id=args.ablater_sae_id,  # <- SAE id (not always a hook point!)
         device=device,
     )
+    reader_sae, _, _ = SAE.from_pretrained(
+        release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
+    )
     model.reset_hooks(including_permanent=True)
     prompt = "In the beginning, God created the heavens and the"
     answer = "earth"
@@ -64,12 +74,16 @@ def main(args: Namespace) -> None:
     print("Test Prompt with feature ablation and no error term")
     ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
     ablater_sae.use_error_term = False
-    test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_feature)
+    test_prompt_with_ablation(
+        model, ablater_sae, prompt, answer, ablation_feature, reader_sae
+    )
 
     print("Test Prompt with feature ablation and error term")
     ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
     ablater_sae.use_error_term = True
-    test_prompt_with_ablation(model, ablater_sae, prompt, answer, ablation_feature)
+    test_prompt_with_ablation(
+        model, ablater_sae, prompt, answer, ablation_feature, reader_sae
+    )
 
 
 if __name__ == "__main__":
