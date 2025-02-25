@@ -13,9 +13,11 @@ from transformer_lens.utils import test_prompt
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument("--model", default="gpt2-small")
-    parser.add_argument("--ablater-sae-release", default="gpt2-small-res-jb")
-    parser.add_argument("--ablater-sae-id", default="blocks.7.hook_resid_pre")
+    parser.add_argument("--model", default="google/gemma-2-2b")
+    parser.add_argument(
+        "--ablater-sae-release", default="gemma-scope-2b-pt-res-canonical"
+    )
+    parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
     return parser
 
 
