@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 from argparse import ArgumentParser, Namespace
+from collections import abc
 from functools import partial
 
 import aiohttp
@@ -79,7 +80,7 @@ async def get_description_async(
 @jaxtyped(typechecker=beartype)
 async def get_all_descriptions(
     indices: list[int] | Int[torch.Tensor, " length"],
-) -> list[str]:
+) -> abc.Coroutine[None, None, list[str]]:
     async with aiohttp.ClientSession() as session:
         tasks = [get_description_async(idx, session) for idx in indices]
         return await asyncio.gather(*tasks)
