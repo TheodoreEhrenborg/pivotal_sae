@@ -9,7 +9,7 @@ dependencies = [
     "coolname==2.2.0",
     "accelerate==0.33.0",
     "datasets==2.20.0",
-    "huggingface-hub==0.24.5",
+    "huggingface-hub[cli]==0.24.5",
     "torch==2.4.0",
     "transformers>=4.48.3",
     "openai>=1.45.0",
