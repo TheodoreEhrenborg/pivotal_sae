@@ -2,6 +2,7 @@
 from argparse import ArgumentParser, Namespace
 from functools import partial
 
+import torch
 from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
 from transformer_lens.utils import test_prompt
@@ -46,7 +47,11 @@ def test_prompt_with_ablation(
     test_prompt(prompt, answer, model)
     _, cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
     # TODO I think there's a way to look this up in the SAE config?
-    print(cache["blocks.21.hook_mlp_out.hook_sae_acts_post"].shape)
+    vals, inds = torch.topk(
+        cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :], 5
+    )
+    for val, ind in zip(vals, inds):
+        print(f"Feature {ind} fired {val:.2f}")
 
     model.reset_hooks()
     model.reset_saes()
