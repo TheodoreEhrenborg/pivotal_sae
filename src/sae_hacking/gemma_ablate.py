@@ -45,7 +45,7 @@ def test_prompt_with_ablation(
 
     test_prompt(prompt, answer, model)
     _, cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    print(cache.keys())
+    # TODO I think there's a way to look this up in the SAE config?
     print(cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :].shape)
 
     model.reset_hooks()
