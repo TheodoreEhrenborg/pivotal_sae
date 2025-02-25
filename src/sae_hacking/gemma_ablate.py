@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, Namespace
+from functools import partial
 
-import numpy as np
 from beartype import beartype
-from huggingface_hub import hf_hub_download
-from scipy.cluster import hierarchy
+from transformer_lens.utils import test_prompt
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -14,8 +13,6 @@ from scipy.cluster import hierarchy
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     return parser
-from transformer_lens.utils import test_prompt
-from functools import partial
 
 
 def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
@@ -39,45 +36,23 @@ def test_prompt_with_ablation(model, sae, prompt, answer, ablation_features):
     model.reset_saes()
 
 
-# Example usage in a notebook:
-
-# Assume model and sae are already defined
-
-# Choose a feature to ablate
-
-model.reset_hooks(including_permanent=True)
-prompt = "In the beginning, God created the heavens and the"
-answer = "earth"
-test_prompt(prompt, answer, model)
-
-
-# Generate text with feature ablation
-print("Test Prompt with feature ablation and no error term")
-ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
-sae.use_error_term = False
-test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
-
-print("Test Prompt with feature ablation and error term")
-ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
-sae.use_error_term = True
-test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
-
-
 @beartype
 def main(args: Namespace) -> None:
-    path_to_params_A = hf_hub_download(
-        repo_id="google/gemma-scope-2b-pt-res",
-        filename="layer_20/width_16k/average_l0_71/params.npz",
-        force_download=False,
-    )
+    model.reset_hooks(including_permanent=True)
+    prompt = "In the beginning, God created the heavens and the"
+    answer = "earth"
+    test_prompt(prompt, answer, model)
 
-    params = np.load(path_to_params_A)
-    decoder_vectors_EM = params["W_dec"]
-    if args.abridge:
-        decoder_vectors_EM = decoder_vectors_EM[0 : args.abridge]
-    E = decoder_vectors_EM.shape[0]
-    print(f"{decoder_vectors_EM.shape=}")
-    Z = hierarchy.linkage(decoder_vectors_EM, "complete")
+    # Generate text with feature ablation
+    print("Test Prompt with feature ablation and no error term")
+    ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
+    sae.use_error_term = False
+    test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
+
+    print("Test Prompt with feature ablation and error term")
+    ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
+    sae.use_error_term = True
+    test_prompt_with_ablation(model, sae, prompt, answer, ablation_feature)
 
 
 if __name__ == "__main__":
