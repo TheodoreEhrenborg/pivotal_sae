@@ -72,14 +72,13 @@ def main(args: Namespace) -> None:
 
     # Generate text with feature ablation
     print("Test Prompt with feature ablation and no error term")
-    ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
+    ablation_feature = 16873  # TODO Change this
     ablater_sae.use_error_term = False
     test_prompt_with_ablation(
         model, ablater_sae, prompt, answer, ablation_feature, reader_sae
     )
 
     print("Test Prompt with feature ablation and error term")
-    ablation_feature = 16873  # Replace with any feature index you're interested in. We use the religion feature
     ablater_sae.use_error_term = True
     test_prompt_with_ablation(
         model, ablater_sae, prompt, answer, ablation_feature, reader_sae
