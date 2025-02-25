@@ -66,7 +66,7 @@ def test_prompt_with_ablation(
 @jaxtyped(typechecker=beartype)
 async def get_description_async(
     idx: int | Int[torch.Tensor, ""], session: aiohttp.ClientSession
-) -> str:
+) -> abc.Coroutine[None, None, str]:
     url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
     async with session.get(url) as response:
         data = await response.json()
