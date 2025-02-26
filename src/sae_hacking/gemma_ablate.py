@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import asyncio
 from argparse import ArgumentParser, Namespace
+from ast import literal_eval
 from functools import partial
 
 import aiohttp
@@ -32,6 +33,13 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     return parser
+
+
+def maybe_get(old_value, name):
+    strng = input(f"Enter new value for {name} (currently {old_value}): ")
+    if strng == "":
+        return old_value
+    return literal_eval(strng)
 
 
 @beartype
@@ -129,18 +137,19 @@ def main(args: Namespace) -> None:
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
-    model.reset_hooks(including_permanent=True)
-    prompt = args.prompt
-    answer = "pet"
-    test_prompt(prompt, answer, model)
+    ablation_features = [61941]
+    while True:
+        ablation_features = maybe_get(ablation_features, "ablation_features")
+        model.reset_hooks(including_permanent=True)
+        prompt = args.prompt
+        answer = "pet"
+        test_prompt(prompt, answer, model)
 
-    ablation_feature = args.ablation_feature
-
-    print("Test Prompt with feature ablation and error term")
-    ablater_sae.use_error_term = True
-    test_prompt_with_ablation(
-        model, ablater_sae, prompt, answer, ablation_feature, reader_sae
-    )
+        print("Test Prompt with feature ablation and error term")
+        ablater_sae.use_error_term = True
+        test_prompt_with_ablation(
+            model, ablater_sae, prompt, answer, ablation_features, reader_sae
+        )
 
 
 if __name__ == "__main__":
