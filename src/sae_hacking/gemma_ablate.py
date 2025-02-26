@@ -86,11 +86,11 @@ def test_prompt_with_ablation(
 
     # Get features with largest differences
     vals, inds = torch.topk(activation_diffs, 20)
-    descriptions, ablation_description = asyncio.run(
-        asyncio.gather(
-            get_all_descriptions(inds.tolist(), "21-gemmascope-mlp-65k"),
-            get_all_descriptions(ablation_features, "20-gemmascope-res-65k"),
-        )
+    descriptions = asyncio.run(
+        get_all_descriptions(inds.tolist(), "21-gemmascope-mlp-65k")
+    )
+    ablation_description = asyncio.run(
+        get_all_descriptions(ablation_features, "20-gemmascope-res-65k")
     )
 
     print(
