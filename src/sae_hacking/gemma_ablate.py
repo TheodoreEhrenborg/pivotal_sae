@@ -21,7 +21,12 @@ def make_parser() -> ArgumentParser:
         "--ablater-sae-release", default="gemma-scope-2b-pt-res-canonical"
     )
     parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
-    parser.add_argument("--prompt", default="I like cats and dogs, but Bob doesn't have a")
+    parser.add_argument(
+        "--ablation-feature", type=int, default=61941
+    )  # TODO Change this
+    parser.add_argument(
+        "--prompt", default="I like cats and dogs, but Bob doesn't have a"
+    )
     parser.add_argument(
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
@@ -129,7 +134,7 @@ def main(args: Namespace) -> None:
     answer = "pet"
     test_prompt(prompt, answer, model)
 
-    ablation_feature = 61941  # TODO Change this
+    ablation_feature = args.ablation_feature
 
     print("Test Prompt with feature ablation and error term")
     ablater_sae.use_error_term = True
