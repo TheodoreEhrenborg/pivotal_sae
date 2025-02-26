@@ -124,11 +124,11 @@ def main(args: Namespace) -> None:
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
     model.reset_hooks(including_permanent=True)
-    prompt = "In the beginning, God created the heavens and the"
-    answer = "earth"
+    prompt = "I like cats and dogs, but Bob doesn't have a"
+    answer = "pet"
     test_prompt(prompt, answer, model)
 
-    ablation_feature = 20671  # TODO Change this
+    ablation_feature = 61941  # TODO Change this
 
     print("Test Prompt with feature ablation and error term")
     ablater_sae.use_error_term = True
