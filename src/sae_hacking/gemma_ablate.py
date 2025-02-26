@@ -72,7 +72,7 @@ def test_prompt_with_ablation(
     activation_diffs = torch.abs(ablated_activations - baseline_activations)
 
     # Get features with largest differences
-    vals, inds = torch.topk(activation_diffs, 5)
+    vals, inds = torch.topk(activation_diffs, 20)
     descriptions = asyncio.run(get_all_descriptions(inds.tolist()))
 
     print(
