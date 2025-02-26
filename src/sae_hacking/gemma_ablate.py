@@ -21,6 +21,7 @@ def make_parser() -> ArgumentParser:
         "--ablater-sae-release", default="gemma-scope-2b-pt-res-canonical"
     )
     parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument("--prompt", default="I like cats and dogs, but Bob doesn't have a")
     parser.add_argument(
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
@@ -124,7 +125,7 @@ def main(args: Namespace) -> None:
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
     model.reset_hooks(including_permanent=True)
-    prompt = "I like cats and dogs, but Bob doesn't have a"
+    prompt = args.prompt
     answer = "pet"
     test_prompt(prompt, answer, model)
 
