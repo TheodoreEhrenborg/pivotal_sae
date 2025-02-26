@@ -89,8 +89,8 @@ def test_prompt_with_ablation(
     descriptions = asyncio.run(
         get_all_descriptions(inds.tolist(), "21-gemmascope-mlp-65k")
     )
-    ablation_description = get_all_descriptions(
-        ablation_features, "20-gemmascope-res-65k"
+    ablation_description = asyncio.run(
+        get_all_descriptions(ablation_features, "20-gemmascope-res-65k")
     )
 
     print(
