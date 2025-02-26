@@ -44,7 +44,12 @@ def maybe_get(old_value, name):
 
 @beartype
 def test_prompt_with_ablation(
-    model, ablater_sae, prompt, answer, ablation_features, reader_sae: SAE
+    model: SAE,
+    ablater_sae,
+    prompt: str,
+    answer: str,
+    ablation_features: list[int],
+    reader_sae: SAE,
 ):
     def ablate_feature_hook(feature_activations, hook, feature_ids, position=None):
         if position is None:
@@ -81,12 +86,19 @@ def test_prompt_with_ablation(
 
     # Get features with largest differences
     vals, inds = torch.topk(activation_diffs, 20)
-    descriptions = asyncio.run(get_all_descriptions(inds.tolist()))
+    descriptions = asyncio.run(
+        get_all_descriptions(inds.tolist(), "21-gemmascope-mlp-65k")
+    )
+    ablation_description = get_all_descriptions(
+        ablation_features, "20-gemmascope-res-65k"
+    )
 
     print(
         "Top features with largest activation differences "
         f"when ablating feature {ablation_features}, {ablater_sae.use_error_term=}:"
     )
+    print(f"Description of ablated feature: {ablation_description}")
+    print()
     for diff, ind, description in zip(vals, inds, descriptions, strict=True):
         baseline_val = baseline_activations[ind].item()
         ablated_val = ablated_activations[ind].item()
@@ -96,15 +108,17 @@ def test_prompt_with_ablation(
             f"Feature {ind}: Delta={diff:.2f} ({baseline_val:.2f} -> {ablated_val:.2f}, {change_direction})"
         )
         print(f"Description: {description}")
+        print()
 
     model.reset_hooks()
     model.reset_saes()
 
 
 @beartype
-async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
-    # TODO Don't hardcode this
-    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
+async def get_description_async(
+    idx: int, session: aiohttp.ClientSession, sae_name: str
+) -> str:
+    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/{sae_name}/{idx}"
     async with session.get(url) as response:
         data = await response.json()
         try:
@@ -115,9 +129,9 @@ async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str
 
 
 @beartype
-async def get_all_descriptions(indices: list[int]) -> list[str]:
+async def get_all_descriptions(indices: list[int], sae_name: str) -> list[str]:
     async with aiohttp.ClientSession() as session:
-        tasks = [get_description_async(idx, session) for idx in indices]
+        tasks = [get_description_async(idx, session, sae_name) for idx in indices]
         return await asyncio.gather(*tasks)
 
 
@@ -140,6 +154,8 @@ def main(args: Namespace) -> None:
     ablation_features = [61941]
     while True:
         ablation_features = maybe_get(ablation_features, "ablation_features")
+        if type(ablation_features) is int:
+            ablation_features = [ablation_features]
         model.reset_hooks(including_permanent=True)
         prompt = args.prompt
         answer = "pet"
