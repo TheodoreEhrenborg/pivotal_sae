@@ -44,8 +44,8 @@ def maybe_get(old_value, name):
 
 @beartype
 def test_prompt_with_ablation(
-    model: SAE,
-    ablater_sae,
+    model: HookedSAETransformer,
+    ablater_sae: SAE,
     prompt: str,
     answer: str,
     ablation_features: list[int],
