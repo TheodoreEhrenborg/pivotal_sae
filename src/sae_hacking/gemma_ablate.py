@@ -77,7 +77,7 @@ def test_prompt_with_ablation(
         change_direction = "increased" if ablated_val > baseline_val else "decreased"
 
         print(
-            f"Feature {ind}: Δ={diff:.2f} ({baseline_val:.2f} → {ablated_val:.2f}, {change_direction})"
+            f"Feature {ind}: Delta={diff:.2f} ({baseline_val:.2f} -> {ablated_val:.2f}, {change_direction})"
         )
         print(f"Description: {description}")
 
