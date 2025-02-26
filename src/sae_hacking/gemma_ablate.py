@@ -42,19 +42,43 @@ def test_prompt_with_ablation(
 
     ablation_hook = partial(ablate_feature_hook, feature_ids=ablation_features)
 
+    # Run without ablation first to get baseline
+    model.reset_hooks()
+    model.reset_saes()
+    _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+    baseline_activations = baseline_cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][
+        0, -1, :
+    ]
+
+    # Now run with ablation
     model.add_sae(ablater_sae)
     hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
     model.add_hook(hook_point, ablation_hook, "fwd")
 
     test_prompt(prompt, answer, model)
-    _, cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    # TODO I think there's a way to look this up in the SAE config?
-    vals, inds = torch.topk(
-        cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][0, -1, :], 5
-    )
+    _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+    ablated_activations = ablated_cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][
+        0, -1, :
+    ]
+
+    # Compute absolute differences between baseline and ablated activations
+    activation_diffs = torch.abs(ablated_activations - baseline_activations)
+
+    # Get features with largest differences
+    vals, inds = torch.topk(activation_diffs, 5)
     descriptions = asyncio.run(get_all_descriptions(inds.tolist()))
-    for val, ind, description in zip(vals, inds, descriptions, strict=True):
-        print(f"Feature {ind} fired {val:.2f}")
+
+    print(
+        f"Top features with largest activation differences when ablating feature {ablation_features}:"
+    )
+    for diff, ind, description in zip(vals, inds, descriptions, strict=True):
+        baseline_val = baseline_activations[ind].item()
+        ablated_val = ablated_activations[ind].item()
+        change_direction = "increased" if ablated_val > baseline_val else "decreased"
+
+        print(
+            f"Feature {ind}: Δ={diff:.2f} ({baseline_val:.2f} → {ablated_val:.2f}, {change_direction})"
+        )
         print(f"Description: {description}")
 
     model.reset_hooks()
