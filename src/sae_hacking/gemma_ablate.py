@@ -69,7 +69,8 @@ def test_prompt_with_ablation(
     descriptions = asyncio.run(get_all_descriptions(inds.tolist()))
 
     print(
-        f"Top features with largest activation differences when ablating feature {ablation_features}:"
+        "Top features with largest activation differences "
+        f"when ablating feature {ablation_features}, {ablater_sae.use_error_term=}:"
     )
     for diff, ind, description in zip(vals, inds, descriptions, strict=True):
         baseline_val = baseline_activations[ind].item()
