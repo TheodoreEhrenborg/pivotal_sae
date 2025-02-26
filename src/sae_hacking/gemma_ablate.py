@@ -128,7 +128,7 @@ def main(args: Namespace) -> None:
 
     # Generate text with feature ablation
     print("Test Prompt with feature ablation and no error term")
-    ablation_feature = 16873  # TODO Change this
+    ablation_feature = 20671  # TODO Change this
     ablater_sae.use_error_term = False
     test_prompt_with_ablation(
         model, ablater_sae, prompt, answer, ablation_feature, reader_sae
