@@ -57,6 +57,7 @@ def test_prompt_with_ablation(
 
     test_prompt(prompt, answer, model)
     _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+    # TODO Don't hardcode this
     ablated_activations = ablated_cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][
         0, -1, :
     ]
@@ -88,6 +89,7 @@ def test_prompt_with_ablation(
 
 @beartype
 async def get_description_async(idx: int, session: aiohttp.ClientSession) -> str:
+    # TODO Don't hardcode this
     url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/21-gemmascope-mlp-65k/{idx}"
     async with session.get(url) as response:
         data = await response.json()
