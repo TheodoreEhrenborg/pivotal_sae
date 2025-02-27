@@ -70,7 +70,7 @@ def test_prompt_with_ablation(
     model.reset_hooks()
     model.reset_saes()
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    print(baseline_cache.shape)
+    print(baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"].shape)
     baseline_activations = baseline_cache[
         f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
     ][0, -1, :]
