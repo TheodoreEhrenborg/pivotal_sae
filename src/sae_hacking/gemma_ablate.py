@@ -36,7 +36,7 @@ def make_parser() -> ArgumentParser:
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
-    parser.add_argument("--abridge-prompt-to", type=int)
+    parser.add_argument("--abridge-prompt-to", type=int, default=750)
     return parser
 
 
