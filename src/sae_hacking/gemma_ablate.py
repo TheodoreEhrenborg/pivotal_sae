@@ -39,6 +39,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     parser.add_argument("--abridge-prompt-to", type=int, default=750)
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
+    parser.add_argument("--n-edges", type=int, default=10000)
     return parser
 
 
@@ -108,17 +109,17 @@ def graph_ablation_matrix(
     ablater_sae_id: str,
     reader_sae_id: str,
     output_dir: str,
+    n_edges: int,
 ) -> None:
     """
     Creates and saves a network plot of the interactions.
     """
 
     # Get the size of the matrix
-    n_ablater, n_reader = ablation_matrix_eE.shape
+    _, n_reader = ablation_matrix_eE.shape
 
     # Find top 1% of edges by absolute value
     abs_matrix = torch.abs(ablation_matrix_eE)
-    n_edges = int(0.01 * n_ablater * n_reader)
     _, flat_indices = torch.topk(abs_matrix.view(-1), n_edges)
 
     # Create graph
@@ -390,6 +391,7 @@ def main(args: Namespace) -> None:
         ablater_sae.cfg.neuronpedia_id,
         reader_sae.cfg.neuronpedia_id,
         "/tmp",
+        args.n_edges,
     )
 
 

@@ -10,4 +10,5 @@ def test_plot():
         "gemma-2-2b/20-gemmascope-res-65k",
         "gemma-2-2b/21-gemmascope-mlp-65k",
         "/tmp",
+        100,
     )
