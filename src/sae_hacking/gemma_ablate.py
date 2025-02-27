@@ -63,7 +63,7 @@ def compute_ablation_matrix(
     baseline_acts_E = baseline_acts_BSE[0, -1, :]  # Take last sequence position
 
     # Initialize the ablation matrix
-    e = ablater_sae.cfg.d_sae
+    e = 1000
     E = reader_sae.cfg.d_sae
     ablation_matrix_eE = torch.zeros((e, E), device=device)
 
