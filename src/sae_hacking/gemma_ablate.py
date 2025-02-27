@@ -129,17 +129,17 @@ def analyze_ablation_matrix(
     )
 
     print("\nStrongest feature interactions:")
-    for val_1, ablater_idx_1, reader_idx_1, ablater_desc, reader_desc in zip(
-        vals_K,
+    for ablater_idx, reader_idx, ablater_desc, reader_desc in zip(
         ablater_indices_K,
         reader_indices_K,
         ablater_descriptions,
         reader_descriptions,
+        strict=True,
     ):
-        effect = ablation_matrix_eE[ablater_idx_1, reader_idx_1].item()
+        effect = ablation_matrix_eE[ablater_idx, reader_idx].item()
         direction = "increases" if effect < 0 else "decreases"
         print(
-            f"\nAblating feature {ablater_idx_1} {direction} feature {reader_idx_1} by {abs(effect):.2f}"
+            f"\nAblating feature {ablater_idx} {direction} feature {reader_idx} by {abs(effect):.2f}"
         )
         print(f"Ablater feature description: {ablater_desc}")
         print(f"Reader feature description: {reader_desc}")
