@@ -65,9 +65,9 @@ def test_prompt_with_ablation(
     model.reset_hooks()
     model.reset_saes()
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    baseline_activations = baseline_cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][
-        0, -1, :
-    ]
+    baseline_activations = baseline_cache[
+        f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
+    ][0, -1, :]
 
     # Now run with ablation
     model.add_sae(ablater_sae)
@@ -76,10 +76,9 @@ def test_prompt_with_ablation(
 
     test_prompt(prompt, answer, model)
     _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    # TODO Don't hardcode this
-    ablated_activations = ablated_cache["blocks.21.hook_mlp_out.hook_sae_acts_post"][
-        0, -1, :
-    ]
+    ablated_activations = ablated_cache[
+        f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
+    ][0, -1, :]
 
     # Compute absolute differences between baseline and ablated activations
     activation_diffs = torch.abs(ablated_activations - baseline_activations)
@@ -143,7 +142,7 @@ def main(args: Namespace) -> None:
     # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
     # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
     # We also return the feature sparsities which are stored in HF for convenience.
-    ablater_sae, cfg_dict, sparsity = SAE.from_pretrained(
+    ablater_sae, _, _ = SAE.from_pretrained(
         release=args.ablater_sae_release,  # <- Release name
         sae_id=args.ablater_sae_id,  # <- SAE id (not always a hook point!)
         device=device,
