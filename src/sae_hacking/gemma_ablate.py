@@ -73,8 +73,8 @@ def compute_ablation_matrix(
     baseline_acts_E = baseline_acts_BSE[0, -1, :]  # Take last sequence position
 
     # Initialize the ablation matrix
-    e = ablater_sae.feature_acts_post.shape[-1]
-    E = reader_sae.feature_acts_post.shape[-1]
+    e = ablater_sae.cfg.d_sae
+    E = reader_sae.cfg.d_sae
     ablation_matrix_eE = torch.zeros((e, E), device=model.device)
 
     # Add the ablater SAE to the model
