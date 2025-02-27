@@ -132,18 +132,22 @@ def graph_ablation_matrix(
     ablater_indices = flat_indices.div(n_reader, rounding_mode="floor")
     reader_indices = flat_indices % n_reader
 
-    ablater_descriptions = asyncio.run(
-        get_all_descriptions(ablater_indices.tolist(), ablater_sae_id)
-    )
-    reader_descriptions = asyncio.run(
-        get_all_descriptions(reader_indices.tolist(), reader_sae_id)
-    )
+    ablater_descriptions = NeuronExplanationLoader(ablater_sae_id)
+    reader_descriptions = NeuronExplanationLoader(reader_sae_id)
 
     # Add nodes with attributes
-    for i, desc in zip(ablater_indices, ablater_descriptions):
-        G.add_node(f"A{i.item()}", description=desc, type="ablater")
-    for i, desc in zip(reader_indices, reader_descriptions):
-        G.add_node(f"R{i.item()}", description=desc, type="reader")
+    for i in ablater_indices:
+        G.add_node(
+            f"A{i.item()}",
+            description=ablater_descriptions.get_explanation(i),
+            type="ablater",
+        )
+    for i in reader_indices:
+        G.add_node(
+            f"R{i.item()}",
+            description=reader_descriptions.get_explanation(i),
+            type="reader",
+        )
 
     # Add edges with weights
     for idx, (ablater_idx, reader_idx) in enumerate(
@@ -254,6 +258,7 @@ class NeuronExplanationLoader:
             with open(self.cache_path, "r") as f:
                 return json.load(f)
 
+        print("Downloading data from neuronpedia")
         url = "https://www.neuronpedia.org/api/explanation/export"
         params = {"modelId": self.model_id, "saeId": self.sae_id}
 
