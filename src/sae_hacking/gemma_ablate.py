@@ -7,11 +7,18 @@ from functools import partial
 import aiohttp
 import torch
 from beartype import beartype
+from datasets import load_dataset
 from sae_lens import SAE, HookedSAETransformer
 from transformer_lens.utils import test_prompt
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
+
+
+# Add this function to get the first prompt from pile-10k
+def get_pile_prompt():
+    dataset = load_dataset("NeelNanda/pile-10k", split="train")
+    return dataset[0]["text"]
 
 
 @beartype
@@ -25,9 +32,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--ablation-feature", type=int, default=61941
     )  # TODO Change this
-    parser.add_argument(
-        "--prompt", default="I like cats and dogs, but Bob doesn't have a"
-    )
     parser.add_argument(
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
@@ -151,12 +155,12 @@ def main(args: Namespace) -> None:
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
     ablation_features = [61941]
+    prompt = get_pile_prompt()
     while True:
         ablation_features = maybe_get(ablation_features, "ablation_features")
         if type(ablation_features) is int:
             ablation_features = [ablation_features]
         model.reset_hooks(including_permanent=True)
-        prompt = args.prompt
         answer = "pet"
         test_prompt(prompt, answer, model)
 
