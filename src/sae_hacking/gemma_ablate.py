@@ -70,9 +70,10 @@ def test_prompt_with_ablation(
     model.reset_hooks()
     model.reset_saes()
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    baseline_activations = baseline_cache[
+    baseline_activations_BSE = baseline_cache[
         f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-    ][0, -1, :]
+    ]
+    final_baseline_activations_E = baseline_activations_BSE[0, -1, :]
 
     # Now run with ablation
     model.add_sae(ablater_sae)
@@ -81,17 +82,20 @@ def test_prompt_with_ablation(
 
     test_prompt(prompt, answer, model)
     _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    ablated_activations = ablated_cache[
+    ablated_activations_BSE = ablated_cache[
         f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-    ][0, -1, :]
+    ]
+    final_ablated_activations_E = ablated_activations_BSE[0, -1, :]
 
     # Compute absolute differences between baseline and ablated activations
-    activation_diffs = torch.abs(ablated_activations - baseline_activations)
+    activation_diffs = torch.abs(
+        final_ablated_activations_E - final_baseline_activations_E
+    )
 
     # Get features with largest differences
-    vals, inds = torch.topk(activation_diffs, 20)
+    vals_K, inds_K = torch.topk(activation_diffs, 20)
     descriptions = asyncio.run(
-        get_all_descriptions(inds.tolist(), reader_sae.cfg.neuronpedia_id)
+        get_all_descriptions(inds_K.tolist(), reader_sae.cfg.neuronpedia_id)
     )
     ablation_description = asyncio.run(
         get_all_descriptions(ablation_features, ablater_sae.cfg.neuronpedia_id)
@@ -103,9 +107,9 @@ def test_prompt_with_ablation(
     )
     print(f"Description of ablated feature: {ablation_description}")
     print()
-    for diff, ind, description in zip(vals, inds, descriptions, strict=True):
-        baseline_val = baseline_activations[ind].item()
-        ablated_val = ablated_activations[ind].item()
+    for diff, ind, description in zip(vals_K, inds_K, descriptions, strict=True):
+        baseline_val = final_baseline_activations_E[ind].item()
+        ablated_val = final_ablated_activations_E[ind].item()
         change_direction = "increased" if ablated_val > baseline_val else "decreased"
 
         print(

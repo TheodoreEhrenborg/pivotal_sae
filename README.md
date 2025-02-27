@@ -39,3 +39,4 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - H: total number of SAE children (multiple of E)
 - K: k in topk
 - M: model dimension
+- S: sequence length
