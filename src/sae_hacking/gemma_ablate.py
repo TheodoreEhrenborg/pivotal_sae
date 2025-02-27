@@ -52,8 +52,8 @@ def compute_ablation_matrix(
     - e: number of features in ablater SAE
     - E: number of features in reader SAE
     """
-    print(f"{ablater_sae.use_error_term=}")
-    print(f"{reader_sae.use_error_term=}")
+    ablater_sae.use_error_term = True
+    reader_sae.use_error_term = True
 
     def ablate_feature_hook(acts_BSe, hook, feature_id):
         acts_BSe[:, :, feature_id] = 0
