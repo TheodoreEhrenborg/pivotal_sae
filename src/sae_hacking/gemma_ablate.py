@@ -52,6 +52,8 @@ def compute_ablation_matrix(
     - e: number of features in ablater SAE
     - E: number of features in reader SAE
     """
+    print(f"{ablater_sae.use_error_term=}")
+    print(f"{reader_sae.use_error_term=}")
 
     def ablate_feature_hook(acts_BSe, hook, feature_id):
         acts_BSe[:, :, feature_id] = 0
@@ -90,7 +92,7 @@ def compute_ablation_matrix(
 
         # Compute differences
         ablation_matrix_eE[ablater_idx, :] = baseline_acts_E - ablated_acts_E
-        print(f"{ablation_matrix_eE[1,28210]=}")
+        print(f"{ablation_matrix_eE[0,28210]=}")
 
         # Reset hooks for next iteration
         model.reset_hooks()
