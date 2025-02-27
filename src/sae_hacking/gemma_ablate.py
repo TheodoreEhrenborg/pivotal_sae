@@ -4,6 +4,8 @@ from argparse import ArgumentParser, Namespace
 from functools import partial
 
 import aiohttp
+import networkx as nx
+import plotly.graph_objects as go
 import torch
 from beartype import beartype
 from datasets import load_dataset
@@ -101,6 +103,113 @@ def compute_ablation_matrix(
 
 
 @beartype
+def graph_ablation_matrix(
+    ablation_matrix_eE: torch.Tensor, ablater_sae_id: str, reader_sae_id: str
+) -> None:
+    """
+    Creates and saves a network plot of the interactions.
+    """
+
+    # Get the size of the matrix
+    n_ablater, n_reader = ablation_matrix_eE.shape
+
+    # Find top 1% of edges by absolute value
+    abs_matrix = torch.abs(ablation_matrix_eE)
+    n_edges = int(0.01 * n_ablater * n_reader)
+    _, flat_indices = torch.topk(abs_matrix.view(-1), n_edges)
+
+    # Create graph
+    G = nx.Graph()
+
+    # Get all descriptions first
+    ablater_indices = flat_indices.div(n_reader, rounding_mode="floor")
+    reader_indices = flat_indices % n_reader
+
+    ablater_descriptions = asyncio.run(
+        get_all_descriptions(ablater_indices.tolist(), ablater_sae_id)
+    )
+    reader_descriptions = asyncio.run(
+        get_all_descriptions(reader_indices.tolist(), reader_sae_id)
+    )
+
+    # Add nodes with attributes
+    for i, desc in zip(ablater_indices, ablater_descriptions):
+        G.add_node(f"A{i.item()}", description=desc, type="ablater")
+    for i, desc in zip(reader_indices, reader_descriptions):
+        G.add_node(f"R{i.item()}", description=desc, type="reader")
+
+    # Add edges with weights
+    for idx, (ablater_idx, reader_idx) in enumerate(
+        zip(ablater_indices, reader_indices)
+    ):
+        weight = ablation_matrix_eE[ablater_idx, reader_idx].item()
+        G.add_edge(
+            f"A{ablater_idx.item()}",
+            f"R{reader_idx.item()}",
+            weight=weight,
+            abs_weight=abs(weight),
+        )
+
+    # Get layout positions
+    pos = nx.spring_layout(G)
+
+    # Create edge traces
+    edge_traces = []
+    max_weight = max(abs(d["weight"]) for (u, v, d) in G.edges(data=True))
+
+    for edge in G.edges(data=True):
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        weight = edge[2]["weight"]
+        width = 3 * abs(weight) / max_weight
+
+        edge_trace = go.Scatter(
+            x=[x0, x1, None],
+            y=[y0, y1, None],
+            line=dict(width=width, color="gray"),
+            hoverinfo="text",
+            text=f"Weight: {weight:.3f}",
+            mode="lines",
+        )
+        edge_traces.append(edge_trace)
+
+    # Create node traces for ablater and reader nodes separately
+    ablater_nodes = [n for n in G.nodes() if G.nodes[n]["type"] == "ablater"]
+    reader_nodes = [n for n in G.nodes() if G.nodes[n]["type"] == "reader"]
+
+    def create_node_trace(nodes, color):
+        return go.Scatter(
+            x=[pos[node][0] for node in nodes],
+            y=[pos[node][1] for node in nodes],
+            mode="markers",
+            hoverinfo="text",
+            text=[
+                f"Node: {node}\nDescription: {G.nodes[node]['description']}"
+                for node in nodes
+            ],
+            marker=dict(size=10, color=color, line=dict(width=2)),
+        )
+
+    ablater_trace = create_node_trace(ablater_nodes, "red")
+    reader_trace = create_node_trace(reader_nodes, "blue")
+
+    # Create figure
+    fig = go.Figure(data=[*edge_traces, ablater_trace, reader_trace])
+
+    # Update layout
+    fig.update_layout(
+        showlegend=False,
+        hovermode="closest",
+        margin=dict(b=20, l=5, r=5, t=40),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    )
+
+    # Save the plot
+    fig.write_html("ablation_network.html")
+
+
+@beartype
 def analyze_ablation_matrix(
     ablation_matrix_eE: torch.Tensor, ablater_sae: SAE, reader_sae: SAE, top_k: int = 5
 ) -> None:
@@ -191,6 +300,11 @@ def main(args: Namespace) -> None:
 
     print("Analyzing results...")
     analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
+    graph_ablation_matrix(
+        ablation_matrix_eE,
+        ablater_sae.cfg.neuronpedia_id,
+        reader_sae.cfg.neuronpedia_id,
+    )
 
 
 if __name__ == "__main__":
