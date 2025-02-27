@@ -86,10 +86,10 @@ def test_prompt_with_ablation(
     # Get features with largest differences
     vals, inds = torch.topk(activation_diffs, 20)
     descriptions = asyncio.run(
-        get_all_descriptions(inds.tolist(), "21-gemmascope-mlp-65k")
+        get_all_descriptions(inds.tolist(), "gemma-2-2b/21-gemmascope-mlp-65k")
     )
     ablation_description = asyncio.run(
-        get_all_descriptions(ablation_features, "20-gemmascope-res-65k")
+        get_all_descriptions(ablation_features, "gemma-2-2b/20-gemmascope-res-65k")
     )
 
     print(
@@ -115,9 +115,9 @@ def test_prompt_with_ablation(
 
 @beartype
 async def get_description_async(
-    idx: int, session: aiohttp.ClientSession, sae_name: str
+    idx: int, session: aiohttp.ClientSession, neuronpedia_id: str
 ) -> str:
-    url = f"https://www.neuronpedia.org/api/feature/gemma-2-2b/{sae_name}/{idx}"
+    url = f"https://www.neuronpedia.org/api/feature/{neuronpedia_id}/{idx}"
     async with session.get(url) as response:
         data = await response.json()
         try:
@@ -128,9 +128,9 @@ async def get_description_async(
 
 
 @beartype
-async def get_all_descriptions(indices: list[int], sae_name: str) -> list[str]:
+async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[str]:
     async with aiohttp.ClientSession() as session:
-        tasks = [get_description_async(idx, session, sae_name) for idx in indices]
+        tasks = [get_description_async(idx, session, neuronpedia_id) for idx in indices]
         return await asyncio.gather(*tasks)
 
 
