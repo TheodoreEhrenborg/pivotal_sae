@@ -166,19 +166,17 @@ def graph_ablation_matrix(
 
     # Create edge traces
     edge_traces = []
-    max_weight = max(abs(d["weight"]) for (u, v, d) in G.edges(data=True))
 
     print("Adding edges to plot")
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         weight = edge[2]["weight"]
-        width = 3 * abs(weight) / max_weight
 
         edge_trace = go.Scatter(
             x=[x0, x1, None],
             y=[y0, y1, None],
-            line=dict(width=width, color="gray"),
+            line=dict(width=1, color="gray"),
             hoverinfo="text",
             text=f"Weight: {weight:.3f}",
             mode="lines",
