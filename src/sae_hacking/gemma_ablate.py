@@ -53,6 +53,7 @@ def compute_ablation_matrix(
     ablater_sae: SAE,
     reader_sae: SAE,
     prompt: str,
+    device: str,
 ) -> torch.Tensor:
     """
     Computes a matrix where each element (i,j) represents the effect of ablating
@@ -75,7 +76,7 @@ def compute_ablation_matrix(
     # Initialize the ablation matrix
     e = ablater_sae.cfg.d_sae
     E = reader_sae.cfg.d_sae
-    ablation_matrix_eE = torch.zeros((e, E), device=model.device)
+    ablation_matrix_eE = torch.zeros((e, E), device=device)
 
     # Add the ablater SAE to the model
     model.add_sae(ablater_sae)
@@ -183,7 +184,9 @@ def main(args: Namespace) -> None:
         prompt = prompt[: args.abridge_prompt_to]
 
     print("Computing ablation matrix...")
-    ablation_matrix_AE = compute_ablation_matrix(model, ablater_sae, reader_sae, prompt)
+    ablation_matrix_AE = compute_ablation_matrix(
+        model, ablater_sae, reader_sae, prompt, device=device
+    )
 
     print("Analyzing results...")
     analyze_ablation_matrix(ablation_matrix_AE, ablater_sae, reader_sae)
