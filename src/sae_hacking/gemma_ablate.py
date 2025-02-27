@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 from argparse import ArgumentParser, Namespace
-from ast import literal_eval
 from functools import partial
 
 import aiohttp
@@ -35,13 +34,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     parser.add_argument("--abridge-prompt-to", type=int, default=750)
     return parser
-
-
-def maybe_get(old_value, name):
-    strng = input(f"Enter new value for {name} (currently {old_value}): ")
-    if strng == "":
-        return old_value
-    return literal_eval(strng)
 
 
 @beartype
