@@ -180,7 +180,7 @@ def main(args: Namespace) -> None:
         prompt = prompt[: args.abridge_prompt_to]
 
     print("Computing ablation matrix...")
-    ablation_matrix_AE = compute_ablation_matrix(
+    ablation_matrix_eE = compute_ablation_matrix(
         model,
         ablater_sae,
         reader_sae,
@@ -190,7 +190,7 @@ def main(args: Namespace) -> None:
     )
 
     print("Analyzing results...")
-    analyze_ablation_matrix(ablation_matrix_AE, ablater_sae, reader_sae)
+    analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
 
 
 if __name__ == "__main__":
