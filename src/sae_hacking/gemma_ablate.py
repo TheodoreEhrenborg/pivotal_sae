@@ -4,7 +4,6 @@ import json
 import os
 from argparse import ArgumentParser, Namespace
 from functools import partial
-from typing import Any, Dict, Tuple
 
 import aiohttp
 import networkx as nx
@@ -139,13 +138,13 @@ def graph_ablation_matrix(
     for i in ablater_indices:
         G.add_node(
             f"A{i.item()}",
-            description=ablater_descriptions.get_explanation(i),
+            description=ablater_descriptions.get_explanation(i.item()),
             type="ablater",
         )
     for i in reader_indices:
         G.add_node(
             f"R{i.item()}",
-            description=reader_descriptions.get_explanation(i),
+            description=reader_descriptions.get_explanation(i.item()),
             type="reader",
         )
 
@@ -234,7 +233,7 @@ class NeuronExplanationLoader:
         self.cache_path = f"/tmp/neuron_explanations_{self.model_id}_{self.sae_id}.json"
         self.explanations = self._load_or_download_data()
 
-    def _parse_combined_id(self, combined_id: str) -> Tuple[str, str]:
+    def _parse_combined_id(self, combined_id: str) -> tuple[str, str]:
         """
         Parse the combined ID into model_id and sae_id.
 
@@ -247,7 +246,7 @@ class NeuronExplanationLoader:
         model_id, sae_id = combined_id.split("/")
         return model_id, sae_id
 
-    def _load_or_download_data(self) -> Dict[str, Any]:
+    def _load_or_download_data(self) -> list[dict]:
         """
         Load data from cache if it exists, otherwise download and cache it.
 
@@ -282,14 +281,12 @@ class NeuronExplanationLoader:
         Returns:
             Dict containing the explanation data for the specified index
 
-        Raises:
-            ValueError: If no explanation is found for the given index
         """
         for explanation in self.explanations:
             if explanation["index"] == str(index):
                 return explanation["description"]
 
-        raise ValueError(f"No explanation found for index {index}")
+        return f"No explanation found for index {index}"
 
 
 @beartype
