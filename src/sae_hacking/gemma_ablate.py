@@ -65,7 +65,7 @@ def compute_ablation_matrix(
     # Initialize the ablation matrix
     e = 1000
     E = reader_sae.cfg.d_sae
-    ablation_matrix_eE = torch.zeros((e, E), device=device)
+    ablation_matrix_eE = torch.zeros((e, E), device="cpu")
 
     # Add the ablater SAE to the model
     model.add_sae(ablater_sae)
