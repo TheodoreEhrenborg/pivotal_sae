@@ -104,7 +104,10 @@ def compute_ablation_matrix(
 
 @beartype
 def graph_ablation_matrix(
-    ablation_matrix_eE: torch.Tensor, ablater_sae_id: str, reader_sae_id: str
+    ablation_matrix_eE: torch.Tensor,
+    ablater_sae_id: str,
+    reader_sae_id: str,
+    output_dir: str,
 ) -> None:
     """
     Creates and saves a network plot of the interactions.
@@ -206,7 +209,7 @@ def graph_ablation_matrix(
     )
 
     # Save the plot
-    fig.write_html("ablation_network.html")
+    fig.write_html(f"{output_dir}/ablation_network.html")
 
 
 @beartype
@@ -304,6 +307,7 @@ def main(args: Namespace) -> None:
         ablation_matrix_eE,
         ablater_sae.cfg.neuronpedia_id,
         reader_sae.cfg.neuronpedia_id,
+        "/tmp",
     )
 
 
