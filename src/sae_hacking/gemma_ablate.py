@@ -30,9 +30,6 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
     parser.add_argument(
-        "--ablation-feature", type=int, default=61941
-    )  # TODO Change this
-    parser.add_argument(
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
