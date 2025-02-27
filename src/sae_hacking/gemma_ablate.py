@@ -36,6 +36,7 @@ def make_parser() -> ArgumentParser:
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
+    parser.add_argument("--abridge-prompt-to", type=int)
     return parser
 
 
@@ -156,6 +157,8 @@ def main(args: Namespace) -> None:
     )
     ablation_features = [61941]
     prompt = get_pile_prompt()
+    if args.abridge_prompt_to:
+        prompt = prompt[: args.abridge_prompt_to]
     while True:
         ablation_features = maybe_get(ablation_features, "ablation_features")
         if type(ablation_features) is int:
