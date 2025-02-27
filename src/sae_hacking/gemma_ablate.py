@@ -63,6 +63,7 @@ def compute_ablation_matrix(
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
     baseline_acts_BSE = baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"]
     baseline_acts_E = baseline_acts_BSE[0, -1, :]  # Take last sequence position
+    print(f"{baseline_acts_E[28210]=}")
 
     # Initialize the ablation matrix
     e = abridge_ablations_to if abridge_ablations_to else ablater_sae.cfg.d_sae
@@ -85,9 +86,11 @@ def compute_ablation_matrix(
             f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
         ]
         ablated_acts_E = ablated_acts_BSE[0, -1, :]  # Take last sequence position
+        print(f"{ablated_acts_E[28210]=}")
 
         # Compute differences
         ablation_matrix_eE[ablater_idx, :] = baseline_acts_E - ablated_acts_E
+        print(f"{ablation_matrix_eE[1,28210]=}")
 
         # Reset hooks for next iteration
         model.reset_hooks()
