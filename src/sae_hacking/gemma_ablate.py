@@ -33,6 +33,7 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     parser.add_argument("--abridge-prompt-to", type=int, default=750)
+    parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     return parser
 
 
@@ -43,6 +44,7 @@ def compute_ablation_matrix(
     reader_sae: SAE,
     prompt: str,
     device: str,
+    abridge_ablations_to: int,
 ) -> torch.Tensor:
     """
     Computes a matrix where each element (i,j) represents the effect of ablating
@@ -63,7 +65,7 @@ def compute_ablation_matrix(
     baseline_acts_E = baseline_acts_BSE[0, -1, :]  # Take last sequence position
 
     # Initialize the ablation matrix
-    e = 1000
+    e = abridge_ablations_to if abridge_ablations_to else ablater_sae.cfg.d_sae
     E = reader_sae.cfg.d_sae
     ablation_matrix_eE = torch.zeros((e, E), device="cpu")
 
@@ -174,7 +176,12 @@ def main(args: Namespace) -> None:
 
     print("Computing ablation matrix...")
     ablation_matrix_AE = compute_ablation_matrix(
-        model, ablater_sae, reader_sae, prompt, device=device
+        model,
+        ablater_sae,
+        reader_sae,
+        prompt,
+        device=device,
+        abridge_ablations_to=args.abridge_ablations_to,
     )
 
     print("Analyzing results...")
