@@ -233,7 +233,10 @@ class NeuronExplanationLoader:
         """
         self.model_id, self.sae_id = self._parse_combined_id(combined_id)
         self.cache_path = f"/tmp/neuron_explanations_{self.model_id}_{self.sae_id}.json"
-        self.explanations = self._load_or_download_data()
+        self.explanations = self._preprocess(self._load_or_download_data())
+
+    def _preprocess(self, data: list) -> dict:
+        return {int(item["index"]): item["description"] for item in data}
 
     def _parse_combined_id(self, combined_id: str) -> tuple[str, str]:
         """
@@ -284,11 +287,7 @@ class NeuronExplanationLoader:
             Dict containing the explanation data for the specified index
 
         """
-        for explanation in self.explanations:
-            if explanation["index"] == str(index):
-                return explanation["description"]
-
-        return f"No explanation found for index {index}"
+        return self.explanations.get(index, f"No explanation found for index {index}")
 
 
 @beartype
