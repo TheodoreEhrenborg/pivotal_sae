@@ -138,7 +138,7 @@ async def get_all_descriptions(indices: list[int], sae_name: str) -> list[str]:
 @beartype
 def main(args: Namespace) -> None:
     device = "cuda"
-    model = HookedSAETransformer.from_pretrained(args.model, device=device)
+    #model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
     # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
     # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
@@ -148,6 +148,7 @@ def main(args: Namespace) -> None:
         sae_id=args.ablater_sae_id,  # <- SAE id (not always a hook point!)
         device=device,
     )
+    print(cfg_dict, sparsity)
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
