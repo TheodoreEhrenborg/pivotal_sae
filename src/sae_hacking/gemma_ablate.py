@@ -87,10 +87,7 @@ def test_prompt_with_ablation(
     ]
     final_ablated_activations_E = ablated_activations_BSE[0, -1, :]
 
-    # Compute absolute differences between baseline and ablated activations
-    activation_diffs = torch.abs(
-        final_ablated_activations_E - final_baseline_activations_E
-    )
+    activation_diffs = final_baseline_activations_E - final_ablated_activations_E
 
     # Get features with largest differences
     vals_K, inds_K = torch.topk(activation_diffs, 20)
