@@ -9,7 +9,7 @@ import torch
 from beartype import beartype
 from datasets import load_dataset
 from sae_lens import SAE, HookedSAETransformer
-from transformer_lens.utils import test_prompt
+from tqdm import tqdm
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -48,75 +48,97 @@ def maybe_get(old_value, name):
 
 
 @beartype
-def test_prompt_with_ablation(
+def compute_ablation_matrix(
     model: HookedSAETransformer,
     ablater_sae: SAE,
-    prompt: str,
-    answer: str,
-    ablation_features: list[int],
     reader_sae: SAE,
-):
-    def ablate_feature_hook(feature_activations, hook, feature_ids, position=None):
-        if position is None:
-            feature_activations[:, :, feature_ids] = 0
-        else:
-            feature_activations[:, position, feature_ids] = 0
+    prompt: str,
+) -> torch.Tensor:
+    """
+    Computes a matrix where each element (i,j) represents the effect of ablating
+    feature i in the ablater SAE on feature j in the reader SAE.
+    """
 
+    def ablate_feature_hook(feature_activations, hook, feature_id):
+        feature_activations[:, :, feature_id] = 0
         return feature_activations
 
-    ablation_hook = partial(ablate_feature_hook, feature_ids=ablation_features)
-
-    # Run without ablation first to get baseline
+    # Get baseline activations first
     model.reset_hooks()
     model.reset_saes()
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    baseline_activations_BSE = baseline_cache[
+    baseline_activations = baseline_cache[
         f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-    ]
-    final_baseline_activations_E = baseline_activations_BSE[0, -1, :]
+    ][0, -1, :]
 
-    # Now run with ablation
+    # Initialize the ablation matrix
+    n_ablater_features = ablater_sae.feature_acts_post.shape[-1]
+    n_reader_features = reader_sae.feature_acts_post.shape[-1]
+    ablation_matrix = torch.zeros(
+        (n_ablater_features, n_reader_features), device=model.device
+    )
+
+    # Add the ablater SAE to the model
     model.add_sae(ablater_sae)
     hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
-    model.add_hook(hook_point, ablation_hook, "fwd")
 
-    test_prompt(prompt, answer, model)
-    _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    ablated_activations_BSE = ablated_cache[
-        f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-    ]
-    final_ablated_activations_E = ablated_activations_BSE[0, -1, :]
+    # For each feature in the ablater SAE
+    for i in tqdm(range(n_ablater_features)):
+        # Set up ablation hook for this feature
+        ablation_hook = partial(ablate_feature_hook, feature_id=i)
+        model.add_hook(hook_point, ablation_hook, "fwd")
 
-    activation_diffs = final_baseline_activations_E - final_ablated_activations_E
+        # Run with this feature ablated
+        _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+        ablated_activations = ablated_cache[
+            f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
+        ][0, -1, :]
 
-    # Get features with largest differences
-    vals_K, inds_K = torch.topk(activation_diffs, 20)
-    descriptions = asyncio.run(
-        get_all_descriptions(inds_K.tolist(), reader_sae.cfg.neuronpedia_id)
+        # Compute differences
+        ablation_matrix[i, :] = baseline_activations - ablated_activations
+
+        # Reset hooks for next iteration
+        model.reset_hooks()
+
+    return ablation_matrix
+
+
+@beartype
+def analyze_ablation_matrix(
+    ablation_matrix: torch.Tensor, ablater_sae: SAE, reader_sae: SAE, top_k: int = 5
+) -> None:
+    """
+    Analyzes the ablation matrix and prints the strongest interactions.
+    """
+    # Find the strongest effects (both positive and negative)
+    abs_matrix = torch.abs(ablation_matrix)
+    vals, (ablater_indices, reader_indices) = torch.topk(abs_matrix.view(-1), top_k)
+
+    # Convert flat indices back to 2D
+    ablater_indices = ablater_indices.div(
+        ablation_matrix.size(1), rounding_mode="floor"
     )
-    ablation_description = asyncio.run(
-        get_all_descriptions(ablation_features, ablater_sae.cfg.neuronpedia_id)
+    reader_indices = reader_indices % ablation_matrix.size(1)
+
+    # Get descriptions for the features
+    ablater_descriptions = asyncio.run(
+        get_all_descriptions(ablater_indices.tolist(), ablater_sae.cfg.neuronpedia_id)
+    )
+    reader_descriptions = asyncio.run(
+        get_all_descriptions(reader_indices.tolist(), reader_sae.cfg.neuronpedia_id)
     )
 
-    print(
-        "Top features with largest activation differences "
-        f"when ablating feature {ablation_features}, {ablater_sae.use_error_term=}:"
-    )
-    print(f"Description of ablated feature: {ablation_description}")
-    print()
-    for diff, ind, description in zip(vals_K, inds_K, descriptions, strict=True):
-        baseline_val = final_baseline_activations_E[ind].item()
-        ablated_val = final_ablated_activations_E[ind].item()
-        change_direction = "increased" if ablated_val > baseline_val else "decreased"
-
+    print("\nStrongest feature interactions:")
+    for val, ablater_idx, reader_idx, ablater_desc, reader_desc in zip(
+        vals, ablater_indices, reader_indices, ablater_descriptions, reader_descriptions
+    ):
+        effect = ablation_matrix[ablater_idx, reader_idx].item()
+        direction = "increases" if effect < 0 else "decreases"
         print(
-            f"Feature {ind}: Delta={diff:.2f} ({baseline_val:.2f} -> {ablated_val:.2f}, {change_direction})"
+            f"\nAblating feature {ablater_idx} {direction} feature {reader_idx} by {abs(effect):.2f}"
         )
-        print(f"Description: {description}")
-        print()
-
-    model.reset_hooks()
-    model.reset_saes()
+        print(f"Ablater feature description: {ablater_desc}")
+        print(f"Reader feature description: {reader_desc}")
 
 
 @beartype
@@ -145,35 +167,22 @@ def main(args: Namespace) -> None:
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
-    # the cfg dict is returned alongside the SAE since it may contain useful information for analysing the SAE (eg: instantiating an activation store)
-    # Note that this is not the same as the SAEs config dict, rather it is whatever was in the HF repo, from which we can extract the SAE config dict
-    # We also return the feature sparsities which are stored in HF for convenience.
     ablater_sae, _, _ = SAE.from_pretrained(
-        release=args.ablater_sae_release,  # <- Release name
-        sae_id=args.ablater_sae_id,  # <- SAE id (not always a hook point!)
-        device=device,
+        release=args.ablater_sae_release, sae_id=args.ablater_sae_id, device=device
     )
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
-    ablation_features = [61941]
+
     prompt = get_pile_prompt()
     if args.abridge_prompt_to:
-        # TODO Really this should use tokens
         prompt = prompt[: args.abridge_prompt_to]
-    while True:
-        ablation_features = maybe_get(ablation_features, "ablation_features")
-        if type(ablation_features) is int:
-            ablation_features = [ablation_features]
-        model.reset_hooks(including_permanent=True)
-        answer = "pet"
-        test_prompt(prompt, answer, model)
 
-        print("Test Prompt with feature ablation and error term")
-        ablater_sae.use_error_term = True
-        test_prompt_with_ablation(
-            model, ablater_sae, prompt, answer, ablation_features, reader_sae
-        )
+    print("Computing ablation matrix...")
+    ablation_matrix = compute_ablation_matrix(model, ablater_sae, reader_sae, prompt)
+
+    print("Analyzing results...")
+    analyze_ablation_matrix(ablation_matrix, ablater_sae, reader_sae)
 
 
 if __name__ == "__main__":
