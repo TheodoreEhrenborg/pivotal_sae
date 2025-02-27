@@ -262,8 +262,12 @@ async def get_description_async(
     async with session.get(url) as response:
         data = await response.json()
         try:
-            return data["explanations"][0]["description"]
+            if data["explanations"]:
+                return data["explanations"][0]["description"]
+            else:
+                return "No explanation found"
         except:
+            # Sometimes we get rate-limited
             print(data)
             raise
 
