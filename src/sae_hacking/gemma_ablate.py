@@ -131,10 +131,12 @@ def graph_ablation_matrix(
     ablater_indices = flat_indices.div(n_reader, rounding_mode="floor")
     reader_indices = flat_indices % n_reader
 
+    print("Loading auto-interp explanations")
     ablater_descriptions = NeuronExplanationLoader(ablater_sae_id)
     reader_descriptions = NeuronExplanationLoader(reader_sae_id)
 
     # Add nodes with attributes
+    print("Adding nodes to graph")
     for i in ablater_indices:
         G.add_node(
             f"A{i.item()}",
@@ -149,6 +151,7 @@ def graph_ablation_matrix(
         )
 
     # Add edges with weights
+    print("Adding edges to graph")
     for idx, (ablater_idx, reader_idx) in enumerate(
         zip(ablater_indices, reader_indices)
     ):
@@ -160,13 +163,14 @@ def graph_ablation_matrix(
             abs_weight=abs(weight),
         )
 
-    # Get layout positions
+    print("Calculating layout")
     pos = nx.spring_layout(G)
 
     # Create edge traces
     edge_traces = []
     max_weight = max(abs(d["weight"]) for (u, v, d) in G.edges(data=True))
 
+    print("Adding edges to plot")
     for edge in G.edges(data=True):
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
@@ -200,6 +204,7 @@ def graph_ablation_matrix(
             marker=dict(size=10, color=color, line=dict(width=2)),
         )
 
+    print("Adding nodes to plot")
     ablater_trace = create_node_trace(ablater_nodes, "red")
     reader_trace = create_node_trace(reader_nodes, "blue")
 
@@ -215,7 +220,7 @@ def graph_ablation_matrix(
         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
     )
 
-    # Save the plot
+    print("Saving plot")
     fig.write_html(f"{output_dir}/ablation_network.html")
 
 
