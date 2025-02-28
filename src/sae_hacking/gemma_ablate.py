@@ -118,9 +118,7 @@ def graph_ablation_matrix(
     # Get the size of the matrix
     _, n_reader = ablation_matrix_eE.shape
 
-    # Find top 1% of edges by absolute value
-    abs_matrix = torch.abs(ablation_matrix_eE)
-    _, flat_indices = torch.topk(abs_matrix.view(-1), n_edges)
+    _, flat_indices = torch.topk(ablation_matrix_eE.view(-1), n_edges)
 
     # Create graph
     G = nx.Graph()
