@@ -7,11 +7,11 @@ from functools import partial
 
 import aiohttp
 import networkx as nx
-import plotly.graph_objects as go
 import requests
 import torch
 from beartype import beartype
 from datasets import load_dataset
+from pyvis.network import Network
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 
@@ -134,23 +134,23 @@ def graph_ablation_matrix(
     # Add nodes with attributes
     print("Adding nodes to graph")
     for i in ablater_indices:
+        name = f"A{i.item()}"
         G.add_node(
-            f"A{i.item()}",
-            description=ablater_descriptions.get_explanation(i.item()),
-            type="ablater",
+            name,
+            title=f"{name} {ablater_descriptions.get_explanation(i.item())}",
+            group="ablater",
         )
     for i in reader_indices:
+        name = f"R{i.item()}"
         G.add_node(
-            f"R{i.item()}",
-            description=reader_descriptions.get_explanation(i.item()),
-            type="reader",
+            name,
+            title=f"{name} {reader_descriptions.get_explanation(i.item())}",
+            group="reader",
         )
 
     # Add edges with weights
     print("Adding edges to graph")
-    for idx, (ablater_idx, reader_idx) in enumerate(
-        zip(ablater_indices, reader_indices)
-    ):
+    for ablater_idx, reader_idx in zip(ablater_indices, reader_indices):
         weight = ablation_matrix_eE[ablater_idx, reader_idx].item()
         G.add_edge(
             f"A{ablater_idx.item()}",
@@ -159,63 +159,10 @@ def graph_ablation_matrix(
             abs_weight=abs(weight),
         )
 
+    nt = Network("500px", "1000px")
     print("Calculating layout")
-    pos = nx.spring_layout(G)
-
-    # Create edge traces
-    edge_traces = []
-
-    print("Adding edges to plot")
-    for edge in G.edges(data=True):
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        weight = edge[2]["weight"]
-
-        edge_trace = go.Scatter(
-            x=[x0, x1, None],
-            y=[y0, y1, None],
-            line=dict(width=1, color="gray"),
-            hoverinfo="text",
-            text=f"Weight: {weight:.3f}",
-            mode="lines",
-        )
-        edge_traces.append(edge_trace)
-
-    # Create node traces for ablater and reader nodes separately
-    ablater_nodes = [n for n in G.nodes() if G.nodes[n]["type"] == "ablater"]
-    reader_nodes = [n for n in G.nodes() if G.nodes[n]["type"] == "reader"]
-
-    def create_node_trace(nodes, color):
-        return go.Scatter(
-            x=[pos[node][0] for node in nodes],
-            y=[pos[node][1] for node in nodes],
-            mode="markers",
-            hoverinfo="text",
-            text=[
-                f"Node: {node}\nDescription: {G.nodes[node]['description']}"
-                for node in nodes
-            ],
-            marker=dict(size=10, color=color, line=dict(width=2)),
-        )
-
-    print("Adding nodes to plot")
-    ablater_trace = create_node_trace(ablater_nodes, "red")
-    reader_trace = create_node_trace(reader_nodes, "blue")
-
-    # Create figure
-    fig = go.Figure(data=[*edge_traces, ablater_trace, reader_trace])
-
-    # Update layout
-    fig.update_layout(
-        showlegend=False,
-        hovermode="closest",
-        margin=dict(b=20, l=5, r=5, t=40),
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    )
-
-    print("Saving plot")
-    fig.write_html(f"{output_dir}/ablation_network.html")
+    nt.from_nx(G)
+    nt.save_graph(f"{output_dir}/ablation_network.html")
 
 
 @beartype
