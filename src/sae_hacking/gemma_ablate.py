@@ -49,7 +49,6 @@ def compute_ablation_matrix(
     ablater_sae: SAE,
     reader_sae: SAE,
     prompt: str,
-    device: str,
     abridge_ablations_to: int,
 ) -> torch.Tensor:
     """
@@ -323,7 +322,6 @@ def main(args: Namespace) -> None:
         ablater_sae,
         reader_sae,
         prompt,
-        device=device,
         abridge_ablations_to=args.abridge_ablations_to,
     )
 
