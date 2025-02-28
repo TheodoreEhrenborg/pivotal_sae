@@ -88,7 +88,7 @@ def compute_ablation_matrix(
     hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
 
     # For each top feature in the ablater SAE
-    for i, ablater_idx in enumerate(tqdm(top_features_K)):
+    for ablater_idx in tqdm(top_features_K):
         # Set up ablation hook for this feature
         def ablation_hook(acts_BSe, hook):
             acts_BSe[:, :, ablater_idx] = 0
@@ -104,7 +104,7 @@ def compute_ablation_matrix(
         ablated_acts_E = ablated_acts_1SE[0, -1, :]
 
         # Compute differences
-        ablation_matrix_eE[i, :] = baseline_acts_E - ablated_acts_E
+        ablation_matrix_eE[ablater_idx, :] = baseline_acts_E - ablated_acts_E
 
         # Reset hooks for next iteration
         model.reset_hooks()
