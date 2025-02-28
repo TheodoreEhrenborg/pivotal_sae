@@ -92,6 +92,7 @@ def compute_ablation_matrix(
     for ablater_idx in tqdm(top_features_K):
         # Set up ablation hook for this feature
         print(ablater_idx)
+
         def ablation_hook(acts_BSe, hook):
             acts_BSe[:, :, ablater_idx] = 0
             return acts_BSe
@@ -170,9 +171,10 @@ def graph_ablation_matrix(
             abs_weight=abs(weight),
         )
 
-    nt = Network("500px", "1000px")
+    nt = Network("500px", "1000px", select_menu=True)
     print("Calculating layout")
     nt.from_nx(G)
+    nt.show_buttons(filter_=["physics"])
     nt.save_graph(f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}ablation_network.html")
 
 
