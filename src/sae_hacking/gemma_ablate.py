@@ -2,6 +2,7 @@
 import asyncio
 import json
 import os
+import time
 from argparse import ArgumentParser, Namespace
 from functools import partial
 
@@ -161,7 +162,7 @@ def graph_ablation_matrix(
     nt = Network("500px", "1000px")
     print("Calculating layout")
     nt.from_nx(G)
-    nt.save_graph(f"{output_dir}/ablation_network.html")
+    nt.save_graph(f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}ablation_network.html")
 
 
 @beartype
