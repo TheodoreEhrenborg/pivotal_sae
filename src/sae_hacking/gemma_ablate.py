@@ -337,6 +337,7 @@ def main(args: Namespace) -> None:
 
     print("Analyzing results...")
     analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
+    print("Graphing results...")
     graph_ablation_matrix(
         ablation_matrix_eE,
         ablater_sae.cfg.neuronpedia_id,
