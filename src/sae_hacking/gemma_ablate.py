@@ -70,24 +70,18 @@ def compute_ablation_matrix(
     model.reset_saes()
     model.add_sae(ablater_sae)
     _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
-    ablater_acts_BSe = ablater_cache[
-        f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"
-    ]  # [1, S, e]
+    ablater_acts_1Se = ablater_cache[f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Find the features with highest activation summed across all positions
-    summed_acts_e = ablater_acts_BSe[0].abs().sum(dim=0)  # [e]
-    top_features = torch.topk(
-        summed_acts_e, k=abridge_ablations_to
-    ).indices  # [abridge_ablations_to]
+    summed_acts_e = ablater_acts_1Se[0].abs().sum(dim=0)
+    top_features_K = torch.topk(summed_acts_e, k=abridge_ablations_to).indices
 
     # Get baseline activations for reader SAE
     model.reset_hooks()
     model.reset_saes()
     _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-    baseline_acts_BSE = baseline_cache[
-        f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-    ]  # [1, S, E]
-    baseline_acts_E = baseline_acts_BSE[0, -1, :]  # [E] Take last sequence position
+    baseline_acts_1SE = baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"]
+    baseline_acts_E = baseline_acts_1SE[0, -1, :]
 
     # Initialize the ablation matrix
     e = ablater_sae.cfg.d_sae
@@ -99,20 +93,20 @@ def compute_ablation_matrix(
     hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
 
     # For each top feature in the ablater SAE
-    for i, ablater_idx in enumerate(tqdm(top_features)):
+    for i, ablater_idx in enumerate(tqdm(top_features_K)):
         # Set up ablation hook for this feature
         ablation_hook = partial(ablate_feature_hook, feature_id=ablater_idx)
         model.add_hook(hook_point, ablation_hook, "fwd")
 
         # Run with this feature ablated
         _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
-        ablated_acts_BSE = ablated_cache[
+        ablated_acts_1SE = ablated_cache[
             f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
-        ]  # [1, S, E]
-        ablated_acts_E = ablated_acts_BSE[0, -1, :]  # [E] Take last sequence position
+        ]
+        ablated_acts_E = ablated_acts_1SE[0, -1, :]
 
         # Compute differences
-        ablation_matrix_eE[i, :] = baseline_acts_E - ablated_acts_E  # [E]
+        ablation_matrix_eE[i, :] = baseline_acts_E - ablated_acts_E
 
         # Reset hooks for next iteration
         model.reset_hooks()
