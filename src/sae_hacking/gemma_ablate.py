@@ -252,7 +252,7 @@ def analyze_ablation_matrix(
     """
     # Find the strongest effects (both positive and negative)
     abs_matrix_AE = torch.abs(ablation_matrix_eE)
-    vals_K, flat_indices_K = torch.topk(abs_matrix_AE.view(-1), top_k)
+    _, flat_indices_K = torch.topk(abs_matrix_AE.view(-1), top_k)
 
     # Convert flat indices back to 2D
     ablater_indices_K = flat_indices_K.div(
