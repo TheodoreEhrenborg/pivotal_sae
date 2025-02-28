@@ -57,6 +57,7 @@ def compute_ablation_matrix(
     - e: number of features in ablater SAE
     - E: number of features in reader SAE
     """
+    print(prompt)
     ablater_sae.use_error_term = True
     reader_sae.use_error_term = True
 
@@ -90,6 +91,7 @@ def compute_ablation_matrix(
     # For each top feature in the ablater SAE
     for ablater_idx in tqdm(top_features_K):
         # Set up ablation hook for this feature
+        print(ablater_idx)
         def ablation_hook(acts_BSe, hook):
             acts_BSe[:, :, ablater_idx] = 0
             return acts_BSe
