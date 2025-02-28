@@ -4,7 +4,6 @@ import json
 import os
 import time
 from argparse import ArgumentParser, Namespace
-from functools import partial
 
 import aiohttp
 import networkx as nx
@@ -61,10 +60,6 @@ def compute_ablation_matrix(
     ablater_sae.use_error_term = True
     reader_sae.use_error_term = True
 
-    def ablate_feature_hook(acts_BSe, hook, feature_id):
-        acts_BSe[:, :, feature_id] = 0
-        return acts_BSe
-
     # First, run the model with ablater SAE to get its activations
     model.reset_hooks()
     model.reset_saes()
@@ -95,7 +90,10 @@ def compute_ablation_matrix(
     # For each top feature in the ablater SAE
     for i, ablater_idx in enumerate(tqdm(top_features_K)):
         # Set up ablation hook for this feature
-        ablation_hook = partial(ablate_feature_hook, feature_id=ablater_idx)
+        def ablation_hook(acts_BSe, hook):
+            acts_BSe[:, :, ablater_idx] = 0
+            return acts_BSe
+
         model.add_hook(hook_point, ablation_hook, "fwd")
 
         # Run with this feature ablated
