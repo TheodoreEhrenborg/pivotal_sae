@@ -55,7 +55,7 @@ def compute_ablation_matrix(
     """
     Computes a matrix where each element (i,j) represents the effect of ablating
     feature i in the ablater SAE on feature j in the reader SAE.
-    - e: number of features in ablater SAE (or abridge_ablations_to if specified)
+    - e: number of features in ablater SAE
     - E: number of features in reader SAE
     """
     ablater_sae.use_error_term = True
@@ -90,7 +90,7 @@ def compute_ablation_matrix(
     baseline_acts_E = baseline_acts_BSE[0, -1, :]  # [E] Take last sequence position
 
     # Initialize the ablation matrix
-    e = abridge_ablations_to
+    e = ablater_sae.cfg.d_sae
     E = reader_sae.cfg.d_sae
     ablation_matrix_eE = torch.zeros((e, E), device="cpu")  # [e, E]
 
