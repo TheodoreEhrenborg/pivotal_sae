@@ -251,16 +251,26 @@ def analyze_ablation_matrix(
 ) -> None:
     """
     Analyzes the ablation matrix and prints the strongest interactions.
+    Uses sequential topk operations on the original matrix to find largest magnitude values.
     """
-    # Find the strongest effects (both positive and negative)
-    abs_matrix_AE = torch.abs(ablation_matrix_eE)
-    _, flat_indices_K = torch.topk(abs_matrix_AE.view(-1), top_k)
+    # Find top k positive values
+    _, top_indices = torch.topk(ablation_matrix_eE.view(-1), top_k)
 
-    # Convert flat indices back to 2D
-    ablater_indices_K = flat_indices_K.div(
-        ablation_matrix_eE.size(1), rounding_mode="floor"
-    )
-    reader_indices_K = flat_indices_K % ablation_matrix_eE.size(1)
+    # Find top k negative values (by finding bottom k)
+    _, bottom_indices = torch.topk(ablation_matrix_eE.view(-1), top_k, largest=False)
+
+    # Combine indices and get their values
+    all_indices = torch.cat([top_indices, bottom_indices])
+    all_values = ablation_matrix_eE.view(-1)[all_indices]
+
+    # Find the top k by absolute value
+    _, final_idx = torch.topk(all_values.abs(), top_k)
+    flat_indices_K = all_indices[final_idx]
+
+    # Convert flat indices to 2D coordinates
+    num_reader_features = ablation_matrix_eE.size(1)
+    ablater_indices_K = flat_indices_K.div(num_reader_features, rounding_mode="floor")
+    reader_indices_K = flat_indices_K % num_reader_features
 
     # Get descriptions for the features
     ablater_descriptions = asyncio.run(
