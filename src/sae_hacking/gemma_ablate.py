@@ -73,7 +73,7 @@ def compute_ablation_matrix(
     ablater_acts_1Se = ablater_cache[f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Find the features with highest activation summed across all positions
-    summed_acts_e = ablater_acts_1Se[0].abs().sum(dim=0)
+    summed_acts_e = ablater_acts_1Se[0].sum(dim=0)
     top_features_K = torch.topk(summed_acts_e, k=abridge_ablations_to).indices
 
     # Get baseline activations for reader SAE
