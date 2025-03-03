@@ -50,7 +50,7 @@ def compute_ablation_matrix(
     reader_sae: SAE,
     prompt: str,
     abridge_ablations_to: int,
-) -> torch.Tensor:
+) -> dict:
     """
     Computes a matrix where each element (i,j) represents the effect of ablating
     feature i in the ablater SAE on feature j in the reader SAE.
@@ -80,9 +80,7 @@ def compute_ablation_matrix(
     baseline_acts_E = baseline_acts_1SE[0, -1, :]
 
     # Initialize the ablation matrix
-    e = ablater_sae.cfg.d_sae
-    E = reader_sae.cfg.d_sae
-    ablation_matrix_eE = torch.zeros((e, E), device="cpu")  # [e, E]
+    ablation_results = {}
 
     # Add the ablater SAE to the model
     model.add_sae(ablater_sae)
@@ -106,18 +104,22 @@ def compute_ablation_matrix(
         ]
         ablated_acts_E = ablated_acts_1SE[0, -1, :]
 
-        # Compute differences
-        ablation_matrix_eE[ablater_idx, :] = baseline_acts_E - ablated_acts_E
+        result = baseline_acts_E - ablated_acts_E
+
+        if ablater_idx in ablation_results:
+            ablation_results[ablater_idx] += result
+        else:
+            ablation_results[ablater_idx] = result
 
         # Reset hooks for next iteration
         model.reset_hooks()
 
-    return ablation_matrix_eE
+    return ablation_results
 
 
 @beartype
 def graph_ablation_matrix(
-    ablation_matrix_eE: torch.Tensor,
+    ablation_results: dict,
     ablater_sae_id: str,
     reader_sae_id: str,
     output_dir: str,
@@ -127,10 +129,27 @@ def graph_ablation_matrix(
     Creates and saves a network plot of the interactions.
     """
 
-    # Get the size of the matrix
-    _, n_reader = ablation_matrix_eE.shape
+    # Get the total number of reader neurons from any entry in the dictionary
+    _, n_reader = next(iter(ablation_results.values())).shape
 
-    _, flat_indices = torch.topk(ablation_matrix_eE.view(-1), n_edges)
+    # Collect all values and their indices
+    all_values = []
+    all_indices = []
+    for ablater_idx, tensor in ablation_results.items():
+        values = tensor.view(-1)
+        indices = torch.arange(len(values))
+        all_values.append(values)
+        all_indices.append(
+            indices + ablater_idx * n_reader
+        )  # Offset indices by ablater position
+
+    # Stack all values and indices
+    all_values = torch.cat(all_values)
+    all_indices = torch.cat(all_indices)
+
+    # Get top k values
+    _, top_k_indices = torch.topk(all_values, n_edges)
+    flat_indices = all_indices[top_k_indices]
 
     # Create graph
     G = nx.Graph()
@@ -163,7 +182,7 @@ def graph_ablation_matrix(
     # Add edges with weights
     print("Adding edges to graph")
     for ablater_idx, reader_idx in zip(ablater_indices, reader_indices):
-        weight = ablation_matrix_eE[ablater_idx, reader_idx].item()
+        weight = ablation_results[ablater_idx.item()][0, reader_idx.item()].item()
         G.add_edge(
             f"A{ablater_idx.item()}",
             f"R{reader_idx.item()}",
@@ -341,7 +360,7 @@ def main(args: Namespace) -> None:
         prompt = prompt[: args.abridge_prompt_to]
 
     print("Computing ablation matrix...")
-    ablation_matrix_eE = compute_ablation_matrix(
+    ablation_results = compute_ablation_matrix(
         model,
         ablater_sae,
         reader_sae,
@@ -349,11 +368,11 @@ def main(args: Namespace) -> None:
         abridge_ablations_to=args.abridge_ablations_to,
     )
 
-    print("Analyzing results...")
-    analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
+    # print("Analyzing results...")
+    # analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
     print("Graphing results...")
     graph_ablation_matrix(
-        ablation_matrix_eE,
+        ablation_results,
         ablater_sae.cfg.neuronpedia_id,
         reader_sae.cfg.neuronpedia_id,
         "/tmp",
