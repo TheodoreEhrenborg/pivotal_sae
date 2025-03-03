@@ -131,7 +131,6 @@ def compute_ablation_matrix(
     # First, run the model with ablater SAE to get its activations
     model.reset_hooks()
     model.reset_saes()
-    model.add_sae(ablater_sae)
     _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
     ablater_acts_1Se = ablater_cache[f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"]
 
