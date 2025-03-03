@@ -4,6 +4,7 @@ import json
 import os
 import time
 from argparse import ArgumentParser, Namespace
+from typing import Dict, List
 
 import aiohttp
 import networkx as nx
@@ -37,6 +38,77 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
     return parser
+
+
+@beartype
+def find_frequently_activating_features(
+    model: HookedSAETransformer,
+    ablater_sae: SAE,
+    prompts: List[str],
+    activation_threshold: float = 0.5,  # Threshold for considering a feature "activated"
+    min_activation_percentage: float = 0.1,  # 10% requirement
+) -> List[int]:
+    """
+    For each prompt, checks which ablater SAE features activate on which tokens.
+    Returns a list of features that activate on at least the specified percentage of tokens.
+
+    Args:
+        model: The transformer model with SAE hooks
+        ablater_sae: The SAE to analyze for feature activations
+        prompts: List of text prompts to process
+        activation_threshold: Threshold above which a feature is considered "activated"
+        min_activation_percentage: Minimum percentage of tokens a feature must activate on
+
+    Returns:
+        List of feature indices that activate on at least min_activation_percentage of tokens
+    """
+    ablater_sae.use_error_term = True
+
+    # Count of total tokens across all prompts
+    total_token_count = 0
+
+    # Dictionary to track activation counts for each feature
+    feature_activation_counts: Dict[int, int] = {}
+
+    # Process each prompt
+    for prompt in prompts:
+        print(f"Processing prompt: {prompt}")
+
+        # Run the model with ablater SAE to get its activations
+        model.reset_hooks()
+        model.reset_saes()
+        model.add_sae(ablater_sae)
+        _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
+        ablater_acts_1Se = ablater_cache[
+            f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"
+        ]
+
+        # Count the number of tokens in this prompt
+        num_tokens = ablater_acts_1Se.shape[1]
+        total_token_count += num_tokens
+
+        # For each feature, count on how many tokens it activates
+        for feature_idx in range(ablater_acts_1Se.shape[2]):
+            # Get activations for this feature across all token positions
+            feature_acts = ablater_acts_1Se[0, :, feature_idx]
+
+            # Count token positions where activation exceeds threshold
+            activations = (feature_acts > activation_threshold).sum().item()
+
+            # Update the count for this feature
+            if feature_idx in feature_activation_counts:
+                feature_activation_counts[feature_idx] += activations
+            else:
+                feature_activation_counts[feature_idx] = activations
+
+    # Calculate which features activate on at least min_activation_percentage of tokens
+    frequently_activating_features = []
+    for feature_idx, activation_count in feature_activation_counts.items():
+        activation_percentage = activation_count / total_token_count
+        if activation_percentage >= min_activation_percentage:
+            frequently_activating_features.append(feature_idx)
+
+    return sorted(frequently_activating_features)
 
 
 @beartype
