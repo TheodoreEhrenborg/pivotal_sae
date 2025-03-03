@@ -41,6 +41,26 @@ def make_parser() -> ArgumentParser:
 
 
 @beartype
+def generate_prompts(
+    model: str, n_prompts: int, max_tokens_in_prompt: int
+) -> list[str]:
+    dataset = load_dataset("NeelNanda/pile-10k", split="train")
+    tokenizer = AutoTokenizer.from_pretrained(model)
+    prompts = [dataset[i]["text"] for i in range(n_prompts)]
+
+    processed_prompts = []
+    for prompt in prompts:
+        tokenized_prompt_1S = tokenizer(prompt)["input_ids"]
+        # Skip the BOS that the tokenizer adds
+        processed_prompt = tokenizer.decode(
+            tokenized_prompt_1S[1 : max_tokens_in_prompt + 1]
+        )
+        processed_prompts.append(processed_prompt)
+
+    return processed_prompts
+
+
+@beartype
 def find_frequently_activating_features(
     model: HookedSAETransformer,
     ablater_sae: SAE,
@@ -405,7 +425,6 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 def main(args: Namespace) -> None:
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
 
     ablater_sae, _, _ = SAE.from_pretrained(
         release=args.ablater_sae_release, sae_id=args.ablater_sae_id, device=device
@@ -413,17 +432,10 @@ def main(args: Namespace) -> None:
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
-    dataset = load_dataset("NeelNanda/pile-10k", split="train")
+    prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
     ablation_results_mut = {}
-    for i in range(args.n_prompts):
-        prompt = dataset[i]["text"]
-        tokenized_prompt_1S = tokenizer(prompt)["input_ids"]
-        # Also skip the BOS that the tokenizer adds
-        prompt = tokenizer.decode(
-            tokenized_prompt_1S[1 : args.max_tokens_in_prompt + 1]
-        )
-
+    for prompt in prompts:
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
