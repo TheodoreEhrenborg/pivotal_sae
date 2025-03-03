@@ -11,6 +11,7 @@ import networkx as nx
 import requests
 import torch
 from beartype import beartype
+from coolname import generate_slug
 from datasets import load_dataset
 from pyvis.network import Network
 from sae_lens import SAE, HookedSAETransformer
@@ -272,7 +273,7 @@ def graph_ablation_matrix(
     print("Calculating layout")
     nt.from_nx(G)
     nt.show_buttons(filter_=["physics"])
-    nt.save_graph(f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}ablation_network.html")
+    nt.save_graph(f"{output_dir}/ablation_network.html")
 
 
 @beartype
@@ -423,6 +424,8 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 @beartype
 def main(args: Namespace) -> None:
+    output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
+    print(f"Writing to {output_dir}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
@@ -454,7 +457,7 @@ def main(args: Namespace) -> None:
         ablation_results,
         ablater_sae.cfg.neuronpedia_id,
         reader_sae.cfg.neuronpedia_id,
-        "/tmp",
+        output_dir,
         args.n_edges,
     )
 
