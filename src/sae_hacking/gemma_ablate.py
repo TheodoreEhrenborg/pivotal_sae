@@ -352,8 +352,11 @@ def main(args: Namespace) -> None:
     ablation_results_mut = {}
     for i in range(args.n_prompts):
         prompt = dataset[i]["text"]
-        tokenized_prompt_1S = tokenizer(prompt, return_tensors="pt")["input_ids"]
-        prompt = tokenizer.decode(tokenized_prompt_1S[:, : args.max_tokens_in_prompt])
+        tokenized_prompt_1S = tokenizer(prompt)["input_ids"]
+        # Also skip the BOS that the tokenizer adds
+        prompt = tokenizer.decode(
+            tokenized_prompt_1S[1 : args.max_tokens_in_prompt + 1]
+        )
 
         print("Computing ablation matrix...")
         compute_ablation_matrix(
