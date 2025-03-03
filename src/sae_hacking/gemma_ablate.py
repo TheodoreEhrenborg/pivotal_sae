@@ -40,6 +40,12 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--json-save-frequency", type=int, default=240)
+    parser.add_argument(
+        "--exclude-latent-threshold",
+        type=float,
+        default=0.1,
+        help="Latents more frequent than this are excluded from ablation",
+    )
     return parser
 
 
@@ -68,7 +74,7 @@ def find_frequently_activating_features(
     model: HookedSAETransformer,
     ablater_sae: SAE,
     prompts: list[str],
-    min_activation_percentage: float,
+    exclude_latent_threshold: float,
 ) -> list[int]:
     """
     For each prompt, checks which ablater SAE features activate on which tokens.
@@ -125,7 +131,7 @@ def find_frequently_activating_features(
     frequently_activating_features = []
     for feature_idx, activation_count in feature_activation_counts.items():
         activation_percentage = activation_count / total_token_count
-        if activation_percentage >= min_activation_percentage:
+        if activation_percentage >= exclude_latent_threshold:
             frequently_activating_features.append(feature_idx)
 
     return sorted(frequently_activating_features)
@@ -137,6 +143,7 @@ def compute_ablation_matrix(
     ablater_sae: SAE,
     reader_sae: SAE,
     prompt: str,
+    frequent_features: list[int],
     ablation_results_mut: dict,
     abridge_ablations_to: int,
 ) -> None:
@@ -156,7 +163,14 @@ def compute_ablation_matrix(
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablater_acts_1Se[0].sum(dim=0)
-    top_features_K = torch.topk(summed_acts_e, k=abridge_ablations_to).indices
+    tentative_top_features_k = torch.topk(
+        summed_acts_e, k=abridge_ablations_to + len(frequent_features)
+    ).indices
+
+    top_features_K = [
+        i for i in tentative_top_features_k if i.item() not in frequent_features
+    ][:abridge_ablations_to]
+    assert len(top_features_K) == abridge_ablations_to
 
     # Get baseline activations for reader SAE
     model.reset_hooks()
@@ -486,6 +500,13 @@ def main(args: Namespace) -> None:
     )
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
+    frequent_features = find_frequently_activating_features(
+        model,
+        ablater_sae,
+        prompts,
+        exclude_latent_threshold=args.exclude_latent_threshold,
+    )
+
     ablation_results_mut = {}
     for i, prompt in enumerate(prompts):
         print("Computing ablation matrix...")
@@ -495,6 +516,7 @@ def main(args: Namespace) -> None:
             reader_sae,
             prompt,
             ablation_results_mut,
+            frequent_features,
             abridge_ablations_to=args.abridge_ablations_to,
         )
         if i % args.json_save_frequency == 0:
