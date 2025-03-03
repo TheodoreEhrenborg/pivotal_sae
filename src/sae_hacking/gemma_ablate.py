@@ -339,7 +339,7 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 @beartype
 def main(args: Namespace) -> None:
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    print(f"{tokenizer('foo', return_tensors='pt').size()=}")
+    print(f"{tokenizer('foo', return_tensors='pt')['input_ids'].size()=}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
@@ -358,7 +358,7 @@ def main(args: Namespace) -> None:
         if args.abridge_prompt_to:
             prompt = prompt[: args.abridge_prompt_to]
 
-        print(f"{tokenizer(prompt, return_tensors='pt').size()=}")
+        print(f"{tokenizer(prompt, return_tensors='pt')['input_ids'].size()=}")
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
