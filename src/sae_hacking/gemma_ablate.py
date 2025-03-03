@@ -191,7 +191,7 @@ def graph_ablation_matrix(
             abs_weight=abs(weight),
         )
 
-    nt = Network("500px", "1000px", select_menu=True)
+    nt = Network("500px", "1000px", select_menu=True, cdn_resources="remote")
     print("Calculating layout")
     nt.from_nx(G)
     nt.show_buttons(filter_=["physics"])
