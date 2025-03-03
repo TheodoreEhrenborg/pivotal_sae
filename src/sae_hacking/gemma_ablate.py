@@ -4,6 +4,7 @@ import json
 import os
 import time
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 from typing import Dict
 
 import aiohttp
@@ -440,6 +441,7 @@ def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
 @beartype
 def main(args: Namespace) -> None:
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
+    Path(output_dir).mkdir()
     print(f"Writing to {output_dir}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
