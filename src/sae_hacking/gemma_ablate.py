@@ -14,6 +14,7 @@ from datasets import load_dataset
 from pyvis.network import Network
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -337,6 +338,8 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 @beartype
 def main(args: Namespace) -> None:
+    tokenizer = AutoTokenizer(args.model)
+    print(f"{tokenizer('foo', return_tensors='pt').size()=}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
@@ -355,6 +358,7 @@ def main(args: Namespace) -> None:
         if args.abridge_prompt_to:
             prompt = prompt[: args.abridge_prompt_to]
 
+        print(f"{tokenizer(prompt, return_tensors='pt').size()=}")
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
