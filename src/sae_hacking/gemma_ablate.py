@@ -130,7 +130,7 @@ def graph_ablation_matrix(
     """
 
     # Get the total number of reader neurons from any entry in the dictionary
-    _, n_reader = next(iter(ablation_results.values())).shape
+    n_reader = next(iter(ablation_results.values())).shape[0]
 
     # Collect all values and their indices
     all_values = []
@@ -182,7 +182,7 @@ def graph_ablation_matrix(
     # Add edges with weights
     print("Adding edges to graph")
     for ablater_idx, reader_idx in zip(ablater_indices, reader_indices):
-        weight = ablation_results[ablater_idx.item()][0, reader_idx.item()].item()
+        weight = ablation_results[ablater_idx.item()][reader_idx.item()].item()
         G.add_edge(
             f"A{ablater_idx.item()}",
             f"R{reader_idx.item()}",
