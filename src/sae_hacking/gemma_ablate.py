@@ -39,6 +39,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
+    parser.add_argument("--json-save-frequency", type=int, default=240)
     return parser
 
 
@@ -455,7 +456,7 @@ def main(args: Namespace) -> None:
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
     ablation_results_mut = {}
-    for prompt in prompts:
+    for i, prompt in enumerate(prompts):
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
@@ -465,10 +466,11 @@ def main(args: Namespace) -> None:
             ablation_results_mut,
             abridge_ablations_to=args.abridge_ablations_to,
         )
-        save_dict_with_tensors_to_json(
-            ablation_results_mut,
-            f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json",
-        )
+        if i % args.json_save_frequency == 0:
+            save_dict_with_tensors_to_json(
+                ablation_results_mut,
+                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json",
+            )
 
     # print("Analyzing results...")
     # analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
