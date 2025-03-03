@@ -423,6 +423,21 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 
 @beartype
+def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
+    json_dict = {}
+
+    for key, value in tensor_dict.items():
+        if isinstance(value, torch.Tensor):
+            assert value.dim() == 1, f"Tensor for key '{key}' is not 1D"
+            json_dict[key] = value.tolist()
+        else:
+            json_dict[key] = value
+
+    with open(save_path, "w") as f:
+        json.dump(json_dict, f)
+
+
+@beartype
 def main(args: Namespace) -> None:
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     print(f"Writing to {output_dir}")
@@ -447,6 +462,10 @@ def main(args: Namespace) -> None:
             prompt,
             ablation_results_mut,
             abridge_ablations_to=args.abridge_ablations_to,
+        )
+        save_dict_with_tensors_to_json(
+            ablation_results_mut,
+            f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json",
         )
 
     # print("Analyzing results...")
