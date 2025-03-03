@@ -137,7 +137,7 @@ def graph_ablation_matrix(
     all_indices = []
     for ablater_idx, tensor in ablation_results.items():
         values = tensor.view(-1)
-        indices = torch.arange(len(values))
+        indices = torch.arange(len(values)).cuda()
         all_values.append(values)
         all_indices.append(
             indices + ablater_idx * n_reader
