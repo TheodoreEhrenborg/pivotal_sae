@@ -338,7 +338,7 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 @beartype
 def main(args: Namespace) -> None:
-    tokenizer = AutoTokenizer(args.model)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
     print(f"{tokenizer('foo', return_tensors='pt').size()=}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
