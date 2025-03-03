@@ -49,8 +49,6 @@ def compute_ablation_matrix(
     abridge_ablations_to: int,
 ) -> None:
     """
-    Computes a matrix where each element (i,j) represents the effect of ablating
-    feature i in the ablater SAE on feature j in the reader SAE.
     - e: number of features in ablater SAE
     - E: number of features in reader SAE
     """
