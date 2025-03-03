@@ -32,7 +32,7 @@ def make_parser() -> ArgumentParser:
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
-    parser.add_argument("--abridge-prompt-to", type=int, default=750)
+    parser.add_argument("--max-tokens-in-prompt", type=int, default=125)
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
@@ -338,10 +338,9 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 @beartype
 def main(args: Namespace) -> None:
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    print(f"{tokenizer('foo', return_tensors='pt')['input_ids'].size()=}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
 
     ablater_sae, _, _ = SAE.from_pretrained(
         release=args.ablater_sae_release, sae_id=args.ablater_sae_id, device=device
@@ -354,11 +353,9 @@ def main(args: Namespace) -> None:
     ablation_results_mut = {}
     for i in range(args.n_prompts):
         prompt = dataset[i]["text"]
+        tokenized_prompt_1S = tokenizer(prompt, return_tensors="pt")["input_ids"]
+        prompt = tokenizer.decode(tokenized_prompt_1S[:, : args.max_tokens_in_prompt])
 
-        if args.abridge_prompt_to:
-            prompt = prompt[: args.abridge_prompt_to]
-
-        print(f"{tokenizer(prompt, return_tensors='pt')['input_ids'].size()=}")
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
