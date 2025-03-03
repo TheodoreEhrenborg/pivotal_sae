@@ -106,10 +106,11 @@ def compute_ablation_matrix(
 
         result = baseline_acts_E - ablated_acts_E
 
-        if ablater_idx in ablation_results:
-            ablation_results[ablater_idx] += result
+        ablater_idx_int = ablater_idx.item()
+        if ablater_idx_int in ablation_results:
+            ablation_results[ablater_idx_int] += result
         else:
-            ablation_results[ablater_idx] = result
+            ablation_results[ablater_idx_int] = result
 
         # Reset hooks for next iteration
         model.reset_hooks()
