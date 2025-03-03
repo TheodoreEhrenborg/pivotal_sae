@@ -49,8 +49,9 @@ def compute_ablation_matrix(
     ablater_sae: SAE,
     reader_sae: SAE,
     prompt: str,
+    ablation_results_mut: dict,
     abridge_ablations_to: int,
-) -> dict:
+) -> None:
     """
     Computes a matrix where each element (i,j) represents the effect of ablating
     feature i in the ablater SAE on feature j in the reader SAE.
@@ -79,9 +80,6 @@ def compute_ablation_matrix(
     baseline_acts_1SE = baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"]
     baseline_acts_E = baseline_acts_1SE[0, -1, :]
 
-    # Initialize the ablation matrix
-    ablation_results = {}
-
     # Add the ablater SAE to the model
     model.add_sae(ablater_sae)
     hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
@@ -107,15 +105,13 @@ def compute_ablation_matrix(
         result = baseline_acts_E - ablated_acts_E
 
         ablater_idx_int = ablater_idx.item()
-        if ablater_idx_int in ablation_results:
-            ablation_results[ablater_idx_int] += result
+        if ablater_idx_int in ablation_results_mut:
+            ablation_results_mut[ablater_idx_int] += result
         else:
-            ablation_results[ablater_idx_int] = result
+            ablation_results_mut[ablater_idx_int] = result
 
         # Reset hooks for next iteration
         model.reset_hooks()
-
-    return ablation_results
 
 
 @beartype
@@ -361,17 +357,20 @@ def main(args: Namespace) -> None:
         prompt = prompt[: args.abridge_prompt_to]
 
     print("Computing ablation matrix...")
-    ablation_results = compute_ablation_matrix(
+    ablation_results_mut = {}
+    compute_ablation_matrix(
         model,
         ablater_sae,
         reader_sae,
         prompt,
+        ablation_results_mut,
         abridge_ablations_to=args.abridge_ablations_to,
     )
 
     # print("Analyzing results...")
     # analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
     print("Graphing results...")
+    ablation_results = ablation_results_mut
     graph_ablation_matrix(
         ablation_results,
         ablater_sae.cfg.neuronpedia_id,
