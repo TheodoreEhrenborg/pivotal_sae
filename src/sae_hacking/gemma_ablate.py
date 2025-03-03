@@ -19,12 +19,6 @@ from tqdm import tqdm
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
 
 
-# Add this function to get the first prompt from pile-10k
-def get_pile_prompt():
-    dataset = load_dataset("NeelNanda/pile-10k", split="train")
-    return dataset[0]["text"]
-
-
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
@@ -40,6 +34,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--abridge-prompt-to", type=int, default=750)
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-edges", type=int, default=10000)
+    parser.add_argument("--n-prompts", type=int, default=1)
     return parser
 
 
@@ -351,21 +346,24 @@ def main(args: Namespace) -> None:
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
+    dataset = load_dataset("NeelNanda/pile-10k", split="train")
 
-    prompt = get_pile_prompt()
-    if args.abridge_prompt_to:
-        prompt = prompt[: args.abridge_prompt_to]
-
-    print("Computing ablation matrix...")
     ablation_results_mut = {}
-    compute_ablation_matrix(
-        model,
-        ablater_sae,
-        reader_sae,
-        prompt,
-        ablation_results_mut,
-        abridge_ablations_to=args.abridge_ablations_to,
-    )
+    for i in range(args.n_prompts):
+        prompt = dataset[i]["text"]
+
+        if args.abridge_prompt_to:
+            prompt = prompt[: args.abridge_prompt_to]
+
+        print("Computing ablation matrix...")
+        compute_ablation_matrix(
+            model,
+            ablater_sae,
+            reader_sae,
+            prompt,
+            ablation_results_mut,
+            abridge_ablations_to=args.abridge_ablations_to,
+        )
 
     # print("Analyzing results...")
     # analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
