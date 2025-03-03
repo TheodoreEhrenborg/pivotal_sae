@@ -4,7 +4,7 @@ import json
 import os
 import time
 from argparse import ArgumentParser, Namespace
-from typing import Dict, List
+from typing import Dict
 
 import aiohttp
 import networkx as nx
@@ -44,10 +44,9 @@ def make_parser() -> ArgumentParser:
 def find_frequently_activating_features(
     model: HookedSAETransformer,
     ablater_sae: SAE,
-    prompts: List[str],
-    activation_threshold: float = 0.5,  # Threshold for considering a feature "activated"
-    min_activation_percentage: float = 0.1,  # 10% requirement
-) -> List[int]:
+    prompts: list[str],
+    min_activation_percentage: float,
+) -> list[int]:
     """
     For each prompt, checks which ablater SAE features activate on which tokens.
     Returns a list of features that activate on at least the specified percentage of tokens.
@@ -56,7 +55,6 @@ def find_frequently_activating_features(
         model: The transformer model with SAE hooks
         ablater_sae: The SAE to analyze for feature activations
         prompts: List of text prompts to process
-        activation_threshold: Threshold above which a feature is considered "activated"
         min_activation_percentage: Minimum percentage of tokens a feature must activate on
 
     Returns:
@@ -77,7 +75,6 @@ def find_frequently_activating_features(
         # Run the model with ablater SAE to get its activations
         model.reset_hooks()
         model.reset_saes()
-        model.add_sae(ablater_sae)
         _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
         ablater_acts_1Se = ablater_cache[
             f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"
@@ -90,10 +87,10 @@ def find_frequently_activating_features(
         # For each feature, count on how many tokens it activates
         for feature_idx in range(ablater_acts_1Se.shape[2]):
             # Get activations for this feature across all token positions
-            feature_acts = ablater_acts_1Se[0, :, feature_idx]
+            feature_acts_e = ablater_acts_1Se[0, :, feature_idx]
 
             # Count token positions where activation exceeds threshold
-            activations = (feature_acts > activation_threshold).sum().item()
+            activations = (feature_acts_e > 0).sum().item()
 
             # Update the count for this feature
             if feature_idx in feature_activation_counts:
