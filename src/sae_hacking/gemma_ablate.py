@@ -208,8 +208,8 @@ def graph_ablation_matrix(
 ) -> None:
     """
     Creates and saves a network plot of the interactions.
+    Shows top positive edges in blue and top negative edges in red.
     """
-
     # Get the total number of reader neurons from any entry in the dictionary
     n_reader = next(iter(ablation_results.values())).shape[0]
 
@@ -228,16 +228,44 @@ def graph_ablation_matrix(
     all_values = torch.cat(all_values)
     all_indices = torch.cat(all_indices)
 
-    # Get top k values
-    _, top_k_indices = torch.topk(all_values, n_edges)
-    flat_indices = all_indices[top_k_indices]
+    # Split edges by positive and negative values
+    n_pos_edges = n_edges // 2
+    n_neg_edges = n_edges - n_pos_edges
+
+    # Get top positive edges
+    positive_mask = all_values > 0
+    positive_values = all_values[positive_mask]
+    positive_indices = all_indices[positive_mask]
+
+    # Get top negative edges
+    negative_mask = all_values < 0
+    negative_values = all_values[negative_mask]
+    negative_indices = all_indices[negative_mask]
+
+    # Get top k positive and negative values
+    if len(positive_values) > 0:
+        _, top_pos_indices = torch.topk(
+            positive_values, min(n_pos_edges, len(positive_values))
+        )
+        top_pos_flat_indices = positive_indices[top_pos_indices]
+    else:
+        top_pos_flat_indices = torch.tensor([], dtype=torch.long)
+
+    if len(negative_values) > 0:
+        _, top_neg_indices = torch.topk(
+            negative_values.abs(), min(n_neg_edges, len(negative_values))
+        )
+        top_neg_flat_indices = negative_indices[top_neg_indices]
+    else:
+        top_neg_flat_indices = torch.tensor([], dtype=torch.long)
 
     # Create graph
     G = nx.Graph()
 
-    # Get all descriptions first
-    ablater_indices = flat_indices.div(n_reader, rounding_mode="floor")
-    reader_indices = flat_indices % n_reader
+    # Process all selected indices
+    all_flat_indices = torch.cat([top_pos_flat_indices, top_neg_flat_indices])
+    ablater_indices = all_flat_indices.div(n_reader, rounding_mode="floor")
+    reader_indices = all_flat_indices % n_reader
 
     print("Loading auto-interp explanations")
     ablater_descriptions = NeuronExplanationLoader(ablater_sae_id)
@@ -260,15 +288,20 @@ def graph_ablation_matrix(
             group="reader",
         )
 
-    # Add edges with weights
+    # Add edges with weights and colors
     print("Adding edges to graph")
-    for ablater_idx, reader_idx in zip(ablater_indices, reader_indices):
+    for idx, (ablater_idx, reader_idx) in enumerate(
+        zip(ablater_indices, reader_indices)
+    ):
         weight = ablation_results[ablater_idx.item()][reader_idx.item()].item()
+        edge_color = "blue" if weight > 0 else "red"
         G.add_edge(
             f"A{ablater_idx.item()}",
             f"R{reader_idx.item()}",
             weight=weight,
             abs_weight=abs(weight),
+            color=edge_color,
+            title=f"Weight: {weight:.4f}",
         )
 
     nt = Network("500px", "1000px", select_menu=True, cdn_resources="remote")
