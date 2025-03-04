@@ -439,6 +439,7 @@ def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
         json.dump(json_dict, f)
 
 
+@torch.inference_mode()
 @beartype
 def main(args: Namespace) -> None:
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
