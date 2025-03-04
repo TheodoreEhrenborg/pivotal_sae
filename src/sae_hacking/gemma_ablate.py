@@ -190,9 +190,9 @@ def compute_ablation_matrix(
 
         ablater_idx_int = ablater_idx.item()
         if ablater_idx_int in ablation_results_mut:
-            ablation_results_mut[ablater_idx_int] += result
+            ablation_results_mut[ablater_idx_int] += result.cpu()
         else:
-            ablation_results_mut[ablater_idx_int] = result
+            ablation_results_mut[ablater_idx_int] = result.cpu()
 
         # Reset hooks for next iteration
         model.reset_hooks()
@@ -218,7 +218,7 @@ def graph_ablation_matrix(
     all_indices = []
     for ablater_idx, tensor in ablation_results.items():
         values = tensor.view(-1)
-        indices = torch.arange(len(values)).cuda()
+        indices = torch.arange(len(values))
         all_values.append(values)
         all_indices.append(
             indices + ablater_idx * n_reader
