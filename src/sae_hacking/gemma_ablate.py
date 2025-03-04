@@ -298,8 +298,7 @@ def graph_ablation_matrix(
         G.add_edge(
             f"A{ablater_idx.item()}",
             f"R{reader_idx.item()}",
-            weight=weight,
-            abs_weight=abs(weight),
+            weight=abs(weight),
             color=edge_color,
             title=f"Weight: {weight:.4f}",
         )
