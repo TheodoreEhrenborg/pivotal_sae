@@ -290,9 +290,7 @@ def graph_ablation_matrix(
 
     # Add edges with weights and colors
     print("Adding edges to graph")
-    for idx, (ablater_idx, reader_idx) in enumerate(
-        zip(ablater_indices, reader_indices)
-    ):
+    for ablater_idx, reader_idx in zip(ablater_indices, reader_indices, strict=True):
         weight = ablation_results[ablater_idx.item()][reader_idx.item()].item()
         edge_color = "blue" if weight > 0 else "red"
         G.add_edge(
