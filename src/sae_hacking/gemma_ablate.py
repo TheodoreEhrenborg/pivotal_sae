@@ -515,9 +515,9 @@ def main(args: Namespace) -> None:
             ablater_sae,
             reader_sae,
             prompt,
-            ablation_results_mut,
             frequent_features,
-            abridge_ablations_to=args.abridge_ablations_to,
+            ablation_results_mut,
+            args.abridge_ablations_to,
         )
         if i % args.json_save_frequency == 0:
             save_dict_with_tensors_to_json(
