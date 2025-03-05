@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, Namespace
-from pathlib import Path
 
 from beartype import beartype
 
