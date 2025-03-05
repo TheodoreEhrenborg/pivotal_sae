@@ -7,7 +7,7 @@ import uuid
 import pytest
 import torch
 
-from sae_hacking.gemma_ablate import (
+from sae_hacking.json_utils import (
     load_dict_with_tensors_from_json,
     save_dict_with_tensors_to_json,
 )
