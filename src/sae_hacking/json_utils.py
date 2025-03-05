@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+import orjson
 import torch
 import zstandard
 from beartype import beartype
@@ -17,13 +18,13 @@ def load_dict_with_tensors_from_json(load_path: str) -> dict:
         with open(path, "rb") as compressed_file:
             decompressor = zstandard.ZstdDecompressor()
             print("Decompressing to bytes")
-            json_str = decompressor.decompress(compressed_file.read())
+            json_bytes = decompressor.decompress(compressed_file.read())
             print("Converting to json")
-            json_dict = json.loads(json_str)
+            json_dict = orjson.loads(json_bytes)
     else:
-        with open(path, "r") as f:
+        with open(path, "rb") as f:
             print("Reading json from file")
-            json_dict = json.load(f)
+            json_dict = orjson.loads(f.read())
 
     print("Making tensor dictionary")
     result_dict = {}
