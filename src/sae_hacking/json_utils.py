@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 import zstandard
 from beartype import beartype
+from tqdm import tqdm
 
 
 @beartype
@@ -27,7 +28,7 @@ def load_dict_with_tensors_from_json(load_path: str) -> dict:
     print("Making tensor dictionary")
     result_dict = {}
 
-    for key, value in json_dict.items():
+    for key, value in tqdm(json_dict.items()):
         result_dict[int(key)] = torch.tensor(value)
 
     print("Done making tensor dictionary")
