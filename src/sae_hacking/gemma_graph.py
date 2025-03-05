@@ -14,8 +14,8 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--ablater-sae-neuronpedia-id", required=True)
     parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     parser.add_argument("--n-edges", type=int, default=1000)
-    parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--json-path", type=Path, required=True)
+    parser.add_argument("--output-dir", type=str, required=True)
+    parser.add_argument("--json-path", type=str, required=True)
     return parser
 
 
