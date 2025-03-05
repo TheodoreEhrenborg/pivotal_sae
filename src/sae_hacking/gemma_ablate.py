@@ -11,6 +11,7 @@ import aiohttp
 import networkx as nx
 import requests
 import torch
+import zstandard
 from beartype import beartype
 from coolname import generate_slug
 from datasets import load_dataset
@@ -470,8 +471,16 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 @beartype
 def load_dict_with_tensors_from_json(load_path: str) -> dict:
-    with open(load_path, "r") as f:
-        json_dict = json.load(f)
+    path = Path(load_path)
+
+    if load_path.endswith(".json.zst"):
+        with open(path, "rb") as compressed_file:
+            decompressor = zstandard.ZstdDecompressor()
+            json_str = decompressor.decompress(compressed_file.read())
+            json_dict = json.loads(json_str)
+    else:
+        with open(path, "r") as f:
+            json_dict = json.load(f)
 
     result_dict = {}
 
@@ -482,7 +491,17 @@ def load_dict_with_tensors_from_json(load_path: str) -> dict:
 
 
 @beartype
-def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
+def save_dict_with_tensors_to_json(
+    tensor_dict: dict, save_path: str, compress: bool
+) -> None:
+    """
+    Save a dictionary containing tensors to a JSON file, with optional compression.
+
+    Args:
+        tensor_dict: Dictionary containing tensors and other serializable values
+        save_path: Path to save the JSON file
+        compress: If True, compress the output using Zstandard and append .zst extension
+    """
     json_dict = {}
 
     for key, value in tensor_dict.items():
@@ -492,8 +511,23 @@ def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
         else:
             json_dict[key] = value
 
-    with open(save_path, "w") as f:
-        json.dump(json_dict, f)
+    if compress:
+        # Make sure the save_path has .zst extension
+        if not save_path.endswith(".zst"):
+            save_path += ".zst"
+
+        # Convert to JSON string
+        json_data = json.dumps(json_dict)
+        # Compress the JSON data and write to file
+        compressor = zstandard.ZstdCompressor()
+        compressed_data = compressor.compress(json_data.encode("utf-8"))
+        with open(save_path, "wb") as f:
+            f.write(compressed_data)
+    else:
+        # Save as regular JSON
+        assert not save_path.endswith(".zst"), "Did you mean to compress?"
+        with open(save_path, "w") as f:
+            json.dump(json_dict, f)
 
 
 @torch.inference_mode()
