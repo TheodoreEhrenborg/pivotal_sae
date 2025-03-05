@@ -568,7 +568,8 @@ def main(args: Namespace) -> None:
         if i % args.json_save_frequency == 0:
             save_dict_with_tensors_to_json(
                 ablation_results_mut,
-                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json",
+                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json.zst",
+                compress=True,
             )
 
     # print("Analyzing results...")
