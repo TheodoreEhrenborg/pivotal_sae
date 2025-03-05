@@ -63,14 +63,11 @@ def save_dict_with_tensors_to_json(
 
         # Convert to JSON string
         json_data = json.dumps(json_dict)
-        print(f"{len(json_data)=}")
         # Compress the JSON data and write to file
         compressor = zstandard.ZstdCompressor()
         compressed_data = compressor.compress(json_data.encode("utf-8"))
-        print(f"{len(compressed_data)=}")
         with open(save_path, "wb") as f:
             f.write(compressed_data)
-        print("Done writing")
     else:
         # Save as regular JSON
         assert not save_path.endswith(".zst"), "Did you mean to compress?"
