@@ -3,7 +3,7 @@ import random
 
 import torch
 
-from sae_hacking.gemma_ablate import graph_ablation_matrix
+from sae_hacking.graph_network import graph_ablation_matrix
 
 
 def test_plot():
