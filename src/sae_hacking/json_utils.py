@@ -15,17 +15,22 @@ def load_dict_with_tensors_from_json(load_path: str) -> dict:
     if load_path.endswith(".json.zst"):
         with open(path, "rb") as compressed_file:
             decompressor = zstandard.ZstdDecompressor()
+            print("Decompressing to bytes")
             json_str = decompressor.decompress(compressed_file.read())
+            print("Converting to json")
             json_dict = json.loads(json_str)
     else:
         with open(path, "r") as f:
+            print("Reading json from file")
             json_dict = json.load(f)
 
+    print("Making tensor dictionary")
     result_dict = {}
 
     for key, value in json_dict.items():
         result_dict[int(key)] = torch.tensor(value)
 
+    print("Done making tensor dictionary")
     return result_dict
 
 
