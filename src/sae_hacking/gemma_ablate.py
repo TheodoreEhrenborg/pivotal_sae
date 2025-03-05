@@ -37,6 +37,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
+    parser.add_argument("--keep-frequent-features", action="store_true")
     parser.add_argument("--json-save-frequency", type=int, default=240)
     parser.add_argument(
         "--exclude-latent-threshold",
@@ -304,11 +305,15 @@ def main(args: Namespace) -> None:
     )
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
-    frequent_features = find_frequently_activating_features(
-        model,
-        ablater_sae,
-        prompts,
-        exclude_latent_threshold=args.exclude_latent_threshold,
+    frequent_features = (
+        []
+        if args.keep_frequent_features
+        else find_frequently_activating_features(
+            model,
+            ablater_sae,
+            prompts,
+            exclude_latent_threshold=args.exclude_latent_threshold,
+        )
     )
 
     ablation_results_mut = {}
