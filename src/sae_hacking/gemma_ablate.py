@@ -513,8 +513,7 @@ def save_dict_with_tensors_to_json(
 
     if compress:
         # Make sure the save_path has .zst extension
-        if not save_path.endswith(".zst"):
-            save_path += ".zst"
+        assert save_path.endswith(".zst"), "Please use the .zst extension"
 
         # Convert to JSON string
         json_data = json.dumps(json_dict)
