@@ -469,6 +469,19 @@ async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[
 
 
 @beartype
+def load_dict_with_tensors_from_json(load_path: str) -> dict:
+    with open(load_path, "r") as f:
+        json_dict = json.load(f)
+
+    result_dict = {}
+
+    for key, value in json_dict.items():
+        result_dict[int(key)] = torch.tensor(value)
+
+    return result_dict
+
+
+@beartype
 def save_dict_with_tensors_to_json(tensor_dict: dict, save_path: str) -> None:
     json_dict = {}
 
