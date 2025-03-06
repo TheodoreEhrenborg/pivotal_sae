@@ -10,7 +10,7 @@ from sae_hacking.safetensor_utils import load_dict_with_tensors
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument("--ablater-sae-neuronpedia-id", required=True)
+    parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     parser.add_argument("--n-edges", type=int, default=1000)
     parser.add_argument("--output-dir", type=str, required=True)
@@ -24,7 +24,7 @@ def main(args: Namespace) -> None:
 
     graph_ablation_matrix(
         ablation_results,
-        args.ablater_sae_neuronpedia_id,
+        args.ablator_sae_neuronpedia_id,
         args.reader_sae_neuronpedia_id,
         args.output_dir,
         args.n_edges,

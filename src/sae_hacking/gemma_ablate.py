@@ -26,9 +26,9 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--model", default="google/gemma-2-2b")
     parser.add_argument(
-        "--ablater-sae-release", default="gemma-scope-2b-pt-res-canonical"
+        "--ablator-sae-release", default="gemma-scope-2b-pt-res-canonical"
     )
-    parser.add_argument("--ablater-sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument("--ablator-sae-id", default="layer_20/width_65k/canonical")
     parser.add_argument(
         "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
     )
@@ -71,24 +71,24 @@ def generate_prompts(
 @beartype
 def find_frequently_activating_features(
     model: HookedSAETransformer,
-    ablater_sae: SAE,
+    ablator_sae: SAE,
     prompts: list[str],
     exclude_latent_threshold: float,
 ) -> list[int]:
     """
-    For each prompt, checks which ablater SAE features activate on which tokens.
+    For each prompt, checks which ablator SAE features activate on which tokens.
     Returns a list of features that activate on at least the specified percentage of tokens.
 
     Args:
         model: The transformer model with SAE hooks
-        ablater_sae: The SAE to analyze for feature activations
+        ablator_sae: The SAE to analyze for feature activations
         prompts: List of text prompts to process
         min_activation_percentage: Minimum percentage of tokens a feature must activate on
 
     Returns:
         List of feature indices that activate on at least min_activation_percentage of tokens
     """
-    ablater_sae.use_error_term = True
+    ablator_sae.use_error_term = True
 
     # Count of total tokens across all prompts
     total_token_count = 0
@@ -100,22 +100,22 @@ def find_frequently_activating_features(
     for prompt in prompts:
         print(f"Processing prompt: {prompt}")
 
-        # Run the model with ablater SAE to get its activations
+        # Run the model with ablator SAE to get its activations
         model.reset_hooks()
         model.reset_saes()
-        _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
-        ablater_acts_1Se = ablater_cache[
-            f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"
+        _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
+        ablator_acts_1Se = ablator_cache[
+            f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"
         ]
 
         # Count the number of tokens in this prompt
-        num_tokens = ablater_acts_1Se.shape[1]
+        num_tokens = ablator_acts_1Se.shape[1]
         total_token_count += num_tokens
 
         # For each feature, count on how many tokens it activates
-        for feature_idx in range(ablater_acts_1Se.shape[2]):
+        for feature_idx in range(ablator_acts_1Se.shape[2]):
             # Get activations for this feature across all token positions
-            feature_acts_e = ablater_acts_1Se[0, :, feature_idx]
+            feature_acts_e = ablator_acts_1Se[0, :, feature_idx]
 
             # Count token positions where activation exceeds threshold
             activations = (feature_acts_e > 0).sum().item()
@@ -139,7 +139,7 @@ def find_frequently_activating_features(
 @beartype
 def compute_ablation_matrix(
     model: HookedSAETransformer,
-    ablater_sae: SAE,
+    ablator_sae: SAE,
     reader_sae: SAE,
     prompt: str,
     frequent_features: list[int],
@@ -147,21 +147,21 @@ def compute_ablation_matrix(
     abridge_ablations_to: int,
 ) -> None:
     """
-    - e: number of features in ablater SAE
+    - e: number of features in ablator SAE
     - E: number of features in reader SAE
     """
     print(prompt)
-    ablater_sae.use_error_term = True
+    ablator_sae.use_error_term = True
     reader_sae.use_error_term = True
 
-    # First, run the model with ablater SAE to get its activations
+    # First, run the model with ablator SAE to get its activations
     model.reset_hooks()
     model.reset_saes()
-    _, ablater_cache = model.run_with_cache_with_saes(prompt, saes=[ablater_sae])
-    ablater_acts_1Se = ablater_cache[f"{ablater_sae.cfg.hook_name}.hook_sae_acts_post"]
+    _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
+    ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Find the features with highest activation summed across all positions
-    summed_acts_e = ablater_acts_1Se[0].sum(dim=0)
+    summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
     tentative_top_features_k = torch.topk(
         summed_acts_e, k=abridge_ablations_to + len(frequent_features)
     ).indices
@@ -178,16 +178,16 @@ def compute_ablation_matrix(
     baseline_acts_1SE = baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"]
     baseline_acts_E = baseline_acts_1SE[0, -1, :]
 
-    # Add the ablater SAE to the model
-    model.add_sae(ablater_sae)
-    hook_point = ablater_sae.cfg.hook_name + ".hook_sae_acts_post"
+    # Add the ablator SAE to the model
+    model.add_sae(ablator_sae)
+    hook_point = ablator_sae.cfg.hook_name + ".hook_sae_acts_post"
 
-    # For each top feature in the ablater SAE
-    for ablater_idx in tqdm(top_features_K):
+    # For each top feature in the ablator SAE
+    for ablator_idx in tqdm(top_features_K):
         # Set up ablation hook for this feature
 
         def ablation_hook(acts_BSe, hook):
-            acts_BSe[:, :, ablater_idx] = 0
+            acts_BSe[:, :, ablator_idx] = 0
             return acts_BSe
 
         model.add_hook(hook_point, ablation_hook, "fwd")
@@ -201,11 +201,11 @@ def compute_ablation_matrix(
 
         result = baseline_acts_E - ablated_acts_E
 
-        ablater_idx_int = ablater_idx.item()
-        if ablater_idx_int in ablation_results_mut:
-            ablation_results_mut[ablater_idx_int] += result.cpu()
+        ablator_idx_int = ablator_idx.item()
+        if ablator_idx_int in ablation_results_mut:
+            ablation_results_mut[ablator_idx_int] += result.cpu()
         else:
-            ablation_results_mut[ablater_idx_int] = result.cpu()
+            ablation_results_mut[ablator_idx_int] = result.cpu()
 
         # Reset hooks for next iteration
         model.reset_hooks()
@@ -213,7 +213,7 @@ def compute_ablation_matrix(
 
 @beartype
 def analyze_ablation_matrix(
-    ablation_matrix_eE: torch.Tensor, ablater_sae: SAE, reader_sae: SAE, top_k: int = 5
+    ablation_matrix_eE: torch.Tensor, ablator_sae: SAE, reader_sae: SAE, top_k: int = 5
 ) -> None:
     """
     Analyzes the ablation matrix and prints the strongest interactions.
@@ -235,31 +235,31 @@ def analyze_ablation_matrix(
 
     # Convert flat indices to 2D coordinates
     num_reader_features = ablation_matrix_eE.size(1)
-    ablater_indices_K = flat_indices_K.div(num_reader_features, rounding_mode="floor")
+    ablator_indices_K = flat_indices_K.div(num_reader_features, rounding_mode="floor")
     reader_indices_K = flat_indices_K % num_reader_features
 
     # Get descriptions for the features
-    ablater_descriptions = asyncio.run(
-        get_all_descriptions(ablater_indices_K.tolist(), ablater_sae.cfg.neuronpedia_id)
+    ablator_descriptions = asyncio.run(
+        get_all_descriptions(ablator_indices_K.tolist(), ablator_sae.cfg.neuronpedia_id)
     )
     reader_descriptions = asyncio.run(
         get_all_descriptions(reader_indices_K.tolist(), reader_sae.cfg.neuronpedia_id)
     )
 
     print("\nStrongest feature interactions:")
-    for ablater_idx, reader_idx, ablater_desc, reader_desc in zip(
-        ablater_indices_K,
+    for ablator_idx, reader_idx, ablator_desc, reader_desc in zip(
+        ablator_indices_K,
         reader_indices_K,
-        ablater_descriptions,
+        ablator_descriptions,
         reader_descriptions,
         strict=True,
     ):
-        effect = ablation_matrix_eE[ablater_idx, reader_idx].item()
+        effect = ablation_matrix_eE[ablator_idx, reader_idx].item()
         direction = "increases" if effect < 0 else "decreases"
         print(
-            f"\nAblating feature {ablater_idx} {direction} feature {reader_idx} by {abs(effect):.2f}"
+            f"\nAblating feature {ablator_idx} {direction} feature {reader_idx} by {abs(effect):.2f}"
         )
-        print(f"Ablater feature description: {ablater_desc}")
+        print(f"Ablator feature description: {ablator_desc}")
         print(f"Reader feature description: {reader_desc}")
 
 
@@ -297,8 +297,8 @@ def main(args: Namespace) -> None:
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
-    ablater_sae, _, _ = SAE.from_pretrained(
-        release=args.ablater_sae_release, sae_id=args.ablater_sae_id, device=device
+    ablator_sae, _, _ = SAE.from_pretrained(
+        release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
@@ -310,7 +310,7 @@ def main(args: Namespace) -> None:
         if args.keep_frequent_features
         else find_frequently_activating_features(
             model,
-            ablater_sae,
+            ablator_sae,
             prompts,
             exclude_latent_threshold=args.exclude_latent_threshold,
         )
@@ -321,7 +321,7 @@ def main(args: Namespace) -> None:
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
-            ablater_sae,
+            ablator_sae,
             reader_sae,
             prompt,
             frequent_features,
@@ -335,12 +335,12 @@ def main(args: Namespace) -> None:
             )
 
     # print("Analyzing results...")
-    # analyze_ablation_matrix(ablation_matrix_eE, ablater_sae, reader_sae)
+    # analyze_ablation_matrix(ablation_matrix_eE, ablator_sae, reader_sae)
     print("Graphing results...")
     ablation_results = ablation_results_mut
     graph_ablation_matrix(
         ablation_results,
-        ablater_sae.cfg.neuronpedia_id,
+        ablator_sae.cfg.neuronpedia_id,
         reader_sae.cfg.neuronpedia_id,
         output_dir,
         args.n_edges,

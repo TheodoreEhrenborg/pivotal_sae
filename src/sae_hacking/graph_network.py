@@ -16,7 +16,7 @@ from sae_hacking.timeprint import timeprint
 @beartype
 def graph_ablation_matrix(
     ablation_results: dict,
-    ablater_sae_id: str,
+    ablator_sae_id: str,
     reader_sae_id: str,
     output_dir: str,
     n_edges: int,
@@ -31,7 +31,7 @@ def graph_ablation_matrix(
 
     # Collect all values and their indices
     all_values_list = []
-    for ablater_idx, tensor in tqdm(ablation_results.items()):
+    for ablator_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
         assert len(values) == n_reader
         all_values_list.append(values)
@@ -48,9 +48,9 @@ def graph_ablation_matrix(
     all_values = all_values.to("cpu")
     timeprint("Have moved all_values to cpu")
 
-    ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
+    ablator_idxs = torch.tensor([ablator_idx for ablator_idx in ablation_results])
     all_indices = (
-        (ablater_idxs * n_reader).unsqueeze(1) + torch.arange(n_reader)
+        (ablator_idxs * n_reader).unsqueeze(1) + torch.arange(n_reader)
     ).view(-1)
 
     timeprint("Have constructed all_indices")
@@ -93,21 +93,21 @@ def graph_ablation_matrix(
 
     # Process all selected indices
     all_flat_indices = torch.cat([top_pos_flat_indices, top_neg_flat_indices])
-    ablater_indices = all_flat_indices.div(n_reader, rounding_mode="floor")
+    ablator_indices = all_flat_indices.div(n_reader, rounding_mode="floor")
     reader_indices = all_flat_indices % n_reader
 
     timeprint("Loading auto-interp explanations")
-    ablater_descriptions = NeuronExplanationLoader(ablater_sae_id)
+    ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
     reader_descriptions = NeuronExplanationLoader(reader_sae_id)
 
     # Add nodes with attributes
     timeprint("Adding nodes to graph")
-    for i in ablater_indices:
+    for i in ablator_indices:
         name = f"A{i.item()}"
         G.add_node(
             name,
-            title=f"{name} {ablater_descriptions.get_explanation(i.item())}",
-            group="ablater",
+            title=f"{name} {ablator_descriptions.get_explanation(i.item())}",
+            group="ablator",
         )
     for i in reader_indices:
         name = f"R{i.item()}"
@@ -119,11 +119,11 @@ def graph_ablation_matrix(
 
     # Add edges with weights and colors
     timeprint("Adding edges to graph")
-    for ablater_idx, reader_idx in zip(ablater_indices, reader_indices, strict=True):
-        weight = ablation_results[ablater_idx.item()][reader_idx.item()].item()
+    for ablator_idx, reader_idx in zip(ablator_indices, reader_indices, strict=True):
+        weight = ablation_results[ablator_idx.item()][reader_idx.item()].item()
         edge_color = "blue" if weight > 0 else "red"
         G.add_edge(
-            f"A{ablater_idx.item()}",
+            f"A{ablator_idx.item()}",
             f"R{reader_idx.item()}",
             weight=abs(weight),
             color=edge_color,
