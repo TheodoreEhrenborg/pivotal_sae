@@ -43,6 +43,7 @@ def find_pattern(
         neg_neighbors[ablator_node] = set(neg_indices.tolist())
 
     for A in tqdm(tensor_dict):
+        print(len(results))
         # Find all B where AB is positive
         pos_B_from_A = pos_neighbors[A]
 
@@ -65,6 +66,7 @@ def find_pattern(
                     if B != D:  # Ensure distinct nodes
                         results.append((A, B, C, D))
 
+    print(len(results))
     return results
 
 
