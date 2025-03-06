@@ -34,12 +34,14 @@ def graph_ablation_matrix(
     for ablater_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
         assert len(values) == n_reader
+        values.cuda()
         all_values.append(values)
 
     timeprint("Finished loop")
-    # Stack all values
     all_values = torch.cat(all_values)
     timeprint("Have constructed all_values")
+    all_values.cpu()
+    timeprint("Have moved all_values to CPU")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
