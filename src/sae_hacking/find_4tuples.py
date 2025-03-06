@@ -9,7 +9,9 @@ from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
 @beartype
-def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
+def find_pattern(
+    tensor_dict: dict, treat_as_zero: float
+) -> list[tuple[int, int, int, int]]:
     """
     We need to find 4-tuples (A, B, C, D) where:
 
@@ -33,8 +35,8 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
         reader_tensor = tensor_dict[ablator_node]
 
         # Find indices where values are positive or negative using tensor operations
-        pos_indices = torch.where(reader_tensor > 0)[0]
-        neg_indices = torch.where(reader_tensor < 0)[0]
+        pos_indices = torch.where(reader_tensor > treat_as_zero)[0]
+        neg_indices = torch.where(reader_tensor < -treat_as_zero)[0]
 
         # Convert to sets in one operation
         pos_neighbors[ablator_node] = set(pos_indices.tolist())
@@ -70,13 +72,14 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--input-path", required=True)
+    parser.add_argument("--treat-as-zero", default=0.0, type=float)
     return parser
 
 
 @beartype
 def main(args: Namespace) -> None:
     tensor_dict = load_dict_with_tensors(args.input_path)
-    find_pattern(tensor_dict)
+    find_pattern(tensor_dict, args.treat_as_zero)
 
 
 if __name__ == "__main__":
