@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
+import safetensors
 import torch
 import zstandard
 from beartype import beartype
-from safetensors.torch import load, save
 
 
 @beartype
@@ -22,7 +22,7 @@ def save_dict_with_tensors(tensor_dict: dict, save_path: str) -> None:
         assert isinstance(value, torch.Tensor)
 
     # Save tensors with metadata
-    uncompressed_data = save(tensor_dict)
+    uncompressed_data = safetensors.torch.save(tensor_dict)
 
     compressor = zstandard.ZstdCompressor()
     compressed_data = compressor.compress(uncompressed_data)
@@ -54,6 +54,6 @@ def load_dict_with_tensors(load_path: str) -> dict:
     uncompressed_data = decompressor.decompress(compressed_data)
 
     # Load the tensors from the uncompressed data
-    tensor_dict = load(uncompressed_data)
+    tensor_dict = safetensors.torch.load(uncompressed_data)
 
     return tensor_dict
