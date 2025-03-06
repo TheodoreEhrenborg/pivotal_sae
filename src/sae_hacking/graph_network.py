@@ -30,18 +30,19 @@ def graph_ablation_matrix(
     n_reader = next(iter(ablation_results.values())).shape[0]
 
     # Collect all values and their indices
-    all_values = []
+    all_values_list = []
     for ablater_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
         assert len(values) == n_reader
-        values.cuda()
-        all_values.append(values)
+        all_values_list.append(values)
 
     timeprint("Finished loop")
-    all_values = torch.cat(all_values)
+    all_values = torch.zeros(len(all_values_list) * n_reader).cuda()
+    timeprint("Made blank tensor")
+    for i, v in enumerate(tqdm(all_values_list)):
+        v.cuda()
+        all_values[i * n_reader : (i + 1) * n_reader] = v
     timeprint("Have constructed all_values")
-    all_values.cpu()
-    timeprint("Have moved all_values to CPU")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
