@@ -10,6 +10,8 @@ from beartype import beartype
 from pyvis.network import Network
 from tqdm import tqdm
 
+from sae_hacking.timeprint import timeprint
+
 
 @beartype
 def graph_ablation_matrix(
@@ -24,7 +26,7 @@ def graph_ablation_matrix(
     Shows top positive edges in blue and top negative edges in red.
     """
     # Get the total number of reader neurons from any entry in the dictionary
-    print("Entered graph_ablation_matrix")
+    timeprint("Entered graph_ablation_matrix")
     n_reader = next(iter(ablation_results.values())).shape[0]
 
     # Collect all values and their indices
@@ -34,20 +36,22 @@ def graph_ablation_matrix(
         assert len(values) == n_reader
         all_values.append(values)
 
+    timeprint("Finished loop")
     # Stack all values
     all_values = torch.cat(all_values)
-    print("Have constructed all_values")
+    timeprint("Have constructed all_values")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
         (torch.tensor(ablater_idxs) * n_reader).unsqueeze(1) + torch.arange(n_reader)
     ).view(-1)
 
-    print("Have constructed all_indices")
+    timeprint("Have constructed all_indices")
     # Split edges by positive and negative values
     n_pos_edges = n_edges // 2
     n_neg_edges = n_edges - n_pos_edges
 
+    timeprint("Starting to construct masks")
     # Get top positive edges
     positive_mask = all_values > 0
     positive_values = all_values[positive_mask]
@@ -57,6 +61,7 @@ def graph_ablation_matrix(
     negative_mask = all_values < 0
     negative_values = all_values[negative_mask]
     negative_indices = all_indices[negative_mask]
+    timeprint("Done constructing masks")
 
     # Get top k positive and negative values
     if len(positive_values) > 0:
@@ -74,6 +79,7 @@ def graph_ablation_matrix(
         top_neg_flat_indices = negative_indices[top_neg_indices]
     else:
         top_neg_flat_indices = torch.tensor([], dtype=torch.long)
+    timeprint("Done collecting indicies")
 
     # Create graph
     G = nx.Graph()
@@ -83,12 +89,12 @@ def graph_ablation_matrix(
     ablater_indices = all_flat_indices.div(n_reader, rounding_mode="floor")
     reader_indices = all_flat_indices % n_reader
 
-    print("Loading auto-interp explanations")
+    timeprint("Loading auto-interp explanations")
     ablater_descriptions = NeuronExplanationLoader(ablater_sae_id)
     reader_descriptions = NeuronExplanationLoader(reader_sae_id)
 
     # Add nodes with attributes
-    print("Adding nodes to graph")
+    timeprint("Adding nodes to graph")
     for i in ablater_indices:
         name = f"A{i.item()}"
         G.add_node(
@@ -105,7 +111,7 @@ def graph_ablation_matrix(
         )
 
     # Add edges with weights and colors
-    print("Adding edges to graph")
+    timeprint("Adding edges to graph")
     for ablater_idx, reader_idx in zip(ablater_indices, reader_indices, strict=True):
         weight = ablation_results[ablater_idx.item()][reader_idx.item()].item()
         edge_color = "blue" if weight > 0 else "red"
@@ -117,11 +123,13 @@ def graph_ablation_matrix(
             title=f"Weight: {weight:.4f}",
         )
 
+    timeprint("Building the plot")
     nt = Network("500px", "1000px", select_menu=True, cdn_resources="remote")
-    print("Calculating layout")
+    timeprint("Calculating layout")
     nt.from_nx(G)
     nt.show_buttons(filter_=["physics"])
     nt.save_graph(f"{output_dir}/ablation_network.html")
+    timeprint("Plot has been saved")
 
 
 @beartype
@@ -165,7 +173,7 @@ class NeuronExplanationLoader:
             with open(self.cache_path, "r") as f:
                 return json.load(f)
 
-        print("Downloading data from neuronpedia")
+        timeprint("Downloading data from neuronpedia")
         url = "https://www.neuronpedia.org/api/explanation/export"
         params = {"modelId": self.model_id, "saeId": self.sae_id}
 
@@ -177,6 +185,7 @@ class NeuronExplanationLoader:
         with open(self.cache_path, "w") as f:
             json.dump(data, f)
 
+        timeprint("Done downloading data")
         return data
 
     def get_explanation(self, index: int) -> str:
