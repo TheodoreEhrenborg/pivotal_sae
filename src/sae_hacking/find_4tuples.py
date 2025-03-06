@@ -80,6 +80,11 @@ def make_parser() -> ArgumentParser:
 
 
 @beartype
+def construct_url(id: str, idx: int) -> str:
+    return f"https://www.neuronpedia.org/{id}/{idx}"
+
+
+@beartype
 def process_results(
     results: list[tuple[int, int, int, int]],
     ablator_sae_id: str,
@@ -93,9 +98,13 @@ def process_results(
         a, b, c, d = result
 
         print(f"A{a}: {ablator_descriptions.get_explanation(a)}")
+        print(f"  See {construct_url(ablator_sae_id, a)}")
         print(f"R{b}: {reader_descriptions.get_explanation(b)}")
+        print(f"  See {construct_url(reader_sae_id, b)}")
         print(f"A{c}: {ablator_descriptions.get_explanation(c)}")
+        print(f"  See {construct_url(ablator_sae_id, c)}")
         print(f"R{d}: {reader_descriptions.get_explanation(d)}")
+        print(f"  See {construct_url(reader_sae_id, d)}")
 
         print(f"A{a}'s effect on R{b}: {tensor_dict[a][b]}")
         print(f"A{a}'s effect on R{d}: {tensor_dict[a][d]}")
