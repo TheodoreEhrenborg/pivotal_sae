@@ -10,8 +10,8 @@ from sae_hacking.safetensor_utils import save_dict_with_tensors
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument("input-path")
-    parser.add_argument("output-path")
+    parser.add_argument("input_path")
+    parser.add_argument("output_path")
     return parser
 
 
