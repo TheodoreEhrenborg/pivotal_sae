@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from argparse import ArgumentParser, Namespace
 
+import torch
 from beartype import beartype
 from tqdm import tqdm
 
@@ -29,11 +30,15 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
     neg_neighbors = {ablator_node: set() for ablator_node in tensor_dict}
 
     for ablator_node in tqdm(tensor_dict):
-        for reader_node, weight in enumerate(tensor_dict[ablator_node]):
-            if weight > 0:
-                pos_neighbors[ablator_node].add(reader_node)
-            elif weight < 0:
-                neg_neighbors[ablator_node].add(reader_node)
+        reader_tensor = tensor_dict[ablator_node]
+
+        # Find indices where values are positive or negative using tensor operations
+        pos_indices = torch.where(reader_tensor > 0)[0]
+        neg_indices = torch.where(reader_tensor < 0)[0]
+
+        # Convert to sets in one operation
+        pos_neighbors[ablator_node] = set(pos_indices.tolist())
+        neg_neighbors[ablator_node] = set(neg_indices.tolist())
 
     for A in tqdm(tensor_dict):
         # Find all B where AB is positive
