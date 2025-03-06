@@ -8,6 +8,15 @@ from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 @beartype
 def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
+    """
+    We need to find 4-tuples (A, B, C, D) where:
+
+        A, C must be from one set (e.g., X)
+        B, D must be from the other set (e.g., Y)
+        Edges AB, AD, BC are positive
+        Edge CD is negative
+
+    """
     # Get bipartite partition
 
     results = []
