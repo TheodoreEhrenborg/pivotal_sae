@@ -7,6 +7,7 @@ if [ -d "$HOME/.local/share/fish" ]; then
 	FISH_MOUNT="-v $HOME/.local/share/fish:/root/.local/share/fish"
 fi
 docker run -it --rm \
+	--memory=14g \
 	$@ \
 	-v $HOME/.cache/huggingface:/root/.cache/huggingface \
 	-v $HOME/.config/vastai:/root/.config/vastai \
