@@ -43,7 +43,6 @@ def find_pattern(
         neg_neighbors[ablator_node] = set(neg_indices.tolist())
 
     for A in tqdm(tensor_dict):
-        print(len(results))
         # Find all B where AB is positive
         pos_B_from_A = pos_neighbors[A]
 
@@ -66,7 +65,6 @@ def find_pattern(
                     if B != D:  # Ensure distinct nodes
                         results.append((A, B, C, D))
 
-    print(len(results))
     return results
 
 
@@ -81,7 +79,7 @@ def make_parser() -> ArgumentParser:
 @beartype
 def main(args: Namespace) -> None:
     tensor_dict = load_dict_with_tensors(args.input_path)
-    find_pattern(tensor_dict, args.treat_as_zero)
+    print(len(find_pattern(tensor_dict, args.treat_as_zero)))
 
 
 if __name__ == "__main__":
