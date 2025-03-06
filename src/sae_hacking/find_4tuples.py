@@ -5,6 +5,7 @@ import torch
 from beartype import beartype
 from tqdm import tqdm
 
+from sae_hacking.graph_network import NeuronExplanationLoader
 from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
@@ -73,13 +74,35 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--input-path", required=True)
     parser.add_argument("--treat-as-zero", default=0.0, type=float)
+    parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
+    parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     return parser
+
+
+@beartype
+def process_results(
+    results: list[tuple[int, int, int, int]], ablator_sae_id: str, reader_sae_id: str
+) -> None:
+    ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
+    reader_descriptions = NeuronExplanationLoader(reader_sae_id)
+
+    for result in results:
+        a, b, c, d = result
+        print("a:", a, ablator_descriptions.get_explanation(a))
+        print("b:", b, reader_descriptions.get_explanation(b))
+        print("c:", c, ablator_descriptions.get_explanation(c))
+        print("d:", d, reader_descriptions.get_explanation(d))
+        print()
 
 
 @beartype
 def main(args: Namespace) -> None:
     tensor_dict = load_dict_with_tensors(args.input_path)
-    print(len(find_pattern(tensor_dict, args.treat_as_zero)))
+    results = find_pattern(tensor_dict, args.treat_as_zero)
+    print(f"{len(results)=}")
+    process_results(
+        results, args.ablator_sae_neuronpedia_id, args.reader_sae_neuronpedia_id
+    )
 
 
 if __name__ == "__main__":
