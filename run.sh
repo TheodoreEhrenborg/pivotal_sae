@@ -9,8 +9,8 @@ fi
 # --memory-swap is RAM+swap,
 # so by setting it to the same value as --memory, we disable swap
 docker run -it --rm \
-	--memory=14g \
-	--memory-swap=14g \
+	--memory=10g \
+	--memory-swap=10g \
 	$@ \
 	-v $HOME/.cache/huggingface:/root/.cache/huggingface \
 	-v $HOME/.config/vastai:/root/.config/vastai \
