@@ -37,14 +37,12 @@ def graph_ablation_matrix(
         all_values_list.append(values)
 
     timeprint("Finished loop")
-    all_values = torch.zeros(len(all_values_list) * n_reader).cuda()
+    all_values = torch.zeros(len(all_values_list) * n_reader, device="cuda")
     timeprint("Made blank tensor")
     for i, v in enumerate(tqdm(all_values_list)):
-        v.cuda()
         all_values[i * n_reader : (i + 1) * n_reader] = v
-        v.cpu()
     timeprint("Have constructed all_values")
-    all_values.cpu()
+    all_values.to("cpu")
     timeprint("Have moved all_values to cpu")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
