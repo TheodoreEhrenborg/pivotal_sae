@@ -36,6 +36,7 @@ def graph_ablation_matrix(
 
     # Stack all values
     all_values = torch.cat(all_values)
+    print("Have constructed all_values")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
