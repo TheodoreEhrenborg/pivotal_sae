@@ -63,7 +63,7 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
                     if B != D:  # Ensure distinct nodes
                         # Calculate min abs value for this 4-tuple
                         AB_value = abs(tensor_dict[A][B])
-                        BC_value = abs(tensor_dict[B][C])
+                        BC_value = abs(tensor_dict[C][B])
                         AD_value = abs(tensor_dict[A][D])
                         CD_value = abs(tensor_dict[C][D])
                         min_abs_value = min(AB_value, BC_value, AD_value, CD_value)
