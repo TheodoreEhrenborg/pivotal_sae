@@ -6,30 +6,29 @@ from beartype import beartype
 from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
-def find_pattern(graph):
+@beartype
+def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
     # Get bipartite partition
-
-    X, Y = bipartite_partition(graph)
 
     results = []
 
     # Precompute positive and negative neighbors for each node
-    pos_neighbors = {node: set() for node in graph}
-    neg_neighbors = {node: set() for node in graph}
+    pos_neighbors = {ablator_node: set() for ablator_node in tensor_dict}
+    neg_neighbors = {ablator_node: set() for ablator_node in tensor_dict}
 
-    for u in graph:
-        for v, weight in graph[u].items():
+    for ablator_node in tensor_dict:
+        for reader_node, weight in enumerate(tensor_dict[ablator_node]):
             if weight > 0:
-                pos_neighbors[u].add(v)
-            else:
-                neg_neighbors[u].add(v)
+                pos_neighbors[ablator_node].add(reader_node)
+            elif weight < 0:
+                neg_neighbors[ablator_node].add(reader_node)
 
     # For each A in X and each C in X
-    for A in X:
+    for A in tensor_dict:
         # Find all B where AB is positive
         pos_B_from_A = pos_neighbors[A]
 
-        for C in X:
+        for C in tensor_dict:
             if A == C:
                 continue
 
@@ -60,7 +59,8 @@ def make_parser() -> ArgumentParser:
 
 @beartype
 def main(args: Namespace) -> None:
-    tensors = load_dict_with_tensors(args.input_path)
+    tensor_dict = load_dict_with_tensors(args.input_path)
+    find_pattern(tensor_dict)
 
 
 if __name__ == "__main__":
