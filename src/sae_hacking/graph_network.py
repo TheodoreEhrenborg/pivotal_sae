@@ -8,6 +8,7 @@ import requests
 import torch
 from beartype import beartype
 from pyvis.network import Network
+from tqdm import tqdm
 
 
 @beartype
@@ -28,7 +29,7 @@ def graph_ablation_matrix(
     # Collect all values and their indices
     all_values = []
     all_indices = []
-    for ablater_idx, tensor in ablation_results.items():
+    for ablater_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
         indices = torch.arange(len(values))
         all_values.append(values)
