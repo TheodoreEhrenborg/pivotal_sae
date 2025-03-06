@@ -60,6 +60,9 @@ def graph_ablation_matrix(
     timeprint("Starting to construct masks")
     # Get top positive edges
     positive_mask = all_values > 0
+    print(positive_mask.device)
+    print(all_values.device)
+    print(all_indices.device)
     positive_values = all_values[positive_mask]
     positive_indices = all_indices[positive_mask]
 
