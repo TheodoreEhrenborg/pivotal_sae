@@ -29,20 +29,20 @@ def graph_ablation_matrix(
 
     # Collect all values and their indices
     all_values = []
-    all_indices = []
     for ablater_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
         assert len(values) == n_reader
-        indices = torch.arange(len(values))
         all_values.append(values)
-        all_indices.append(
-            indices + ablater_idx * n_reader
-        )  # Offset indices by ablater position
 
-    # Stack all values and indices
+    # Stack all values
     all_values = torch.cat(all_values)
-    all_indices = torch.cat(all_indices)
 
+    ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
+    all_indices = (
+        (torch.tensor(ablater_idxs) * n_reader).unsqueeze(1) + torch.arange(n_reader)
+    ).view(-1)
+
+    print("Have constructed all_indices")
     # Split edges by positive and negative values
     n_pos_edges = n_edges // 2
     n_neg_edges = n_edges - n_pos_edges
