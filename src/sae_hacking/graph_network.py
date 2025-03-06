@@ -86,7 +86,7 @@ def graph_ablation_matrix(
         top_neg_flat_indices = negative_indices[top_neg_indices]
     else:
         top_neg_flat_indices = torch.tensor([], dtype=torch.long)
-    timeprint("Done collecting indicies")
+    timeprint("Done collecting indices")
 
     # Create graph
     G = nx.Graph()
