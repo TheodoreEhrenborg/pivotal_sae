@@ -49,7 +49,7 @@ def graph_ablation_matrix(
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
-        (torch.tensor(ablater_idxs) * n_reader).unsqueeze(1) + torch.arange(n_reader)
+        (ablater_idxs * n_reader).unsqueeze(1) + torch.arange(n_reader)
     ).view(-1)
 
     timeprint("Have constructed all_indices")
