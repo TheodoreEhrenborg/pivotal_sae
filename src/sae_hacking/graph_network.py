@@ -24,6 +24,7 @@ def graph_ablation_matrix(
     Shows top positive edges in blue and top negative edges in red.
     """
     # Get the total number of reader neurons from any entry in the dictionary
+    print("Now graphing")
     n_reader = next(iter(ablation_results.values())).shape[0]
 
     # Collect all values and their indices
