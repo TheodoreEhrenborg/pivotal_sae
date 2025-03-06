@@ -6,8 +6,11 @@ FISH_MOUNT=""
 if [ -d "$HOME/.local/share/fish" ]; then
 	FISH_MOUNT="-v $HOME/.local/share/fish:/root/.local/share/fish"
 fi
+# --memory-swap is RAM+swap,
+# so by setting it to the same value as --memory, we disable swap
 docker run -it --rm \
 	--memory=14g \
+	--memory-swap=14g \
 	$@ \
 	-v $HOME/.cache/huggingface:/root/.cache/huggingface \
 	-v $HOME/.config/vastai:/root/.config/vastai \
