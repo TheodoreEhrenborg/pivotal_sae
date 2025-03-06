@@ -61,25 +61,9 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
             for B in common_B:
                 for D in potential_D:
                     if B != D:  # Ensure distinct nodes
-                        # Calculate min abs value for this 4-tuple
-                        AB_value = abs(tensor_dict[A][B])
-                        BC_value = abs(tensor_dict[C][B])
-                        AD_value = abs(tensor_dict[A][D])
-                        CD_value = abs(tensor_dict[C][D])
-                        min_abs_value = min(AB_value, BC_value, AD_value, CD_value)
+                        results.append((A, B, C, D))
 
-                        results.append((A, B, C, D, min_abs_value))
-
-        # Sort by min abs value and keep top 1000 after each A iteration
-        results.sort(
-            key=lambda x: x[4], reverse=True
-        )  # Assuming larger values are better
-        results = results[:1000]
-
-    # Final result should be just the tuples without the min_abs_value
-    final_results = [(a, b, c, d) for a, b, c, d, _ in results]
-
-    return final_results
+    return results
 
 
 @beartype
