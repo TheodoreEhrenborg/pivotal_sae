@@ -4,7 +4,7 @@ from argparse import ArgumentParser, Namespace
 from beartype import beartype
 
 from sae_hacking.graph_network import graph_ablation_matrix
-from sae_hacking.json_utils import load_dict_with_tensors_from_json
+from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
 @beartype
@@ -14,13 +14,13 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     parser.add_argument("--n-edges", type=int, default=1000)
     parser.add_argument("--output-dir", type=str, required=True)
-    parser.add_argument("--json-path", type=str, required=True)
+    parser.add_argument("--input-path", type=str, required=True)
     return parser
 
 
 @beartype
 def main(args: Namespace) -> None:
-    ablation_results = load_dict_with_tensors_from_json(args.json_path)
+    ablation_results = load_dict_with_tensors(args.input_path)
 
     graph_ablation_matrix(
         ablation_results,
