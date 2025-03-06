@@ -81,17 +81,27 @@ def make_parser() -> ArgumentParser:
 
 @beartype
 def process_results(
-    results: list[tuple[int, int, int, int]], ablator_sae_id: str, reader_sae_id: str
+    results: list[tuple[int, int, int, int]],
+    ablator_sae_id: str,
+    reader_sae_id: str,
+    tensor_dict: dict,
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
     reader_descriptions = NeuronExplanationLoader(reader_sae_id)
 
     for result in results:
         a, b, c, d = result
-        print("a:", a, ablator_descriptions.get_explanation(a))
-        print("b:", b, reader_descriptions.get_explanation(b))
-        print("c:", c, ablator_descriptions.get_explanation(c))
-        print("d:", d, reader_descriptions.get_explanation(d))
+
+        print(f"A{a}: {ablator_descriptions.get_explanation(a)}")
+        print(f"R{b}: {reader_descriptions.get_explanation(b)}")
+        print(f"A{c}: {ablator_descriptions.get_explanation(c)}")
+        print(f"R{d}: {reader_descriptions.get_explanation(d)}")
+
+        print(f"A{a}'s effect on R{b}: {tensor_dict[a][b]}")
+        print(f"A{a}'s effect on R{d}: {tensor_dict[a][d]}")
+        print(f"A{c}'s effect on R{b}: {tensor_dict[c][b]}")
+        print(f"A{c}'s effect on R{d}: {tensor_dict[c][d]}")
+
         print()
 
 
@@ -101,7 +111,10 @@ def main(args: Namespace) -> None:
     results = find_pattern(tensor_dict, args.treat_as_zero)
     print(f"{len(results)=}")
     process_results(
-        results, args.ablator_sae_neuronpedia_id, args.reader_sae_neuronpedia_id
+        results,
+        args.ablator_sae_neuronpedia_id,
+        args.reader_sae_neuronpedia_id,
+        tensor_dict,
     )
 
 
