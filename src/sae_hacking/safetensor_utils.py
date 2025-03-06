@@ -3,7 +3,7 @@
 import torch
 import zstandard
 from beartype import beartype
-from safetensors.torch import save
+from safetensors.torch import load, save
 
 
 @beartype
@@ -30,3 +30,32 @@ def save_dict_with_tensors(tensor_dict: dict, save_path: str) -> None:
 
     with open(save_path, "wb") as f_out:
         f_out.write(compressed_data)
+
+
+@beartype
+def load_dict_with_tensors(load_path: str) -> dict:
+    """
+    Load a dictionary containing tensors from a safetensors file.
+    This function is the inverse of save_dict_with_tensors.
+
+    Args:
+        load_path: Path to the safetensors file
+
+    Returns:
+        Dictionary containing the loaded tensors
+    """
+    # Make sure the load_path has .zst extension
+    assert load_path.endswith(".zst")
+
+    # Read the compressed data
+    with open(load_path, "rb") as f_in:
+        compressed_data = f_in.read()
+
+    # Decompress the data
+    decompressor = zstandard.ZstdDecompressor()
+    uncompressed_data = decompressor.decompress(compressed_data)
+
+    # Load the tensors from the uncompressed data
+    tensor_dict = load(uncompressed_data)
+
+    return tensor_dict
