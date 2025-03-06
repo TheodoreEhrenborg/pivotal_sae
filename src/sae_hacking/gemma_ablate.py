@@ -15,7 +15,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 from sae_hacking.graph_network import graph_ablation_matrix
-from sae_hacking.json_utils import save_dict_with_tensors_to_json
+from sae_hacking.safetensor_utils import save_dict_with_tensors
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -38,7 +38,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--keep-frequent-features", action="store_true")
-    parser.add_argument("--json-save-frequency", type=int, default=240)
+    parser.add_argument("--save-frequency", type=int, default=240)
     parser.add_argument(
         "--exclude-latent-threshold",
         type=float,
@@ -328,11 +328,10 @@ def main(args: Namespace) -> None:
             ablation_results_mut,
             args.abridge_ablations_to,
         )
-        if i % args.json_save_frequency == 0:
-            save_dict_with_tensors_to_json(
+        if i % args.save_frequency == 0:
+            save_dict_with_tensors(
                 ablation_results_mut,
-                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.json.zst",
-                compress=True,
+                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
             )
 
     # print("Analyzing results...")
