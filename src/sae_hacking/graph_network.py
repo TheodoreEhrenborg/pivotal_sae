@@ -36,6 +36,9 @@ def graph_ablation_matrix(
         assert len(values) == n_reader
         all_values_list.append(values)
 
+    # We're going to do an in-place version of torch.cat, where the result tensor
+    # is on the GPU. Weirdly this is at least 1000x faster than using the CPU,
+    # and using torch.cat with inputs on the GPU is also slower
     timeprint("Finished loop")
     all_values = torch.zeros(len(all_values_list) * n_reader, device="cuda")
     timeprint("Made blank tensor")
@@ -58,9 +61,6 @@ def graph_ablation_matrix(
     timeprint("Starting to construct masks")
     # Get top positive edges
     positive_mask = all_values > 0
-    print(positive_mask.device)
-    print(all_values.device)
-    print(all_indices.device)
     positive_values = all_values[positive_mask]
     positive_indices = all_indices[positive_mask]
 
