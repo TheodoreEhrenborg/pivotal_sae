@@ -42,6 +42,7 @@ def graph_ablation_matrix(
     for i, v in enumerate(tqdm(all_values_list)):
         v.cuda()
         all_values[i * n_reader : (i + 1) * n_reader] = v
+        v.cpu()
     timeprint("Have constructed all_values")
     all_values.cpu()
     timeprint("Have moved all_values to cpu")
