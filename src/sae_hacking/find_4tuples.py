@@ -11,10 +11,12 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
     """
     We need to find 4-tuples (A, B, C, D) where:
 
-        A, C must be from one set (e.g., X)
-        B, D must be from the other set (e.g., Y)
+        A, C must be from one set
+        B, D must be from the other set
         Edges AB, AD, BC are positive
         Edge CD is negative
+
+    Without losing any 4-tuples, we can assume A & C are ablators
 
     """
     # Get bipartite partition
@@ -32,7 +34,6 @@ def find_pattern(tensor_dict: dict) -> list[tuple[int, int, int, int]]:
             elif weight < 0:
                 neg_neighbors[ablator_node].add(reader_node)
 
-    # For each A in X and each C in X
     for A in tensor_dict:
         # Find all B where AB is positive
         pos_B_from_A = pos_neighbors[A]
