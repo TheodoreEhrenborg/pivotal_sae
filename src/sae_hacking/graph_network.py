@@ -32,6 +32,7 @@ def graph_ablation_matrix(
     all_indices = []
     for ablater_idx, tensor in tqdm(ablation_results.items()):
         values = tensor.view(-1)
+        assert len(values) == n_reader
         indices = torch.arange(len(values))
         all_values.append(values)
         all_indices.append(
