@@ -43,6 +43,8 @@ def graph_ablation_matrix(
         v.cuda()
         all_values[i * n_reader : (i + 1) * n_reader] = v
     timeprint("Have constructed all_values")
+    all_values.cpu()
+    timeprint("Have moved all_values to cpu")
 
     ablater_idxs = torch.tensor([ablater_idx for ablater_idx in ablation_results])
     all_indices = (
