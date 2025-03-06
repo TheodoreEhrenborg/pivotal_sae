@@ -16,8 +16,7 @@ def save_dict_with_tensors(tensor_dict: dict, save_path: str) -> None:
         tensor_dict: Dictionary containing tensors
         save_path: Path to save the safetensors file
     """
-    # Make sure the save_path has .zst extension
-    assert save_path.endswith(".zst")
+    assert save_path.endswith(".safetensors.zst")
 
     for _, value in tensor_dict.items():
         assert isinstance(value, torch.Tensor)
@@ -44,8 +43,7 @@ def load_dict_with_tensors(load_path: str) -> dict:
     Returns:
         Dictionary containing the loaded tensors
     """
-    # Make sure the load_path has .zst extension
-    assert load_path.endswith(".zst")
+    assert load_path.endswith(".safetensors.zst")
 
     # Read the compressed data
     with open(load_path, "rb") as f_in:
