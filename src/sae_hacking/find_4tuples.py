@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
+from argparse import ArgumentParser, Namespace
+
+from beartype import beartype
+
+from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
 def find_pattern(graph):
     # Get bipartite partition
+
     X, Y = bipartite_partition(graph)
 
     results = []
@@ -43,3 +49,19 @@ def find_pattern(graph):
                         results.append((A, B, C, D))
 
     return results
+
+
+@beartype
+def make_parser() -> ArgumentParser:
+    parser = ArgumentParser()
+    parser.add_argument("--input-path", required=True)
+    return parser
+
+
+@beartype
+def main(args: Namespace) -> None:
+    tensors = load_dict_with_tensors(args.input_path)
+
+
+if __name__ == "__main__":
+    main(make_parser().parse_args())
