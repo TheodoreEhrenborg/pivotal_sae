@@ -9,8 +9,8 @@ from sae_hacking.safetensor_utils import load_dict_with_tensors, save_dict_with_
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument("--input_path", required=True)
-    parser.add_argument("--output_path", required=True)
+    parser.add_argument("--input-path", required=True)
+    parser.add_argument("--output-path", required=True)
     parser.add_argument("--num-keys-to-keep", type=int, required=True)
     return parser
 
