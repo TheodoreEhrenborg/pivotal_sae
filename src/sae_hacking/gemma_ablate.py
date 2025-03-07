@@ -234,9 +234,11 @@ def main(args: Namespace) -> None:
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
-    ablator_sae, _, _ = SAE.from_pretrained(
+    ablator_sae, ablator_sae_config, _ = SAE.from_pretrained(
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
+    print(ablator_sae_config)
+    e = ablator_sae_config["d_sae"]
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
@@ -254,6 +256,8 @@ def main(args: Namespace) -> None:
     )
 
     ablation_results_mut = {}
+    cooccurrences_mut = torch.zeros(e, e)
+    exit()
     for i, prompt in enumerate(prompts):
         print("Computing ablation matrix...")
         compute_ablation_matrix(
