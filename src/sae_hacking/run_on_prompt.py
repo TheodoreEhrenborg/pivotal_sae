@@ -9,6 +9,9 @@ from transformers import AutoTokenizer
 
 from sae_hacking.timeprint import timeprint
 
+# TODO Save in output dir
+# TODO Add args to HTML
+# TODO Run in loop
 
 @beartype
 def highlight_tokens_with_intensity(
