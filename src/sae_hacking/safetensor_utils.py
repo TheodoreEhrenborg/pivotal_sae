@@ -8,7 +8,7 @@ from beartype import beartype
 
 @beartype
 def save_dict_with_tensors(
-    tensor_dict: dict, save_path: str, cooccurrences: torch.Tensor
+    tensor_dict: dict, save_path: str, cooccurrences: torch.Tensor | None
 ) -> None:
     """
     Save a dictionary containing tensors to a safetensors file
@@ -25,7 +25,8 @@ def save_dict_with_tensors(
         assert isinstance(value, torch.Tensor)
         tensors[str(key)] = value
 
-    tensors["cooccurrences"] = cooccurrences
+    if cooccurrences is not None:
+        tensors["cooccurrences"] = cooccurrences
 
     # Save tensors with metadata
     uncompressed_data = safetensors.torch.save(tensors)
@@ -38,7 +39,7 @@ def save_dict_with_tensors(
 
 
 @beartype
-def load_dict_with_tensors(load_path: str) -> dict:
+def load_dict_with_tensors(load_path: str) -> tuple[dict, torch.Tensor | None]:
     """
     Load a dictionary containing tensors from a safetensors file.
     This function is the inverse of save_dict_with_tensors.
@@ -64,6 +65,7 @@ def load_dict_with_tensors(load_path: str) -> dict:
 
     results = {}
     for key, value in tensor_dict.items():
-        results[int(key)] = value
+        if key != "cooccurrences":
+            results[int(key)] = value
 
-    return results
+    return results, tensor_dict.get("cooccurrences")
