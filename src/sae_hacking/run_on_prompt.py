@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from argparse import ArgumentParser, Namespace
 
 import torch
 from beartype import beartype
@@ -42,3 +43,35 @@ def get_feature_activation_per_token(
     feature_acts = sae_acts[0, :, feature_idx]
 
     return feature_acts
+
+
+@beartype
+def make_parser() -> ArgumentParser:
+    parser = ArgumentParser()
+    parser.add_argument("--model", default="google/gemma-2-2b")
+    parser.add_argument("--sae-release", required=True)
+    parser.add_argument("--sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument(
+        "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
+    )
+    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--feature-idx", required=True, type=int)
+    parser.add_argument("--prompt", required=True)
+    return parser
+
+
+@torch.inference_mode()
+@beartype
+def main(args: Namespace) -> None:
+    model = HookedSAETransformer.from_pretrained(args.model, device=args.device)
+
+    sae, _, _ = SAE.from_pretrained(
+        release=args.sae_release, sae_id=args.sae_id, device=args.device
+    )
+    activations_S = get_feature_activation_per_token(
+        model, sae, args.feature_idx, args.prompt
+    )
+
+
+if __name__ == "__main__":
+    main(make_parser().parse_args())
