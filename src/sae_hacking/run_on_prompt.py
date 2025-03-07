@@ -1,47 +1,28 @@
 #!/usr/bin/env python3
 
-import random
-import re
 from argparse import ArgumentParser, Namespace
 
 import torch
 from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
+from transformers import AutoTokenizer
 
 
-def highlight_tokens_with_intensity(text):
-    """
-    Highlights every token in text with green background of varying intensity.
-
-    Args:
-        text (str): The text to process
-
-    Returns:
-        str: HTML text with all tokens highlighted
-    """
-    # Tokenize the text (split by whitespace and punctuation)
-    tokens = re.findall(r"\b\w+\b|\s+|[^\w\s]", text)
-
+@beartype
+def highlight_tokens_with_intensity(
+    split_text: list[str], activations: torch.Tensor
+) -> str:
     html_parts = []
 
-    for token in tokens:
-        # Skip whitespace for highlighting but preserve it
-        if token.isspace():
-            html_parts.append(token)
-            continue
+    for token, activation in zip(split_text, activations, strict=True):
+        # TODO Normalize activation
 
-        # Assign random intensity for each token (1-10)
-        # You can replace this with your own intensity logic
-        intensity = random.randint(1, 10)
-
-        # Calculate green shade based on intensity
-        red = max(235 - (intensity * 20), 100)
+        red = max(235 - (activation * 20), 100)
         green = 255
-        blue = max(235 - (intensity * 20), 100)
+        blue = max(235 - (activation * 20), 100)
 
         color = f"#{red:02x}{green:02x}{blue:02x}"
 
-        # Create HTML for the highlighted token
         highlighted = f'<span style="background-color: {color};">{token}</span>'
         html_parts.append(highlighted)
 
@@ -148,6 +129,7 @@ def make_parser() -> ArgumentParser:
 @beartype
 def main(args: Namespace) -> None:
     model = HookedSAETransformer.from_pretrained(args.model, device=args.device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
 
     sae, _, _ = SAE.from_pretrained(
         release=args.sae_release, sae_id=args.sae_id, device=args.device
@@ -155,6 +137,8 @@ def main(args: Namespace) -> None:
     activations_S = get_feature_activation_per_token(
         model, sae, args.feature_idx, args.prompt
     )
+
+    split_text = tokenizer.tokenize(args.prompt)
 
 
 if __name__ == "__main__":
