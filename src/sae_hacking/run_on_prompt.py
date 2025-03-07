@@ -61,7 +61,7 @@ def create_html(
         <hr>
         <p>Arguments: {args}</p>
         <hr>
-        <p>Activations: {activations}</p>
+        <p>Activations: {list(zip(split_text, activations.tolist(), strict=True))}</p>
     </body>
     </html>
     """
