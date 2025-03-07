@@ -240,7 +240,6 @@ def main(args: Namespace) -> None:
     ablator_sae, ablator_sae_config, _ = SAE.from_pretrained(
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
-    print(ablator_sae_config)
     e = ablator_sae_config["d_sae"]
     reader_sae, _, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
