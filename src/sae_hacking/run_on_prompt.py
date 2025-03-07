@@ -12,8 +12,6 @@ from transformers import AutoTokenizer
 
 from sae_hacking.timeprint import timeprint
 
-# TODO Run in loop
-
 
 @beartype
 def highlight_tokens_with_intensity(
@@ -178,20 +176,23 @@ def main(args: Namespace) -> None:
 
     sae_id = args.sae_id
     sae_release = args.sae_release
-    device = args.device
     prompt = args.prompt
     feature_idx = args.feature_idx
-    output_dir = args.output_dir
-    run_once(
-        model,
-        tokenizer,
-        sae_id,
-        sae_release,
-        device,
-        prompt,
-        feature_idx,
-        output_dir,
-    )
+    while True:
+        run_once(
+            model,
+            tokenizer,
+            sae_id,
+            sae_release,
+            args.device,
+            prompt,
+            feature_idx,
+            args.output_dir,
+        )
+        sae_id = maybe_get(sae_id, "sae_id")
+        sae_release = maybe_get(sae_release, "sae_release")
+        prompt = maybe_get(prompt, "prompt")
+        feature_idx = maybe_get(feature_idx, "feature_idx")
 
 
 if __name__ == "__main__":
