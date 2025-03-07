@@ -143,6 +143,7 @@ def compute_ablation_matrix(
     frequent_features: list[int],
     ablation_results_mut: dict,
     abridge_ablations_to: int,
+    cooccurrences: torch.Tensor,  # Added parameter for co-occurrence tracking
 ) -> None:
     """
     - e: number of features in ablator SAE
@@ -157,6 +158,22 @@ def compute_ablation_matrix(
     model.reset_saes()
     _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
+
+    # Update co-occurrence matrix for ablator features
+    # For each position in the sequence
+    for pos in range(ablator_acts_1Se.shape[1]):
+        # Get feature activations at this position
+        pos_acts = ablator_acts_1Se[0, pos]
+        # Find which features are active (> 0)
+        active_features = torch.where(pos_acts > 0)[0]
+
+        # Update co-occurrence counts for each pair of active features
+        for i in range(len(active_features)):
+            for j in range(i + 1, len(active_features)):
+                feat1, feat2 = active_features[i].item(), active_features[j].item()
+                # Increment both directions in the symmetric matrix
+                cooccurrences[feat1, feat2] += 1
+                cooccurrences[feat2, feat1] += 1
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
@@ -183,7 +200,6 @@ def compute_ablation_matrix(
     # For each top feature in the ablator SAE
     for ablator_idx in tqdm(top_features_K):
         # Set up ablation hook for this feature
-
         def ablation_hook(acts_BSe, hook):
             acts_BSe[:, :, ablator_idx] = 0
             return acts_BSe
