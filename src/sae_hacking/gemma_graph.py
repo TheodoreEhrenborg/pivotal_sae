@@ -20,7 +20,7 @@ def make_parser() -> ArgumentParser:
 
 @beartype
 def main(args: Namespace) -> None:
-    ablation_results = load_dict_with_tensors(args.input_path)
+    ablation_results, _ = load_dict_with_tensors(args.input_path)
 
     graph_ablation_matrix(
         ablation_results,

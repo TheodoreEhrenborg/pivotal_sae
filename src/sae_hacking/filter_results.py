@@ -17,9 +17,9 @@ def make_parser() -> ArgumentParser:
 
 @beartype
 def main(args: Namespace) -> None:
-    tensors = load_dict_with_tensors(args.input_path)
+    tensors, _ = load_dict_with_tensors(args.input_path)
     filtered_tensors = dict(list(tensors.items())[: args.num_keys_to_keep])
-    save_dict_with_tensors(filtered_tensors, args.output_path)
+    save_dict_with_tensors(filtered_tensors, args.output_path, None)
 
 
 if __name__ == "__main__":

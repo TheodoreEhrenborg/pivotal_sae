@@ -116,7 +116,7 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
-    tensor_dict = load_dict_with_tensors(args.input_path)
+    tensor_dict, _ = load_dict_with_tensors(args.input_path)
     results = find_pattern(tensor_dict, args.treat_as_zero)
     print(f"{len(results)=}")
     process_results(

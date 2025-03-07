@@ -18,7 +18,7 @@ def make_parser() -> ArgumentParser:
 @beartype
 def main(args: Namespace) -> None:
     tensors = load_dict_with_tensors_from_json(args.input_path)
-    save_dict_with_tensors(tensors, args.output_path)
+    save_dict_with_tensors(tensors, args.output_path, None)
 
 
 if __name__ == "__main__":
