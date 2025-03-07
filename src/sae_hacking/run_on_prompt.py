@@ -2,6 +2,7 @@
 
 import time
 from argparse import ArgumentParser, Namespace
+from ast import literal_eval
 from pathlib import Path
 
 import torch
@@ -121,6 +122,13 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--output-dir", required=True, type=Path)
     return parser
+
+
+def maybe_get(old_value, name):
+    strng = input(f"Enter new value for {name} (currently {old_value}): ")
+    if strng == "":
+        return old_value
+    return literal_eval(strng)
 
 
 @torch.inference_mode()
