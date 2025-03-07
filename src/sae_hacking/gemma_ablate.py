@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-import asyncio
 import time
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 from typing import Dict
 
-import aiohttp
 import torch
 from beartype import beartype
 from coolname import generate_slug
@@ -211,83 +209,6 @@ def compute_ablation_matrix(
         model.reset_hooks()
 
 
-@beartype
-def analyze_ablation_matrix(
-    ablation_matrix_eE: torch.Tensor, ablator_sae: SAE, reader_sae: SAE, top_k: int = 5
-) -> None:
-    """
-    Analyzes the ablation matrix and prints the strongest interactions.
-    Uses sequential topk operations on the original matrix to find largest magnitude values.
-    """
-    # Find top k positive values
-    _, top_indices = torch.topk(ablation_matrix_eE.view(-1), top_k)
-
-    # Find top k negative values (by finding bottom k)
-    _, bottom_indices = torch.topk(ablation_matrix_eE.view(-1), top_k, largest=False)
-
-    # Combine indices and get their values
-    all_indices = torch.cat([top_indices, bottom_indices])
-    all_values = ablation_matrix_eE.view(-1)[all_indices]
-
-    # Find the top k by absolute value
-    _, final_idx = torch.topk(all_values.abs(), top_k)
-    flat_indices_K = all_indices[final_idx]
-
-    # Convert flat indices to 2D coordinates
-    num_reader_features = ablation_matrix_eE.size(1)
-    ablator_indices_K = flat_indices_K.div(num_reader_features, rounding_mode="floor")
-    reader_indices_K = flat_indices_K % num_reader_features
-
-    # Get descriptions for the features
-    ablator_descriptions = asyncio.run(
-        get_all_descriptions(ablator_indices_K.tolist(), ablator_sae.cfg.neuronpedia_id)
-    )
-    reader_descriptions = asyncio.run(
-        get_all_descriptions(reader_indices_K.tolist(), reader_sae.cfg.neuronpedia_id)
-    )
-
-    print("\nStrongest feature interactions:")
-    for ablator_idx, reader_idx, ablator_desc, reader_desc in zip(
-        ablator_indices_K,
-        reader_indices_K,
-        ablator_descriptions,
-        reader_descriptions,
-        strict=True,
-    ):
-        effect = ablation_matrix_eE[ablator_idx, reader_idx].item()
-        direction = "increases" if effect < 0 else "decreases"
-        print(
-            f"\nAblating feature {ablator_idx} {direction} feature {reader_idx} by {abs(effect):.2f}"
-        )
-        print(f"Ablator feature description: {ablator_desc}")
-        print(f"Reader feature description: {reader_desc}")
-
-
-@beartype
-async def get_description_async(
-    idx: int, session: aiohttp.ClientSession, neuronpedia_id: str
-) -> str:
-    url = f"https://www.neuronpedia.org/api/feature/{neuronpedia_id}/{idx}"
-    async with session.get(url) as response:
-        data = await response.json()
-        try:
-            if data["explanations"]:
-                return data["explanations"][0]["description"]
-            else:
-                return "No explanation found"
-        except:
-            # Sometimes we get rate-limited
-            print(data)
-            raise
-
-
-@beartype
-async def get_all_descriptions(indices: list[int], neuronpedia_id: str) -> list[str]:
-    async with aiohttp.ClientSession() as session:
-        tasks = [get_description_async(idx, session, neuronpedia_id) for idx in indices]
-        return await asyncio.gather(*tasks)
-
-
 @torch.inference_mode()
 @beartype
 def main(args: Namespace) -> None:
@@ -334,8 +255,6 @@ def main(args: Namespace) -> None:
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
             )
 
-    # print("Analyzing results...")
-    # analyze_ablation_matrix(ablation_matrix_eE, ablator_sae, reader_sae)
     print("Graphing results...")
     ablation_results = ablation_results_mut
     graph_ablation_matrix(
