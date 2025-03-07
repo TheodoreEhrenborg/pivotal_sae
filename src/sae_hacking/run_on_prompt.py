@@ -17,9 +17,9 @@ def highlight_tokens_with_intensity(
     for token, activation in zip(split_text, activations, strict=True):
         # TODO Normalize activation
 
-        red = max(235 - (activation * 20), 100)
+        red = int(max(235 - (activation * 20), 100))
         green = 255
-        blue = max(235 - (activation * 20), 100)
+        blue = int(max(235 - (activation * 20), 100))
 
         color = f"#{red:02x}{green:02x}{blue:02x}"
 
