@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import time
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
 import torch
 from beartype import beartype
@@ -9,7 +11,6 @@ from transformers import AutoTokenizer
 
 from sae_hacking.timeprint import timeprint
 
-# TODO Save in output dir
 # TODO Run in loop
 
 
@@ -116,6 +117,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--feature-idx", required=True, type=int)
     parser.add_argument("--prompt", required=True)
+    parser.add_argument("--output-dir", required=True, type=Path)
     return parser
 
 
@@ -142,7 +144,8 @@ def main(args: Namespace) -> None:
     print(activations_S.shape)
 
     html_output = create_html(split_text, activations_S, args)
-    print(html_output)
+    with open(args.output_dir / time.strftime("%Y%m%d_%H%M%S_prompt.html"), "w") as f:
+        f.write(html_output)
 
 
 if __name__ == "__main__":
