@@ -129,7 +129,7 @@ def main(args: Namespace) -> None:
     )
     timeprint("Got activations")
 
-    split_text = tokenizer.tokenize(args.prompt)
+    split_text = tokenizer.tokenize(args.prompt, add_special_tokens=True)
     print(len(split_text))
     print(activations_S.shape)
 
