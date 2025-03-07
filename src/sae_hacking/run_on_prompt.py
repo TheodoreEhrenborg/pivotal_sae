@@ -21,11 +21,11 @@ def highlight_tokens_with_intensity(
     html_parts = []
 
     for token, activation in zip(split_text, activations, strict=True):
-        activation = min(activation, 100)
+        activation = min(activation, 30)
 
-        red = int(255 - (activation * 2))
+        red = int(255 - (activation * 8))
         green = 255
-        blue = int(255 - (activation * 2))
+        blue = int(255 - (activation * 8))
 
         color = f"#{red:02x}{green:02x}{blue:02x}"
 
