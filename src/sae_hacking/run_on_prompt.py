@@ -10,8 +10,8 @@ from transformers import AutoTokenizer
 from sae_hacking.timeprint import timeprint
 
 # TODO Save in output dir
-# TODO Add args to HTML
 # TODO Run in loop
+
 
 @beartype
 def highlight_tokens_with_intensity(
@@ -35,7 +35,9 @@ def highlight_tokens_with_intensity(
 
 
 @beartype
-def create_html(split_text: list[str], activations: torch.Tensor) -> str:
+def create_html(
+    split_text: list[str], activations: torch.Tensor, args: Namespace
+) -> str:
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
     full_html = f"""
@@ -56,7 +58,7 @@ def create_html(split_text: list[str], activations: torch.Tensor) -> str:
         <h1>Green Intensity Highlighting Example</h1>
         <p>{html_output}</p>
         <hr>
-        <p>Each token is highlighted with a different intensity of green (1-10 scale).</p>
+        <p>Arguments: {args}</p>
     </body>
     </html>
     """
@@ -66,7 +68,10 @@ def create_html(split_text: list[str], activations: torch.Tensor) -> str:
 
 @beartype
 def get_feature_activation_per_token(
-    model: HookedSAETransformer, sae: SAE, feature_idx: int, prompt: str
+    model: HookedSAETransformer,
+    sae: SAE,
+    feature_idx: int,
+    prompt: str,
 ) -> torch.Tensor:
     """
     Returns an array showing how much a specific SAE feature activated on each token of the prompt.
@@ -136,7 +141,7 @@ def main(args: Namespace) -> None:
     print(len(split_text))
     print(activations_S.shape)
 
-    html_output = create_html(split_text, activations_S)
+    html_output = create_html(split_text, activations_S, args)
     print(html_output)
 
 
