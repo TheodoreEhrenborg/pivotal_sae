@@ -140,8 +140,6 @@ def main(args: Namespace) -> None:
     timeprint("Got activations")
 
     split_text = tokenizer.tokenize(args.prompt, add_special_tokens=True)
-    print(len(split_text))
-    print(activations_S.shape)
 
     html_output = create_html(split_text, activations_S, args)
     with open(args.output_dir / time.strftime("%Y%m%d_%H%M%S_prompt.html"), "w") as f:
