@@ -102,10 +102,7 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--model", default="google/gemma-2-2b")
     parser.add_argument("--sae-release", required=True)
-    parser.add_argument("--sae-id", default="layer_20/width_65k/canonical")
-    parser.add_argument(
-        "--reader-sae-release", default="gemma-scope-2b-pt-mlp-canonical"
-    )
+    parser.add_argument("--sae-id", required=True)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--feature-idx", required=True, type=int)
     parser.add_argument("--prompt", required=True)
