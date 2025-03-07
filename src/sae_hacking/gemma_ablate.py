@@ -198,7 +198,7 @@ def compute_ablation_matrix(
     hook_point = ablator_sae.cfg.hook_name + ".hook_sae_acts_post"
 
     # For each top feature in the ablator SAE
-    for ablator_idx in tqdm(top_features_K):
+    for ablator_idx in top_features_K:
         # Set up ablation hook for this feature
         def ablation_hook(acts_BSe, hook):
             acts_BSe[:, :, ablator_idx] = 0
@@ -257,7 +257,7 @@ def main(args: Namespace) -> None:
 
     ablation_results_mut = {}
     cooccurrences_mut = torch.zeros(e, e)
-    for i, prompt in enumerate(prompts):
+    for i, prompt in enumerate(tqdm(prompts)):
         print("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
