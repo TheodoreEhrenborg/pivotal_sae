@@ -38,7 +38,12 @@ def highlight_tokens_with_intensity(
 
 @beartype
 def create_html(
-    split_text: list[str], activations: torch.Tensor, args: Namespace
+    split_text: list[str],
+    activations: torch.Tensor,
+    sae_id: str,
+    sae_release: str,
+    prompt: str,
+    feature_idx: int,
 ) -> str:
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
@@ -60,7 +65,13 @@ def create_html(
         <h1>Green Intensity Highlighting Example</h1>
         <p>{html_output}</p>
         <hr>
-        <p>Arguments: {args}</p>
+        <p>{sae_id=}</p>
+        <hr>
+        <p>{sae_release=}</p>
+        <hr>
+        <p>{prompt}</p>
+        <hr>
+        <p>{feature_idx}</p>
         <hr>
         <p>Activations: {list(zip(split_text, activations.tolist(), strict=True))}</p>
     </body>
@@ -131,29 +142,56 @@ def maybe_get(old_value, name):
     return literal_eval(strng)
 
 
+def run_once(
+    model: HookedSAETransformer,
+    tokenizer: AutoTokenizer,
+    sae_id: str,
+    sae_release: str,
+    device: str,
+    prompt: str,
+    feature_idx: int,
+    output_dir: Path,
+) -> None:
+    sae, _, _ = SAE.from_pretrained(release=sae_release, sae_id=sae_id, device=device)
+    timeprint("Loaded SAE")
+    activations_S = get_feature_activation_per_token(model, sae, feature_idx, prompt)
+    timeprint("Got activations")
+
+    split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
+
+    html_output = create_html(
+        split_text, activations_S, sae_id, sae_release, prompt, feature_idx
+    )
+    with open(output_dir / time.strftime("%Y%m%d_%H%M%S_prompt.html"), "w") as f:
+        f.write(html_output)
+
+
 @torch.inference_mode()
 @beartype
 def main(args: Namespace) -> None:
     timeprint("Starting")
     model = HookedSAETransformer.from_pretrained(args.model, device=args.device)
     timeprint("Loaded model")
+
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     timeprint("Loaded tokenizer")
 
-    sae, _, _ = SAE.from_pretrained(
-        release=args.sae_release, sae_id=args.sae_id, device=args.device
+    sae_id = args.sae_id
+    sae_release = args.sae_release
+    device = args.device
+    prompt = args.prompt
+    feature_idx = args.feature_idx
+    output_dir = args.output_dir
+    run_once(
+        model,
+        tokenizer,
+        sae_id,
+        sae_release,
+        device,
+        prompt,
+        feature_idx,
+        output_dir,
     )
-    timeprint("Loaded SAE")
-    activations_S = get_feature_activation_per_token(
-        model, sae, args.feature_idx, args.prompt
-    )
-    timeprint("Got activations")
-
-    split_text = tokenizer.tokenize(args.prompt, add_special_tokens=True)
-
-    html_output = create_html(split_text, activations_S, args)
-    with open(args.output_dir / time.strftime("%Y%m%d_%H%M%S_prompt.html"), "w") as f:
-        f.write(html_output)
 
 
 if __name__ == "__main__":
