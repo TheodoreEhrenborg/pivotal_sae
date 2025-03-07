@@ -29,17 +29,10 @@ def highlight_tokens_with_intensity(
     return "".join(html_parts)
 
 
-# Example usage
-def main():
-    # Sample text
-    text = (
-        "Python is a versatile programming language that is powerful and easy to learn."
-    )
+@beartype
+def create_html(split_text: list[str], activations: torch.Tensor) -> str:
+    html_output = highlight_tokens_with_intensity(split_text, activations)
 
-    # Generate HTML with highlighted tokens
-    html_output = highlight_tokens_with_intensity(text)
-
-    # Create a complete HTML document
     full_html = f"""
     <!DOCTYPE html>
     <html>
@@ -63,13 +56,7 @@ def main():
     </html>
     """
 
-    # Save to a file
-    with open("highlighted_text.html", "w") as f:
-        f.write(full_html)
-
-    print("HTML file created with highlighted tokens!")
-    print("\nPreview of highlighted text:")
-    print(html_output)
+    return full_html
 
 
 @beartype
@@ -139,6 +126,9 @@ def main(args: Namespace) -> None:
     )
 
     split_text = tokenizer.tokenize(args.prompt)
+
+    html_output = create_html(split_text, activations_S)
+    print(html_output)
 
 
 if __name__ == "__main__":
