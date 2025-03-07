@@ -7,7 +7,9 @@ from beartype import beartype
 
 
 @beartype
-def save_dict_with_tensors(tensor_dict: dict, save_path: str) -> None:
+def save_dict_with_tensors(
+    tensor_dict: dict, save_path: str, cooccurrences: torch.Tensor
+) -> None:
     """
     Save a dictionary containing tensors to a safetensors file
     Non-tensor values are stored as tensor metadata.
@@ -22,6 +24,8 @@ def save_dict_with_tensors(tensor_dict: dict, save_path: str) -> None:
     for key, value in tensor_dict.items():
         assert isinstance(value, torch.Tensor)
         tensors[str(key)] = value
+
+    tensors["cooccurrences"] = cooccurrences
 
     # Save tensors with metadata
     uncompressed_data = safetensors.torch.save(tensors)

@@ -143,7 +143,7 @@ def compute_ablation_matrix(
     frequent_features: list[int],
     ablation_results_mut: dict,
     abridge_ablations_to: int,
-    cooccurrences: torch.Tensor,  # Added parameter for co-occurrence tracking
+    cooccurrences_mut: torch.Tensor,  # Added parameter for co-occurrence tracking
 ) -> None:
     """
     - e: number of features in ablator SAE
@@ -172,8 +172,8 @@ def compute_ablation_matrix(
             for j in range(i + 1, len(active_features)):
                 feat1, feat2 = active_features[i].item(), active_features[j].item()
                 # Increment both directions in the symmetric matrix
-                cooccurrences[feat1, feat2] += 1
-                cooccurrences[feat2, feat1] += 1
+                cooccurrences_mut[feat1, feat2] += 1
+                cooccurrences_mut[feat2, feat1] += 1
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
@@ -257,7 +257,6 @@ def main(args: Namespace) -> None:
 
     ablation_results_mut = {}
     cooccurrences_mut = torch.zeros(e, e)
-    exit()
     for i, prompt in enumerate(prompts):
         print("Computing ablation matrix...")
         compute_ablation_matrix(
@@ -268,11 +267,13 @@ def main(args: Namespace) -> None:
             frequent_features,
             ablation_results_mut,
             args.abridge_ablations_to,
+            cooccurrences_mut,
         )
         if i % args.save_frequency == 0:
             save_dict_with_tensors(
                 ablation_results_mut,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
+                cooccurrences_mut,
             )
 
     print("Graphing results...")
