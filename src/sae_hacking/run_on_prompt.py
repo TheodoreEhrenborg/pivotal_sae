@@ -50,6 +50,7 @@ def create_html(
     <html>
     <head>
         <title>Highlighted Text Example</title>
+        <meta charset="UTF-8">
         <style>
             body {{
                 font-family: Arial, sans-serif;
