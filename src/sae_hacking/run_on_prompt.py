@@ -7,6 +7,8 @@ from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
 from transformers import AutoTokenizer
 
+from sae_hacking.timeprint import timeprint
+
 
 @beartype
 def highlight_tokens_with_intensity(
@@ -112,15 +114,20 @@ def make_parser() -> ArgumentParser:
 @torch.inference_mode()
 @beartype
 def main(args: Namespace) -> None:
+    timeprint("Starting")
     model = HookedSAETransformer.from_pretrained(args.model, device=args.device)
+    timeprint("Loaded model")
     tokenizer = AutoTokenizer.from_pretrained(args.model)
+    timeprint("Loaded tokenizer")
 
     sae, _, _ = SAE.from_pretrained(
         release=args.sae_release, sae_id=args.sae_id, device=args.device
     )
+    timeprint("Loaded SAE")
     activations_S = get_feature_activation_per_token(
         model, sae, args.feature_idx, args.prompt
     )
+    timeprint("Got activations")
 
     split_text = tokenizer.tokenize(args.prompt)
 
