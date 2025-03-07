@@ -60,6 +60,8 @@ def create_html(
         <p>{html_output}</p>
         <hr>
         <p>Arguments: {args}</p>
+        <hr>
+        <p>Activations: {activations}</p>
     </body>
     </html>
     """
