@@ -130,6 +130,8 @@ def main(args: Namespace) -> None:
     timeprint("Got activations")
 
     split_text = tokenizer.tokenize(args.prompt)
+    print(len(split_text))
+    print(activations_S.shape)
 
     html_output = create_html(split_text, activations_S)
     print(html_output)
