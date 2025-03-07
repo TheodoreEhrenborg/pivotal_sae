@@ -14,6 +14,7 @@ from transformers import AutoTokenizer
 
 from sae_hacking.graph_network import graph_ablation_matrix
 from sae_hacking.safetensor_utils import save_dict_with_tensors
+from sae_hacking.timeprint import timeprint
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
 # Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
@@ -159,6 +160,7 @@ def compute_ablation_matrix(
     _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
+    timeprint("Starting to update co-occurrence matrix")
     # Update co-occurrence matrix for ablator features
     # For each position in the sequence
     for pos in range(ablator_acts_1Se.shape[1]):
@@ -174,6 +176,7 @@ def compute_ablation_matrix(
                 # Increment both directions in the symmetric matrix
                 cooccurrences_mut[feat1, feat2] += 1
                 cooccurrences_mut[feat2, feat1] += 1
+    timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
