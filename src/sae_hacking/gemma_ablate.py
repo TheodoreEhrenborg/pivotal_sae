@@ -163,9 +163,9 @@ def compute_ablation_matrix(
     # For each position in the sequence
     for pos in range(ablator_acts_1Se.shape[1]):
         # Get feature activations at this position
-        pos_acts = ablator_acts_1Se[0, pos]
+        pos_acts_e = ablator_acts_1Se[0, pos]
         # Find which features are active (> 0)
-        active_features = torch.where(pos_acts > 0)[0]
+        active_features = torch.where(pos_acts_e > 0)[0]
 
         # Update co-occurrence counts for each pair of active features
         for i in range(len(active_features)):
