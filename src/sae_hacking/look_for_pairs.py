@@ -2,6 +2,7 @@
 from argparse import ArgumentParser, Namespace
 
 import torch
+import torch.nn.functional as F
 from beartype import beartype
 from tqdm import tqdm
 
@@ -25,16 +26,6 @@ def find_similar_noncooccurring_pairs(
     similar_pairs = []
     ablator_ids = sorted(list(tensor_dict.keys()))
 
-    # Pre-normalize all vectors for faster cosine similarity computation
-    normalized_tensors = {}
-    for ablator_id in ablator_ids:
-        tensor = tensor_dict[ablator_id]
-        norm = torch.norm(tensor)
-        if norm > 0:
-            normalized_tensors[ablator_id] = tensor / norm
-        else:
-            normalized_tensors[ablator_id] = tensor
-
     # Check each pair of ablators
     for i, ablator1 in enumerate(tqdm(ablator_ids[:-1])):
         for ablator2 in ablator_ids[i + 1 :]:
@@ -43,8 +34,8 @@ def find_similar_noncooccurring_pairs(
                 continue
 
             # Compute cosine similarity of their effects on reader SAEs
-            cosine_sim = torch.dot(
-                normalized_tensors[ablator1], normalized_tensors[ablator2]
+            cosine_sim = F.cosine_similarity(
+                tensor_dict[ablator1], tensor_dict[ablator2]
             ).item()
 
             # Keep if similarity is high enough
