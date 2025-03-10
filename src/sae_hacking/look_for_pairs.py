@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from beartype import beartype
 from tqdm import tqdm
 
+from sae_hacking.graph_network import NeuronExplanationLoader
 from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
@@ -90,14 +91,7 @@ def process_results(
     cooccurrences: torch.Tensor,
     top_n: int,
 ) -> None:
-    try:
-        from sae_hacking.graph_network import NeuronExplanationLoader
-
-        ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
-        has_descriptions = True
-    except:
-        print("NeuronExplanationLoader not available, skipping descriptions")
-        has_descriptions = False
+    ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
     print(f"Found {len(results)} similar non-co-occurring pairs")
     print(f"Showing top {min(top_n, len(results))} results:")
@@ -108,13 +102,8 @@ def process_results(
         print(f"  Cosine similarity: {cosine_sim:.4f}")
         print(f"  Co-occurrence count: {cooccurrences[ablator1, ablator2]}")
 
-        if has_descriptions:
-            print(
-                f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}"
-            )
-            print(
-                f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}"
-            )
+        print(f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}")
+        print(f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}")
 
         print(f"  URLs: {construct_url(ablator_sae_id, ablator1)}")
         print(f"        {construct_url(ablator_sae_id, ablator2)}")
