@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 from argparse import ArgumentParser, Namespace
 
 import torch
