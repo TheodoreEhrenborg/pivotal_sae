@@ -29,9 +29,6 @@ def find_similar_noncooccurring_pairs(
     similar_pairs = []
     ablator_ids = sorted(list(tensor_dict.keys()))
 
-    for ablator in tensor_dict:
-        tensor_dict[ablator] = tensor_dict[ablator].cuda()
-
     D = len(tensor_dict)
     M = tensor_dict[ablator_ids[0]].shape[0]
     all_ablators_DM = torch.zeros(D, M, device="cuda")
