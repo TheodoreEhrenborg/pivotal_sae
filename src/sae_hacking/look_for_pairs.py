@@ -68,8 +68,8 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--cooccurrence-threshold",
         type=int,
-        default=5,
-        help="Maximum co-occurrence count to consider non-co-occurring",
+        default=0,
+        help="Throw away any pairs that co-occur more than this",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--reader-sae-neuronpedia-id", required=True)
