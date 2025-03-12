@@ -14,7 +14,7 @@ from sae_hacking.timeprint import timeprint
 @beartype
 def find_similar_noncooccurring_pairs(
     tensor_dict: dict,
-    cooccurrences: torch.Tensor,
+    cooccurrences_DD: torch.Tensor,
     cosine_threshold: float,
     cooccurrence_threshold: int,
     max_steps: int | None,
@@ -39,7 +39,7 @@ def find_similar_noncooccurring_pairs(
             break
         for ablator2 in ablator_ids[i + 1 :]:
             # Skip if they co-occur frequently
-            if cooccurrences[ablator1, ablator2] > cooccurrence_threshold:
+            if cooccurrences_DD[ablator1, ablator2] > cooccurrence_threshold:
                 continue
 
             # Compute cosine similarity of their effects on reader SAEs
@@ -109,20 +109,22 @@ def process_results(
 @beartype
 def main(args: Namespace) -> None:
     timeprint("Loading file")
-    tensor_dict, cooccurrences = load_dict_with_tensors(args.input_path)
+    tensor_dict, cooccurrences_DD = load_dict_with_tensors(args.input_path)
 
     # Find similar non-co-occurring pairs
     timeprint("Finding similar non-co-occurring pairs...")
     results = find_similar_noncooccurring_pairs(
         tensor_dict,
-        cooccurrences,
+        cooccurrences_DD,
         args.cosine_threshold,
         args.cooccurrence_threshold,
         max_steps=args.max_steps,
     )
 
     # Process and display results
-    process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences, args.top_n)
+    process_results(
+        results, args.ablator_sae_neuronpedia_id, cooccurrences_DD, args.top_n
+    )
 
 
 if __name__ == "__main__":
