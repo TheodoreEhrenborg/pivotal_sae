@@ -50,18 +50,14 @@ def find_similar_noncooccurring_pairs(
 
         # Get all subsequent ablators for batch processing
         next_ablators = ablator_ids[i + 1 :]
-        next_indices = [ablator_ids.index(a) for a in next_ablators]
 
         # Get current ablator tensor and reshape for batch comparison
         current_tensor = all_ablators_DM[i].unsqueeze(0)  # [1, M]
 
-        # Get all comparison tensors
-        comparison_tensors = all_ablators_DM[next_indices]  # [num_remaining, M]
-
         # Compute cosine similarities in one batch operation
         cosine_sims = F.cosine_similarity(
             current_tensor,  # [1, M]
-            comparison_tensors,  # [num_remaining, M]
+            all_ablators_DM,
             dim=1,
         )
 
