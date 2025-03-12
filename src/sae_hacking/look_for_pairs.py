@@ -52,12 +52,8 @@ def find_similar_noncooccurring_pairs(
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument(
-        "--effects-path",
+        "--input-path",
         required=True,
-        help="Path to tensor file with ablator effects on readers",
-    )
-    parser.add_argument(
-        "--cooccurrence-path", required=True, help="Path to co-occurrence matrix file"
     )
     parser.add_argument(
         "--cosine-threshold",
@@ -107,13 +103,8 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
-    # Load ablator effects on reader SAEs
-    print("Loading ablator effects...")
-    tensor_dict, _ = load_dict_with_tensors(args.effects_path)
-
-    # Load co-occurrence matrix
-    print("Loading co-occurrence matrix...")
-    cooccurrences = torch.load(args.cooccurrence_path)
+    print("Loading file")
+    tensor_dict, cooccurrences = load_dict_with_tensors(args.input_path)
 
     # Find similar non-co-occurring pairs
     print("Finding similar non-co-occurring pairs...")
