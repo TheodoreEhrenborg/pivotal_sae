@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
 from sae_hacking.safetensor_utils import load_dict_with_tensors
+from sae_hacking.timeprint import timeprint
 
 
 @beartype
@@ -78,8 +79,8 @@ def process_results(
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
-    print(f"Found {len(results)} similar non-co-occurring pairs")
-    print(f"Showing top {min(top_n, len(results))} results:")
+    timeprint(f"Found {len(results)} similar non-co-occurring pairs")
+    timeprint(f"Showing top {min(top_n, len(results))} results:")
     print()
 
     for i, (ablator1, ablator2, cosine_sim) in enumerate(results[:top_n]):
@@ -97,11 +98,11 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
-    print("Loading file")
+    timeprint("Loading file")
     tensor_dict, cooccurrences = load_dict_with_tensors(args.input_path)
 
     # Find similar non-co-occurring pairs
-    print("Finding similar non-co-occurring pairs...")
+    timeprint("Finding similar non-co-occurring pairs...")
     results = find_similar_noncooccurring_pairs(
         tensor_dict, cooccurrences, args.cosine_threshold, args.cooccurrence_threshold
     )
