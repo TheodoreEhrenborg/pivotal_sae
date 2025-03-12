@@ -4,7 +4,6 @@ from argparse import ArgumentParser, Namespace
 import torch
 import torch.nn.functional as F
 from beartype import beartype
-from scalene import scalene_profiler
 from tqdm import tqdm
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
@@ -72,7 +71,6 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--top-n", type=int, default=100, help="Show top N results")
-    parser.add_argument("--profile", action="store_true")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
@@ -107,9 +105,6 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
-    if args.profile:
-        scalene_profiler.start()
-
     timeprint("Loading file")
     tensor_dict, cooccurrences = load_dict_with_tensors(args.input_path)
 
@@ -125,9 +120,6 @@ def main(args: Namespace) -> None:
 
     # Process and display results
     process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences, args.top_n)
-
-    if args.profile:
-        scalene_profiler.stop()
 
 
 if __name__ == "__main__":
