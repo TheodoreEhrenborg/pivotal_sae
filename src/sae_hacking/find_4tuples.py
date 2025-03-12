@@ -5,7 +5,7 @@ import torch
 from beartype import beartype
 from tqdm import tqdm
 
-from sae_hacking.graph_network import NeuronExplanationLoader
+from sae_hacking.neuronpedia_utils import NeuronExplanationLoader
 from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
