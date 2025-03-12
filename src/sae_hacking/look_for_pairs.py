@@ -4,6 +4,7 @@ from argparse import ArgumentParser, Namespace
 import torch
 import torch.nn.functional as F
 from beartype import beartype
+from scalene import scalene_profiler
 from tqdm import tqdm
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
@@ -17,6 +18,7 @@ def find_similar_noncooccurring_pairs(
     cooccurrences: torch.Tensor,
     cosine_threshold: float,
     cooccurrence_threshold: int,
+    max_steps: int | None,
 ) -> list[tuple[int, int, float]]:
     """
     Find pairs of ablator latents that:
@@ -30,6 +32,9 @@ def find_similar_noncooccurring_pairs(
 
     # Check each pair of ablators
     for i, ablator1 in enumerate(tqdm(ablator_ids)):
+        if max_steps is not None and i >= max_steps:
+            timeprint(f"Reached maximum steps ({max_steps}). Stopping early.")
+            break
         for ablator2 in ablator_ids[i + 1 :]:
             # Skip if they co-occur frequently
             if cooccurrences[ablator1, ablator2] > cooccurrence_threshold:
@@ -67,6 +72,10 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--top-n", type=int, default=100, help="Show top N results")
+    parser.add_argument("--profile", action="store_true")
+    parser.add_argument(
+        "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
+    )
     return parser
 
 
@@ -98,17 +107,27 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
+    if args.profile:
+        scalene_profiler.start()
+
     timeprint("Loading file")
     tensor_dict, cooccurrences = load_dict_with_tensors(args.input_path)
 
     # Find similar non-co-occurring pairs
     timeprint("Finding similar non-co-occurring pairs...")
     results = find_similar_noncooccurring_pairs(
-        tensor_dict, cooccurrences, args.cosine_threshold, args.cooccurrence_threshold
+        tensor_dict,
+        cooccurrences,
+        args.cosine_threshold,
+        args.cooccurrence_threshold,
+        max_steps=args.max_steps,
     )
 
     # Process and display results
     process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences, args.top_n)
+
+    if args.profile:
+        scalene_profiler.stop()
 
 
 if __name__ == "__main__":
