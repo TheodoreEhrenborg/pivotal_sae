@@ -5,7 +5,7 @@ import torch
 from beartype import beartype
 from tqdm import tqdm
 
-from sae_hacking.neuronpedia_utils import NeuronExplanationLoader
+from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
 from sae_hacking.safetensor_utils import load_dict_with_tensors
 
 
@@ -77,11 +77,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     return parser
-
-
-@beartype
-def construct_url(id: str, idx: int) -> str:
-    return f"https://www.neuronpedia.org/{id}/{idx}"
 
 
 @beartype

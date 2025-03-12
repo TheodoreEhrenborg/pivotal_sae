@@ -77,3 +77,8 @@ class NeuronExplanationLoader:
 
         """
         return self.explanations.get(index, f"No explanation found for index {index}")
+
+
+@beartype
+def construct_url(id: str, idx: int) -> str:
+    return f"https://www.neuronpedia.org/{id}/{idx}"
