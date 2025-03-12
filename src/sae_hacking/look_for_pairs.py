@@ -68,7 +68,6 @@ def make_parser() -> ArgumentParser:
         help="Throw away any pairs that co-occur more than this",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
-    parser.add_argument("--reader-sae-neuronpedia-id", required=True)
     parser.add_argument("--top-n", type=int, default=100, help="Show top N results")
     return parser
 
@@ -77,8 +76,6 @@ def make_parser() -> ArgumentParser:
 def process_results(
     results: list[tuple[int, int, float]],
     ablator_sae_id: str,
-    reader_sae_id: str,
-    tensor_dict: dict,
     cooccurrences: torch.Tensor,
     top_n: int,
 ) -> None:
@@ -116,8 +113,6 @@ def main(args: Namespace) -> None:
     process_results(
         results,
         args.ablator_sae_neuronpedia_id,
-        args.reader_sae_neuronpedia_id,
-        tensor_dict,
         cooccurrences,
         args.top_n,
     )
