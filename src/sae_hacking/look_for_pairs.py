@@ -29,27 +29,52 @@ def find_similar_noncooccurring_pairs(
     similar_pairs = []
     ablator_ids = sorted(list(tensor_dict.keys()))
 
-    for key in tensor_dict:
-        tensor_dict[key] = tensor_dict[key].cuda()
+    for ablator in tensor_dict:
+        tensor_dict[ablator] = tensor_dict[ablator].cuda()
 
-    # Check each pair of ablators
+    D = len(tensor_dict)
+    M = tensor_dict[ablator_ids[0]].shape[0]
+    all_ablators_DM = torch.zeros(D, M, device="cuda")
+    for i, ablator in enumerate(tqdm(ablator_ids)):
+        all_ablators_DM[i] = tensor_dict[ablator]
+
+    # Check each ablator against remaining ablators in batch
     for i, ablator1 in enumerate(tqdm(ablator_ids)):
         if max_steps is not None and i >= max_steps:
             timeprint(f"Reached maximum steps ({max_steps}). Stopping early.")
             break
-        for ablator2 in ablator_ids[i + 1 :]:
+
+        # Skip if there are no more ablators to compare
+        if i + 1 >= len(ablator_ids):
+            continue
+
+        # Get all subsequent ablators for batch processing
+        next_ablators = ablator_ids[i + 1 :]
+        next_indices = [ablator_ids.index(a) for a in next_ablators]
+
+        # Get current ablator tensor and reshape for batch comparison
+        current_tensor = all_ablators_DM[i].unsqueeze(0)  # [1, M]
+
+        # Get all comparison tensors
+        comparison_tensors = all_ablators_DM[next_indices]  # [num_remaining, M]
+
+        # Compute cosine similarities in one batch operation
+        cosine_sims = F.cosine_similarity(
+            current_tensor,  # [1, M]
+            comparison_tensors,  # [num_remaining, M]
+            dim=1,
+        )
+
+        # Process the results
+        for j, ablator2 in enumerate(next_ablators):
             # Skip if they co-occur frequently
             if cooccurrences_DD[ablator1, ablator2] > cooccurrence_threshold:
                 continue
 
-            # Compute cosine similarity of their effects on reader SAEs
-            cosine_sim = F.cosine_similarity(
-                tensor_dict[ablator1], tensor_dict[ablator2], dim=0
-            ).item()
-
-            # Keep if similarity is high enough
-            if cosine_sim >= cosine_threshold:
-                similar_pairs.append((ablator1, ablator2, cosine_sim))
+            # Check if similarity is high enough
+            sim_value = cosine_sims[j].item()
+            if sim_value >= cosine_threshold:
+                similar_pairs.append((ablator1, ablator2, sim_value))
 
     # Sort by similarity (highest first)
     similar_pairs.sort(key=lambda x: x[2], reverse=True)
