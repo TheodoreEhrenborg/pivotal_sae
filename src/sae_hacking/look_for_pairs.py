@@ -37,7 +37,7 @@ def find_similar_noncooccurring_pairs(
 
             # Compute cosine similarity of their effects on reader SAEs
             cosine_sim = F.cosine_similarity(
-                tensor_dict[ablator1], tensor_dict[ablator2]
+                tensor_dict[ablator1], tensor_dict[ablator2], dim=0
             ).item()
 
             # Keep if similarity is high enough
