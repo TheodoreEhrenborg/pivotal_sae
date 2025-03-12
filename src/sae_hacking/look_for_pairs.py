@@ -28,7 +28,7 @@ def find_similar_noncooccurring_pairs(
     ablator_ids = sorted(list(tensor_dict.keys()))
 
     # Check each pair of ablators
-    for i, ablator1 in enumerate(tqdm(ablator_ids[:-1])):
+    for i, ablator1 in enumerate(tqdm(ablator_ids)):
         for ablator2 in ablator_ids[i + 1 :]:
             # Skip if they co-occur frequently
             if cooccurrences[ablator1, ablator2] > cooccurrence_threshold:
