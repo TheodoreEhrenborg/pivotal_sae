@@ -21,14 +21,10 @@ def get_llm_activation(
 
 @jaxtyped(typechecker=beartype)
 def get_llm_activation_from_tensor(
-    model: GPTNeoForCausalLM,
-    tokens_tensor: Int[torch.Tensor, "1 seq_len"],
+    model: GPTNeoForCausalLM, tokens_tensor: Int[torch.Tensor, "1 seq_len"]
 ) -> Float[torch.Tensor, "1 seq_len 768"]:
     with torch.no_grad():
-        x = model(
-            tokens_tensor,
-            output_hidden_states=True,
-        )
+        x = model(tokens_tensor, output_hidden_states=True)
         assert len(x.hidden_states) == 5
         return x.hidden_states[2]
 

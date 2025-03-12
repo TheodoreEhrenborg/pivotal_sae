@@ -51,10 +51,7 @@ def find_similar_noncooccurring_pairs(
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument(
-        "--input-path",
-        required=True,
-    )
+    parser.add_argument("--input-path", required=True)
     parser.add_argument(
         "--cosine-threshold",
         type=float,
@@ -110,12 +107,7 @@ def main(args: Namespace) -> None:
     )
 
     # Process and display results
-    process_results(
-        results,
-        args.ablator_sae_neuronpedia_id,
-        cooccurrences,
-        args.top_n,
-    )
+    process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences, args.top_n)
 
 
 if __name__ == "__main__":

@@ -101,11 +101,7 @@ def main(args: Namespace):
     plot_feature_similarity(dataset, output_dir)
 
     sae = setup(
-        args.sae_hidden_dim,
-        args.cuda,
-        args.hierarchical,
-        args.model_dim,
-        args.sae_k,
+        args.sae_hidden_dim, args.cuda, args.hierarchical, args.model_dim, args.sae_k
     )
     if args.handcode_sae:
         assert args.hierarchical
@@ -558,10 +554,7 @@ def adjusted_get_similarity(
 
 
 @beartype
-def plot_feature_similarity(
-    dataset: ToyDataset,
-    output_dir: str,
-) -> None:
+def plot_feature_similarity(dataset: ToyDataset, output_dir: str) -> None:
     similarity = get_feature_v_feature_sim(dataset)
     plt.figure(figsize=(12, 5))
     sns.heatmap(

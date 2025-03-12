@@ -82,10 +82,7 @@ def create_html(
 
 @beartype
 def get_feature_activation_per_token(
-    model: HookedSAETransformer,
-    sae: SAE,
-    feature_idx: int,
-    prompt: str,
+    model: HookedSAETransformer, sae: SAE, feature_idx: int, prompt: str
 ) -> torch.Tensor:
     """
     Returns an array showing how much a specific SAE feature activated on each token of the prompt.

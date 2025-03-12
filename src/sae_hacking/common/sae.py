@@ -204,9 +204,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
     def forward(
         self, model_activations_BM: Float[torch.Tensor, "B M"]
     ) -> tuple[
-        Float[torch.Tensor, "B M"],
-        tuple[int, int, int],
-        Float[torch.Tensor, ""],
+        Float[torch.Tensor, "B M"], tuple[int, int, int], Float[torch.Tensor, ""]
     ]:
         pre_activations_BE = self.encoder(model_activations_BM)
         topk = torch.topk(pre_activations_BE, self.k)
@@ -285,11 +283,7 @@ class TopkSparseAutoEncoder2Child_v2(torch.nn.Module):
 
         return (
             reconstructed_BM,
-            (
-                num_live_parent_latents,
-                num_live_child1_latents,
-                num_live_child2_latents,
-            ),
+            (num_live_parent_latents, num_live_child1_latents, num_live_child2_latents),
             aux_loss,
         )
 
