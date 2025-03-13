@@ -14,7 +14,7 @@ from sae_hacking.timeprint import timeprint
 def find_similar_noncooccurring_pairs(
     tensor_dict: dict,
     cooccurrences_DD: torch.Tensor,
-    dot_threshold: float,
+    top_n: int,
     cooccurrence_threshold: int,
     max_steps: int | None,
 ) -> list[tuple[int, int, float]]:
@@ -44,12 +44,12 @@ def find_similar_noncooccurring_pairs(
             # Compute dot product of their effects on reader SAEs
             dot_prod = torch.dot(tensor_dict[ablator1], tensor_dict[ablator2]).item()
 
-            # Keep if dot product is high enough
-            if dot_prod >= dot_threshold:
-                similar_pairs.append((ablator1, ablator2, dot_prod))
+            similar_pairs.append((ablator1, ablator2, dot_prod))
 
-    # Sort by dot product (highest first)
-    similar_pairs.sort(key=lambda x: x[2], reverse=True)
+        # Sort by dot product and abridge
+        similar_pairs.sort(key=lambda x: x[2], reverse=True)
+        similar_pairs = similar_pairs[:top_n]
+
     return similar_pairs
 
 
@@ -58,16 +58,13 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--input-path", required=True)
     parser.add_argument(
-        "--dot-threshold", type=float, default=0.8, help="Minimum dot product to keep"
-    )
-    parser.add_argument(
         "--cooccurrence-threshold",
         type=int,
         default=0,
         help="Throw away any pairs that co-occur more than this",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
-    parser.add_argument("--top-n", type=int, default=100, help="Show top N results")
+    parser.add_argument("--top-n", type=int, default=100, help="Keep top N results")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
@@ -110,7 +107,7 @@ def main(args: Namespace) -> None:
     results = find_similar_noncooccurring_pairs(
         tensor_dict,
         cooccurrences_DD,
-        args.dot_threshold,
+        args.top_n,
         args.cooccurrence_threshold,
         max_steps=args.max_steps,
     )
