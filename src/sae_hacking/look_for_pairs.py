@@ -2,7 +2,6 @@
 from argparse import ArgumentParser, Namespace
 
 import torch
-import torch.nn.functional as F
 from beartype import beartype
 from tqdm import tqdm
 
@@ -15,16 +14,16 @@ from sae_hacking.timeprint import timeprint
 def find_similar_noncooccurring_pairs(
     tensor_dict: dict,
     cooccurrences_DD: torch.Tensor,
-    cosine_threshold: float,
+    dot_threshold: float,
     cooccurrence_threshold: int,
     max_steps: int | None,
 ) -> list[tuple[int, int, float]]:
     """
     Find pairs of ablator latents that:
     1. Don't significantly co-occur (below cooccurrence_threshold)
-    2. Have similar effects on reader SAEs (cosine similarity above threshold)
+    2. Have similar effects on reader SAEs (dot product above threshold)
 
-    Returns a list of tuples (ablator1, ablator2, cosine_similarity)
+    Returns a list of tuples (ablator1, ablator2, dot_product)
     """
     similar_pairs = []
     ablator_ids = sorted(list(tensor_dict.keys()))
@@ -42,16 +41,14 @@ def find_similar_noncooccurring_pairs(
             if cooccurrences_DD[ablator1, ablator2] > cooccurrence_threshold:
                 continue
 
-            # Compute cosine similarity of their effects on reader SAEs
-            cosine_sim = F.cosine_similarity(
-                tensor_dict[ablator1], tensor_dict[ablator2], dim=0
-            ).item()
+            # Compute dot product of their effects on reader SAEs
+            dot_prod = torch.dot(tensor_dict[ablator1], tensor_dict[ablator2]).item()
 
-            # Keep if similarity is high enough
-            if cosine_sim >= cosine_threshold:
-                similar_pairs.append((ablator1, ablator2, cosine_sim))
+            # Keep if dot product is high enough
+            if dot_prod >= dot_threshold:
+                similar_pairs.append((ablator1, ablator2, dot_prod))
 
-    # Sort by similarity (highest first)
+    # Sort by dot product (highest first)
     similar_pairs.sort(key=lambda x: x[2], reverse=True)
     return similar_pairs
 
@@ -61,10 +58,7 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--input-path", required=True)
     parser.add_argument(
-        "--cosine-threshold",
-        type=float,
-        default=0.8,
-        help="Minimum cosine similarity to keep",
+        "--dot-threshold", type=float, default=0.8, help="Minimum dot product to keep"
     )
     parser.add_argument(
         "--cooccurrence-threshold",
@@ -93,9 +87,9 @@ def process_results(
     timeprint(f"Showing top {min(top_n, len(results))} results:")
     print()
 
-    for i, (ablator1, ablator2, cosine_sim) in enumerate(results[:top_n]):
+    for i, (ablator1, ablator2, dot_prod) in enumerate(results[:top_n]):
         print(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}")
-        print(f"  Cosine similarity: {cosine_sim:.4f}")
+        print(f"  Dot product: {dot_prod:.4f}")
         print(f"  Co-occurrence count: {cooccurrences[ablator1, ablator2]}")
 
         print(f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}")
@@ -116,7 +110,7 @@ def main(args: Namespace) -> None:
     results = find_similar_noncooccurring_pairs(
         tensor_dict,
         cooccurrences_DD,
-        args.cosine_threshold,
+        args.dot_threshold,
         args.cooccurrence_threshold,
         max_steps=args.max_steps,
     )
