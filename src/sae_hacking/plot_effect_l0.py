@@ -2,7 +2,6 @@
 from argparse import ArgumentParser, Namespace
 
 import matplotlib.pyplot as plt
-import torch
 from beartype import beartype
 
 from sae_hacking.safetensor_utils import load_dict_with_tensors
@@ -10,7 +9,7 @@ from sae_hacking.timeprint import timeprint
 
 
 @beartype
-def count_active_readers(tensor_dict: dict, threshold: float) -> torch.Tensor:
+def count_active_readers(tensor_dict: dict, threshold: float) -> list[int]:
     """
     Count how many reader latents are active (above threshold) for each ablator latent.
 
@@ -28,35 +27,22 @@ def count_active_readers(tensor_dict: dict, threshold: float) -> torch.Tensor:
         active_count = (tensor_dict[ablator_id].abs() > threshold).sum().item()
         active_counts.append(active_count)
 
-    return torch.tensor(active_counts)
+    return active_counts
 
 
 @beartype
-def plot_histogram(
-    active_counts: torch.Tensor,
-    output_path: str,
-    bins: int = 50,
-    figsize: tuple[int, int] = (10, 6),
-) -> None:
+def plot_histogram(active_counts: list[int], output_path: str, bins: int) -> None:
     """
     Plot and save a histogram of active reader counts.
     """
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=(10, 6))
 
-    plt.hist(active_counts.numpy(), bins=bins, edgecolor="black")
+    plt.hist(active_counts, bins=bins, edgecolor="black")
     plt.xlabel("Number of Active Reader Latents")
     plt.ylabel("Count of Ablator Latents")
     plt.title("Distribution of Active Reader Latents per Ablator")
 
     # Add summary statistics
-    mean_count = active_counts.float().mean()
-    median_count = active_counts.float().median()
-    plt.axvline(
-        mean_count, color="r", linestyle="dashed", label=f"Mean: {mean_count:.1f}"
-    )
-    plt.axvline(
-        median_count, color="g", linestyle="dashed", label=f"Median: {median_count:.1f}"
-    )
     plt.legend()
 
     plt.grid(True, alpha=0.3)
@@ -94,14 +80,6 @@ def main(args: Namespace) -> None:
 
     timeprint("Creating histogram plot...")
     plot_histogram(active_counts, args.output_path, args.bins)
-
-    # Print summary statistics
-    timeprint("Summary statistics:")
-    print(f"  Mean active readers: {active_counts.float().mean():.2f}")
-    print(f"  Median active readers: {active_counts.float().median():.2f}")
-    print(f"  Min active readers: {active_counts.min().item()}")
-    print(f"  Max active readers: {active_counts.max().item()}")
-    print(f"  Total ablators analyzed: {len(active_counts)}")
 
     timeprint(f"Plot saved to {args.output_path}")
 
