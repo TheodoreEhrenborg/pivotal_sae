@@ -64,7 +64,7 @@ def make_parser() -> ArgumentParser:
         help="Throw away any pairs that co-occur more than this",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
-    parser.add_argument("--top-n", type=int, default=100, help="Keep top N results")
+    parser.add_argument("--top-n", type=int, default=1000, help="Keep top N results")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
