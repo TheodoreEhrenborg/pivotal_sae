@@ -9,7 +9,9 @@ from sae_hacking.timeprint import timeprint
 
 
 @beartype
-def count_active_readers(tensor_dict: dict, threshold: float) -> list[int]:
+def count_active_readers(
+    tensor_dict: dict, threshold: float, exclude_over: float
+) -> list[int]:
     """
     Count how many reader latents are active (above threshold) for each ablator latent.
 
@@ -25,7 +27,8 @@ def count_active_readers(tensor_dict: dict, threshold: float) -> list[int]:
     for ablator_id in sorted(tensor_dict.keys()):
         # Count values above threshold
         active_count = (tensor_dict[ablator_id].abs() > threshold).sum().item()
-        active_counts.append(active_count)
+        if active_count <= exclude_over:
+            active_counts.append(active_count)
 
     return active_counts
 
@@ -67,6 +70,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--bins", type=int, default=50, help="Number of bins in the histogram"
     )
+    parser.add_argument("--exclude-over", type=float, default=5000.0)
     return parser
 
 
@@ -76,7 +80,7 @@ def main(args: Namespace) -> None:
     tensor_dict, _ = load_dict_with_tensors(args.input_path)
 
     timeprint("Counting active readers for each ablator...")
-    active_counts = count_active_readers(tensor_dict, args.threshold)
+    active_counts = count_active_readers(tensor_dict, args.threshold, args.exclude_over)
 
     timeprint("Creating histogram plot...")
     plot_histogram(active_counts, args.output_path, args.bins)
