@@ -30,7 +30,7 @@ def find_similar_noncooccurring_pairs(
     ablator_ids = sorted(list(tensor_dict.keys()))
 
     for key in tensor_dict:
-        tensor_dict[key] = tensor_dict[key].cuda()
+        tensor_dict[key] = torch.sign(tensor_dict[key].cuda())
 
     # Check each pair of ablators
     for i, ablator1 in enumerate(tqdm(ablator_ids)):
