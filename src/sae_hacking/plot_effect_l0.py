@@ -75,7 +75,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--threshold",
         type=float,
-        default=0.1,
+        default=0.0,
         help="Threshold for considering a reader latent active",
     )
     parser.add_argument(
