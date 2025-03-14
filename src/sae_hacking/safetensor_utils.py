@@ -69,3 +69,22 @@ def load_dict_with_tensors(load_path: str) -> tuple[dict, torch.Tensor | None]:
             results[int(key)] = value
 
     return results, tensor_dict.get("cooccurrences")
+
+
+@beartype
+def save_v2(
+    effects_tensor: torch.Tensor, cooccurrences: torch.Tensor, save_path: str
+) -> None:
+    assert save_path.endswith(".safetensors.zst")
+
+    tensors = {}
+    tensors["cooccurrences"] = cooccurrences
+    tensors["effects"] = effects_tensor
+
+    uncompressed_data = safetensors.torch.save(tensors)
+
+    compressor = zstandard.ZstdCompressor()
+    compressed_data = compressor.compress(uncompressed_data)
+
+    with open(save_path, "wb") as f_out:
+        f_out.write(compressed_data)
