@@ -279,8 +279,6 @@ def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Compute co-occurrences using matrix multiplication
     these_cooccurrences_ee = active_binary_Se.T @ active_binary_Se
 
-    # Zero out the diagonal (no self-co-occurrences)
-    # these_cooccurrences_ee.fill_diagonal_(0)
 
     cooccurrences_ee += these_cooccurrences_ee.cpu()
 
