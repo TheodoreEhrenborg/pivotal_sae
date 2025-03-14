@@ -142,7 +142,7 @@ def compute_ablation_matrix(
     frequent_features: list[int],
     ablation_results_eE: torch.Tensor,
     abridge_ablations_to: int,
-    cooccurrences_ee: torch.Tensor,  # Added parameter for co-occurrence tracking
+    cooccurrences_ee: torch.Tensor,
 ) -> None:
     """
     - e: number of features in ablator SAE
