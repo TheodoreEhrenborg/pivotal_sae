@@ -95,7 +95,7 @@ def find_frequently_activating_features(
 
     # Process each prompt
     for prompt in prompts:
-        print(f"Processing prompt: {prompt}")
+        timeprint(f"Processing prompt: {prompt}")
 
         # Run the model with ablator SAE to get its activations
         model.reset_hooks()
@@ -148,7 +148,7 @@ def compute_ablation_matrix(
     - e: number of features in ablator SAE
     - E: number of features in reader SAE
     """
-    print(prompt)
+    timeprint(prompt)
     ablator_sae.use_error_term = True
     reader_sae.use_error_term = True
 
@@ -228,7 +228,7 @@ def compute_ablation_matrix(
 def main(args: Namespace) -> None:
     output_dir = f"/results/{time.strftime('%Y%m%d-%H%M%S')}{generate_slug()}"
     Path(output_dir).mkdir()
-    print(f"Writing to {output_dir}")
+    timeprint(f"Writing to {output_dir}")
     device = "cuda"
     model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
@@ -256,7 +256,7 @@ def main(args: Namespace) -> None:
     ablation_results_eE = torch.zeros(e, E)
     cooccurrences_ee = torch.zeros(e, e)
     for i, prompt in enumerate(tqdm(prompts)):
-        print("Computing ablation matrix...")
+        timeprint("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
             ablator_sae,
