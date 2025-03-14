@@ -163,7 +163,7 @@ def compute_ablation_matrix(
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     timeprint("Starting to update co-occurrence matrix")
-    update_co_occurrences(cooccurrences_ee, ablator_acts_1Se)
+    update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se)
     timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
