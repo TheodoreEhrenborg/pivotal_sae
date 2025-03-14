@@ -12,7 +12,6 @@ from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sae_hacking.graph_network import graph_ablation_matrix
 from sae_hacking.safetensor_utils import save_dict_with_tensors
 from sae_hacking.timeprint import timeprint
 
@@ -34,7 +33,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--reader-sae-id", default="layer_21/width_65k/canonical")
     parser.add_argument("--max-tokens-in-prompt", type=int, default=125)
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
-    parser.add_argument("--n-edges", type=int, default=10000)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--keep-frequent-features", action="store_true")
     parser.add_argument("--save-frequency", type=int, default=240)
@@ -277,16 +275,6 @@ def main(args: Namespace) -> None:
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
                 cooccurrences_mut,
             )
-
-    print("Graphing results...")
-    ablation_results = ablation_results_mut
-    graph_ablation_matrix(
-        ablation_results,
-        ablator_sae.cfg.neuronpedia_id,
-        reader_sae.cfg.neuronpedia_id,
-        output_dir,
-        args.n_edges,
-    )
 
 
 if __name__ == "__main__":
