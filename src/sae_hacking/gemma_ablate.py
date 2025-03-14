@@ -272,6 +272,23 @@ def main(args: Namespace) -> None:
 
 
 @beartype
+def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
+    # Convert to binary activation (1 where features are active, 0 otherwise)
+    active_binary_Se = (ablator_acts_1Se[0] > 0).float()
+
+    # Compute co-occurrences using matrix multiplication
+    these_cooccurrences_ee = active_binary_Se.T @ active_binary_Se
+
+    # Zero out the diagonal (no self-co-occurrences)
+    these_cooccurrences_ee.fill_diagonal_(0)
+
+    # Double-count
+    these_cooccurrences_ee += these_cooccurrences_ee.T
+
+    cooccurrences_ee += these_cooccurrences_ee
+
+
+@beartype
 def update_co_occurrences(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Update co-occurrence matrix for ablator features
     # For each position in the sequence
