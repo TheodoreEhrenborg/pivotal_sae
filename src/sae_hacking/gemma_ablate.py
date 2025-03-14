@@ -163,7 +163,7 @@ def compute_ablation_matrix(
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     timeprint("Starting to update co-occurrence matrix")
-    update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se)
+    cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
     timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
@@ -272,7 +272,7 @@ def main(args: Namespace) -> None:
 
 
 @beartype
-def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
+def gather_co_occurrences2(ablator_acts_1Se) -> torch.Tensor:
     # Convert to binary activation (1 where features are active, 0 otherwise)
     active_binary_Se = (ablator_acts_1Se[0] > 0).float().to_sparse()
 
@@ -280,11 +280,13 @@ def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     these_cooccurrences_ee = active_binary_Se.T @ active_binary_Se
 
 
-    cooccurrences_ee += these_cooccurrences_ee.cpu()
+    return these_cooccurrences_ee.cpu()
 
 
 @beartype
-def update_co_occurrences(cooccurrences_ee, ablator_acts_1Se) -> None:
+def gather_co_occurrences(ablator_acts_1Se) -> torch.Tensor:
+    e = ablator_acts_1Se.shape[2]
+    these_cooccurrences_ee = torch.zeros(e,e)
     # Update co-occurrence matrix for ablator features
     # For each position in the sequence
     for pos in range(ablator_acts_1Se.shape[1]):
@@ -297,8 +299,8 @@ def update_co_occurrences(cooccurrences_ee, ablator_acts_1Se) -> None:
         for i in range(len(active_features)):
             for j in range(len(active_features)):
                 feat1, feat2 = active_features[i].item(), active_features[j].item()
-                cooccurrences_ee[feat1, feat2] += 1
-
+                these_cooccurrences_ee[feat1, feat2] += 1
+    return these_cooccurrences_ee
 
 if __name__ == "__main__":
     main(make_parser().parse_args())

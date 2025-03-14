@@ -2,7 +2,7 @@
 
 import torch
 
-from sae_hacking.gemma_ablate import update_co_occurrences, update_co_occurrences2
+from sae_hacking.gemma_ablate import gather_co_occurrences, gather_co_occurrences2
 
 
 def test_co_occurrences():
@@ -19,10 +19,8 @@ def test_co_occurrences():
         ]
     )
 
-    cooccurrences1 = torch.zeros(num_features, num_features)
-    cooccurrences2 = torch.zeros(num_features, num_features)
 
-    update_co_occurrences(cooccurrences1, activations)
-    update_co_occurrences2(cooccurrences2, activations)
+    r1 = gather_co_occurrences( activations)
+    r2 = gather_co_occurrences2( activations)
 
-    assert torch.allclose(cooccurrences1, cooccurrences2)
+    assert torch.allclose(r1, r2.to_dense())
