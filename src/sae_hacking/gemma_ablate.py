@@ -246,7 +246,7 @@ def main(args: Namespace) -> None:
     )
 
     ablation_results_eE = torch.zeros(e, E)
-    cooccurrences_ee = torch.zeros(e, e).to_sparse().cuda()
+    cooccurrences_ee = torch.zeros(e, e).to_sparse()
     how_often_activated_e = torch.zeros(e)
     for i, prompt in enumerate(tqdm(prompts)):
         timeprint("Computing ablation matrix...")
@@ -266,7 +266,7 @@ def main(args: Namespace) -> None:
             save_v2(
                 ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
-                cooccurrences_ee.cpu().to_dense(),
+                cooccurrences_ee.to_dense(),
                 how_often_activated_e,
             )
 
@@ -282,7 +282,7 @@ def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Zero out the diagonal (no self-co-occurrences)
     # these_cooccurrences_ee.fill_diagonal_(0)
 
-    cooccurrences_ee += these_cooccurrences_ee
+    cooccurrences_ee += these_cooccurrences_ee.cpu()
 
 
 @beartype
