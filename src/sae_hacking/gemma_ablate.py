@@ -146,6 +146,7 @@ def compute_ablation_matrix(
     ],
     abridge_ablations_to: int,
     cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
+    how_often_activated_e: Float[torch.Tensor, " num_ablator_features"],
 ) -> None:
     """
     - e: number of features in ablator SAE
@@ -189,6 +190,8 @@ def compute_ablation_matrix(
         i for i in tentative_top_features_k if i.item() not in frequent_features
     ][:abridge_ablations_to]
     assert len(top_features_K) == abridge_ablations_to
+
+    how_often_activated_e[top_features_K] += 1
 
     # Get baseline activations for reader SAE
     model.reset_hooks()
@@ -258,6 +261,7 @@ def main(args: Namespace) -> None:
 
     ablation_results_eE = torch.zeros(e, E)
     cooccurrences_ee = torch.zeros(e, e)
+    how_often_activated_e = torch.zeros(e)
     for i, prompt in enumerate(tqdm(prompts)):
         timeprint("Computing ablation matrix...")
         compute_ablation_matrix(
@@ -269,6 +273,7 @@ def main(args: Namespace) -> None:
             ablation_results_eE,
             args.abridge_ablations_to,
             cooccurrences_ee,
+            how_often_activated_e,
         )
         timeprint("Done computing ablation matrix")
         if i % args.save_frequency == 0:
@@ -276,6 +281,7 @@ def main(args: Namespace) -> None:
                 ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
                 cooccurrences_ee,
+                how_often_activated_e,
             )
 
 
