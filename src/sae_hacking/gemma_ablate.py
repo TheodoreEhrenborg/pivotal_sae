@@ -163,7 +163,7 @@ def compute_ablation_matrix(
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     timeprint("Starting to update co-occurrence matrix")
-    update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se.to_sparse())
+    update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se)
     timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
@@ -274,7 +274,7 @@ def main(args: Namespace) -> None:
 @beartype
 def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Convert to binary activation (1 where features are active, 0 otherwise)
-    active_binary_Se = (ablator_acts_1Se[0] > 0).float()
+    active_binary_Se = (ablator_acts_1Se[0] > 0).float().to_sparse()
 
     # Compute co-occurrences using matrix multiplication
     these_cooccurrences_ee = active_binary_Se.T @ active_binary_Se
