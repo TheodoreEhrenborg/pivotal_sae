@@ -8,6 +8,7 @@ import torch
 from beartype import beartype
 from coolname import generate_slug
 from datasets import load_dataset
+from jaxtyping import Float, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 from transformers import AutoTokenizer
@@ -133,16 +134,18 @@ def find_frequently_activating_features(
     return sorted(frequently_activating_features)
 
 
-@beartype
+@jaxtyped(typechecker=beartype)
 def compute_ablation_matrix(
     model: HookedSAETransformer,
     ablator_sae: SAE,
     reader_sae: SAE,
     prompt: str,
     frequent_features: list[int],
-    ablation_results_eE: torch.Tensor,
+    ablation_results_eE: Float[
+        torch.Tensor, "num_ablator_features num_reader_features"
+    ],
     abridge_ablations_to: int,
-    cooccurrences_ee: torch.Tensor,
+    cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
 ) -> None:
     """
     - e: number of features in ablator SAE
