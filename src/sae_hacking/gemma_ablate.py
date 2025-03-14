@@ -297,11 +297,9 @@ def update_co_occurrences(cooccurrences_ee, ablator_acts_1Se) -> None:
 
         # Update co-occurrence counts for each pair of active features
         for i in range(len(active_features)):
-            for j in range(i + 1, len(active_features)):
+            for j in range(len(active_features)):
                 feat1, feat2 = active_features[i].item(), active_features[j].item()
-                # Increment both directions in the symmetric matrix
                 cooccurrences_ee[feat1, feat2] += 1
-                cooccurrences_ee[feat2, feat1] += 1
 
 
 if __name__ == "__main__":
