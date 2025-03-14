@@ -282,9 +282,6 @@ def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Zero out the diagonal (no self-co-occurrences)
     these_cooccurrences_ee.fill_diagonal_(0)
 
-    # Double-count
-    these_cooccurrences_ee += these_cooccurrences_ee.T
-
     cooccurrences_ee += these_cooccurrences_ee
 
 
