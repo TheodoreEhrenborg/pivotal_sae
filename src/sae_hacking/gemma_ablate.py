@@ -274,7 +274,7 @@ def main(args: Namespace) -> None:
 @beartype
 def update_co_occurrences2(cooccurrences_ee, ablator_acts_1Se) -> None:
     # Convert to binary activation (1 where features are active, 0 otherwise)
-    active_binary_Se = (ablator_acts_1Se[0] > 0).float()
+    active_binary_Se = (ablator_acts_1Se[0] > 0).float().cpu()
 
     # Compute co-occurrences using matrix multiplication
     these_cooccurrences_ee = active_binary_Se.T @ active_binary_Se
