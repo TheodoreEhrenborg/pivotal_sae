@@ -270,6 +270,7 @@ def main(args: Namespace) -> None:
             args.abridge_ablations_to,
             cooccurrences_ee,
         )
+        timeprint("Done computing ablation matrix")
         if i % args.save_frequency == 0:
             save_v2(
                 ablation_results_eE,
