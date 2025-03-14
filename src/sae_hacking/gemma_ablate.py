@@ -12,7 +12,7 @@ from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sae_hacking.safetensor_utils import save_dict_with_tensors
+from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
 
 # Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
@@ -140,9 +140,9 @@ def compute_ablation_matrix(
     reader_sae: SAE,
     prompt: str,
     frequent_features: list[int],
-    ablation_results_mut: dict,
+    ablation_results_eE: torch.Tensor,
     abridge_ablations_to: int,
-    cooccurrences_mut: torch.Tensor,  # Added parameter for co-occurrence tracking
+    cooccurrences_ee: torch.Tensor,  # Added parameter for co-occurrence tracking
 ) -> None:
     """
     - e: number of features in ablator SAE
@@ -172,8 +172,8 @@ def compute_ablation_matrix(
             for j in range(i + 1, len(active_features)):
                 feat1, feat2 = active_features[i].item(), active_features[j].item()
                 # Increment both directions in the symmetric matrix
-                cooccurrences_mut[feat1, feat2] += 1
-                cooccurrences_mut[feat2, feat1] += 1
+                cooccurrences_ee[feat1, feat2] += 1
+                cooccurrences_ee[feat2, feat1] += 1
     timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
@@ -217,10 +217,7 @@ def compute_ablation_matrix(
         result = baseline_acts_E - ablated_acts_E
 
         ablator_idx_int = ablator_idx.item()
-        if ablator_idx_int in ablation_results_mut:
-            ablation_results_mut[ablator_idx_int] += result.cpu()
-        else:
-            ablation_results_mut[ablator_idx_int] = result.cpu()
+        ablation_results_eE[ablator_idx_int] += result.cpu()
 
         # Reset hooks for next iteration
         model.reset_hooks()
@@ -239,9 +236,10 @@ def main(args: Namespace) -> None:
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
     e = ablator_sae_config["d_sae"]
-    reader_sae, _, _ = SAE.from_pretrained(
+    reader_sae, reader_sae_config, _ = SAE.from_pretrained(
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
+    E = reader_sae_config["d_sae"]
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
     frequent_features = (
@@ -255,8 +253,8 @@ def main(args: Namespace) -> None:
         )
     )
 
-    ablation_results_mut = {}
-    cooccurrences_mut = torch.zeros(e, e)
+    ablation_results_eE = torch.zeros(e, E)
+    cooccurrences_ee = torch.zeros(e, e)
     for i, prompt in enumerate(tqdm(prompts)):
         print("Computing ablation matrix...")
         compute_ablation_matrix(
@@ -265,15 +263,15 @@ def main(args: Namespace) -> None:
             reader_sae,
             prompt,
             frequent_features,
-            ablation_results_mut,
+            ablation_results_eE,
             args.abridge_ablations_to,
-            cooccurrences_mut,
+            cooccurrences_ee,
         )
         if i % args.save_frequency == 0:
-            save_dict_with_tensors(
-                ablation_results_mut,
+            save_v2(
+                ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
-                cooccurrences_mut,
+                cooccurrences_ee,
             )
 
 

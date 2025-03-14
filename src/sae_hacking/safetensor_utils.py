@@ -73,7 +73,7 @@ def load_dict_with_tensors(load_path: str) -> tuple[dict, torch.Tensor | None]:
 
 @beartype
 def save_v2(
-    effects_tensor: torch.Tensor, cooccurrences: torch.Tensor, save_path: str
+    effects_tensor: torch.Tensor, save_path: str, cooccurrences: torch.Tensor
 ) -> None:
     assert save_path.endswith(".safetensors.zst")
 
