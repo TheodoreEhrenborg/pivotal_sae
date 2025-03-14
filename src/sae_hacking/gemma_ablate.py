@@ -163,21 +163,7 @@ def compute_ablation_matrix(
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     timeprint("Starting to update co-occurrence matrix")
-    # Update co-occurrence matrix for ablator features
-    # For each position in the sequence
-    for pos in range(ablator_acts_1Se.shape[1]):
-        # Get feature activations at this position
-        pos_acts_e = ablator_acts_1Se[0, pos]
-        # Find which features are active (> 0)
-        active_features = torch.where(pos_acts_e > 0)[0]
-
-        # Update co-occurrence counts for each pair of active features
-        for i in range(len(active_features)):
-            for j in range(i + 1, len(active_features)):
-                feat1, feat2 = active_features[i].item(), active_features[j].item()
-                # Increment both directions in the symmetric matrix
-                cooccurrences_ee[feat1, feat2] += 1
-                cooccurrences_ee[feat2, feat1] += 1
+    update_co_occurrences(cooccurrences_ee, ablator_acts_1Se)
     timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
@@ -283,6 +269,25 @@ def main(args: Namespace) -> None:
                 cooccurrences_ee,
                 how_often_activated_e,
             )
+
+
+@beartype
+def update_co_occurrences(cooccurrences_ee, ablator_acts_1Se) -> None:
+    # Update co-occurrence matrix for ablator features
+    # For each position in the sequence
+    for pos in range(ablator_acts_1Se.shape[1]):
+        # Get feature activations at this position
+        pos_acts_e = ablator_acts_1Se[0, pos]
+        # Find which features are active (> 0)
+        active_features = torch.where(pos_acts_e > 0)[0]
+
+        # Update co-occurrence counts for each pair of active features
+        for i in range(len(active_features)):
+            for j in range(i + 1, len(active_features)):
+                feat1, feat2 = active_features[i].item(), active_features[j].item()
+                # Increment both directions in the symmetric matrix
+                cooccurrences_ee[feat1, feat2] += 1
+                cooccurrences_ee[feat2, feat1] += 1
 
 
 if __name__ == "__main__":
