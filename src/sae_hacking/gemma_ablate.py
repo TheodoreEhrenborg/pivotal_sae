@@ -246,7 +246,7 @@ def main(args: Namespace) -> None:
     )
 
     ablation_results_eE = torch.zeros(e, E)
-    cooccurrences_ee = torch.zeros(e, e).to_sparse()
+    cooccurrences_ee = torch.zeros(e, e)
     how_often_activated_e = torch.zeros(e)
     for i, prompt in enumerate(tqdm(prompts)):
         timeprint("Computing ablation matrix...")
