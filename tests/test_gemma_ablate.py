@@ -6,7 +6,6 @@ from sae_hacking.gemma_ablate import gather_co_occurrences, gather_co_occurrence
 
 
 def test_co_occurrences():
-    num_features = 4
     activations = torch.tensor(
         [
             [
@@ -19,8 +18,7 @@ def test_co_occurrences():
         ]
     )
 
-
-    r1 = gather_co_occurrences( activations)
-    r2 = gather_co_occurrences2( activations)
+    r1 = gather_co_occurrences(activations)
+    r2 = gather_co_occurrences2(activations)
 
     assert torch.allclose(r1, r2.to_dense())
