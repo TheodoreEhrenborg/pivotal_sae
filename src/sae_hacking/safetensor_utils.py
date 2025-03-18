@@ -92,3 +92,40 @@ def save_v2(
 
     with open(save_path, "wb") as f_out:
         f_out.write(compressed_data)
+
+
+@beartype
+def load_v2(load_path: str) -> dict[str, torch.Tensor]:
+    """
+    Load effects, cooccurrences, and activation frequency tensors from a compressed safetensors file.
+    This function is the inverse of save_v2.
+
+    Args:
+        load_path: Path to the compressed safetensors file
+
+    Returns:
+        Dictionary containing the loaded tensors with exactly the keys:
+        "effects_eE", "cooccurrences_ee", and "how_often_activated_e"
+    """
+    assert load_path.endswith(".safetensors.zst")
+
+    # Read the compressed data
+    with open(load_path, "rb") as f_in:
+        compressed_data = f_in.read()
+
+    # Decompress the data
+    decompressor = zstandard.ZstdDecompressor()
+    uncompressed_data = decompressor.decompress(compressed_data)
+
+    # Load the tensors from the uncompressed data
+    tensor_dict = safetensors.torch.load(uncompressed_data)
+
+    # Check that the dictionary has exactly the required keys, no more and no less
+    required_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
+    actual_keys = set(tensor_dict.keys())
+
+    assert (
+        required_keys == actual_keys
+    ), f"Dictionary has incorrect keys. Expected: {required_keys}, Got: {actual_keys}"
+
+    return tensor_dict
