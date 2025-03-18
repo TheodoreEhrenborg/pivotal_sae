@@ -28,28 +28,46 @@ def find_similar_noncooccurring_pairs(
     """
     similar_pairs = []
     num_ablators = effects_eE.shape[0]
-    ablator_ids = list(range(num_ablators))
 
+    # Move to GPU and normalize the effects for cosine similarity computation
     effects_eE = torch.sign(effects_eE).cuda()
+    normalized_effects_eE = F.normalize(effects_eE, p=2, dim=1)
 
-    # Check each pair of ablators
-    for i, ablator1 in enumerate(tqdm(ablator_ids)):
+    # Process in batches for each ablator
+    for i in tqdm(range(num_ablators)):
         if max_steps is not None and i >= max_steps:
             timeprint(f"Reached maximum steps ({max_steps}). Stopping early.")
             break
-        for ablator2 in ablator_ids[i + 1 :]:
-            # Skip if they co-occur frequently
-            if cooccurrences_ee[ablator1, ablator2] > cooccurrence_threshold:
-                continue
 
-            # Compute cosine similarity of their effects on reader SAEs
-            cosine_sim = F.cosine_similarity(
-                effects_eE[ablator1], effects_eE[ablator2], dim=0
-            ).item()
+        # Get all ablators after the current one
+        remaining_indices = torch.arange(i + 1, num_ablators, device=effects_eE.device)
 
-            similar_pairs.append((ablator1, ablator2, cosine_sim))
+        if len(remaining_indices) == 0:
+            continue
 
-        # Sort by cosine sim and abridge
+        # Check cooccurrence threshold for all pairs at once
+        valid_cooccurrence_mask = (
+            cooccurrences_ee[i, remaining_indices] <= cooccurrence_threshold
+        )
+        valid_indices = remaining_indices[valid_cooccurrence_mask]
+
+        if len(valid_indices) == 0:
+            continue
+
+        # Compute cosine similarity for all valid pairs at once
+        cosine_sims_D = torch.matmul(
+            normalized_effects_eE[valid_indices], normalized_effects_eE[i]
+        )
+
+        # Convert to CPU for processing
+        valid_indices_cpu = valid_indices.cpu()
+        cosine_sims_cpu_D = cosine_sims_D.cpu()
+
+        # Add all valid pairs to the list
+        for idx, j in enumerate(valid_indices_cpu):
+            similar_pairs.append((i, int(j), float(cosine_sims_cpu_D[idx])))
+
+        # Sort by cosine sim and keep only top_n
         similar_pairs.sort(key=lambda x: x[2], reverse=True)
         similar_pairs = similar_pairs[:top_n]
 
