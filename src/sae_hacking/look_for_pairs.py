@@ -7,14 +7,14 @@ from beartype import beartype
 from tqdm import tqdm
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
-from sae_hacking.safetensor_utils import load_dict_with_tensors
+from sae_hacking.safetensor_utils import load_v2
 from sae_hacking.timeprint import timeprint
 
 
 @beartype
 def find_similar_noncooccurring_pairs(
-    tensor_dict: dict,
-    cooccurrences_DD: torch.Tensor,
+    effects_eE: torch.Tensor,
+    cooccurrences_ee: torch.Tensor,
     top_n: int,
     cooccurrence_threshold: int,
     max_steps: int | None,
@@ -27,10 +27,11 @@ def find_similar_noncooccurring_pairs(
     Returns a list of tuples (ablator1, ablator2, cosine_similarity)
     """
     similar_pairs = []
-    ablator_ids = sorted(list(tensor_dict.keys()))
+    num_ablators = effects_eE.shape[0]
+    ablator_ids = list(range(num_ablators))
 
-    for key in tensor_dict:
-        tensor_dict[key] = torch.sign(tensor_dict[key].cuda())
+    # Move to CUDA and apply sign function
+    effects_eE = torch.sign(effects_eE.cuda())
 
     # Check each pair of ablators
     for i, ablator1 in enumerate(tqdm(ablator_ids)):
@@ -39,12 +40,12 @@ def find_similar_noncooccurring_pairs(
             break
         for ablator2 in ablator_ids[i + 1 :]:
             # Skip if they co-occur frequently
-            if cooccurrences_DD[ablator1, ablator2] > cooccurrence_threshold:
+            if cooccurrences_ee[ablator1, ablator2] > cooccurrence_threshold:
                 continue
 
             # Compute cosine similarity of their effects on reader SAEs
             cosine_sim = F.cosine_similarity(
-                tensor_dict[ablator1], tensor_dict[ablator2], dim=0
+                effects_eE[ablator1], effects_eE[ablator2], dim=0
             ).item()
 
             similar_pairs.append((ablator1, ablator2, cosine_sim))
@@ -103,13 +104,16 @@ def process_results(
 @beartype
 def main(args: Namespace) -> None:
     timeprint("Loading file")
-    tensor_dict, cooccurrences_DD = load_dict_with_tensors(args.input_path)
+    data = load_v2(args.input_path)
+
+    effects_eE = data["effects_eE"]
+    cooccurrences_ee = data["cooccurrences_ee"]
 
     # Find similar non-co-occurring pairs
     timeprint("Finding similar non-co-occurring pairs...")
     results = find_similar_noncooccurring_pairs(
-        tensor_dict,
-        cooccurrences_DD,
+        effects_eE,
+        cooccurrences_ee,
         args.top_n,
         args.cooccurrence_threshold,
         max_steps=args.max_steps,
@@ -117,7 +121,7 @@ def main(args: Namespace) -> None:
 
     # Process and display results
     process_results(
-        results, args.ablator_sae_neuronpedia_id, cooccurrences_DD, args.top_n
+        results, args.ablator_sae_neuronpedia_id, cooccurrences_ee, args.top_n
     )
 
 
