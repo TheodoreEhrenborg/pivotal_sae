@@ -120,6 +120,7 @@ def process_results(
     results: list[tuple[int, int, float]],
     ablator_sae_id: str,
     cooccurrences_ee: Float[torch.Tensor, "e e"],
+    how_often_activated_e: Float[torch.Tensor, " e"],
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
@@ -133,6 +134,13 @@ def process_results(
 
         print(f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}")
         print(f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}")
+
+        print(
+            f"  Ablator {ablator1} activated on {how_often_activated_e[ablator1]} prompts"
+        )
+        print(
+            f"  Ablator {ablator2} activated on {how_often_activated_e[ablator2]} prompts"
+        )
 
         print(f"  URLs: {construct_url(ablator_sae_id, ablator1)}")
         print(f"        {construct_url(ablator_sae_id, ablator2)}")
@@ -158,7 +166,12 @@ def main(args: Namespace) -> None:
     )
 
     # Process and display results
-    process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences_ee)
+    process_results(
+        results,
+        args.ablator_sae_neuronpedia_id,
+        cooccurrences_ee,
+        data["how_often_activated_e"],
+    )
 
 
 if __name__ == "__main__":
