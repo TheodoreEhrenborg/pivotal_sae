@@ -262,7 +262,7 @@ def main(args: Namespace) -> None:
             how_often_activated_e,
         )
         timeprint("Done computing ablation matrix")
-        if i % args.save_frequency == 0:
+        if i % args.save_frequency == 0 or i + 1 == len(prompts):
             save_v2(
                 ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
