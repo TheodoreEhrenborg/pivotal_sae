@@ -29,9 +29,9 @@ def find_similar_noncooccurring_pairs(
     similar_pairs = []
     num_ablators = effects_eE.shape[0]
 
-    # Move to GPU and normalize the effects for cosine similarity computation
-    effects_eE = torch.sign(effects_eE).cuda()
-    normalized_effects_eE = F.normalize(effects_eE, p=2, dim=1)
+    timeprint("Beginning to normalize")
+    normalized_effects_eE = F.normalize(torch.sign(effects_eE), dim=1).cuda()
+    timeprint("Done normalizing")
 
     # Process in batches for each ablator
     for i in tqdm(range(num_ablators)):
