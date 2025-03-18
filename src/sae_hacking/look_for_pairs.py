@@ -4,6 +4,7 @@ from argparse import ArgumentParser, Namespace
 import torch
 import torch.nn.functional as F
 from beartype import beartype
+from jaxtyping import Float, jaxtyped
 from tqdm import tqdm
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
@@ -11,10 +12,10 @@ from sae_hacking.safetensor_utils import load_v2
 from sae_hacking.timeprint import timeprint
 
 
-@beartype
+@jaxtyped(typechecker=beartype)
 def find_similar_noncooccurring_pairs(
-    effects_eE: torch.Tensor,
-    cooccurrences_ee: torch.Tensor,
+    effects_eE: Float[torch.Tensor, "e E"],
+    cooccurrences_ee: Float[torch.Tensor, "e e"],
     cooccurrence_threshold: int,
     cosine_sim_threshold: float,
     max_steps: int | None,
@@ -114,11 +115,11 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
-@beartype
+@jaxtyped(typechecker=beartype)
 def process_results(
     results: list[tuple[int, int, float]],
     ablator_sae_id: str,
-    cooccurrences: torch.Tensor,
+    cooccurrences_ee: Float[torch.Tensor, "e e"],
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
@@ -128,7 +129,7 @@ def process_results(
     for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
         print(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}")
         print(f"  Cosine similarity: {cosine_sim:.4f}")
-        print(f"  Co-occurrence count: {cooccurrences[ablator1, ablator2]}")
+        print(f"  Co-occurrence count: {cooccurrences_ee[ablator1, ablator2]}")
 
         print(f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}")
         print(f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}")
