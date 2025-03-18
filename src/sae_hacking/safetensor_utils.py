@@ -5,6 +5,8 @@ import torch
 import zstandard
 from beartype import beartype
 
+from sae_hacking.timeprint import timeprint
+
 
 @beartype
 def save_dict_with_tensors(
@@ -107,18 +109,23 @@ def load_v2(load_path: str) -> dict[str, torch.Tensor]:
         Dictionary containing the loaded tensors with exactly the keys:
         "effects_eE", "cooccurrences_ee", and "how_often_activated_e"
     """
+    timeprint("Starting to load")
+
     assert load_path.endswith(".safetensors.zst")
 
     # Read the compressed data
     with open(load_path, "rb") as f_in:
         compressed_data = f_in.read()
 
+    timeprint("Have read the file")
     # Decompress the data
     decompressor = zstandard.ZstdDecompressor()
     uncompressed_data = decompressor.decompress(compressed_data)
+    timeprint("Have decompressed the file")
 
     # Load the tensors from the uncompressed data
     tensor_dict = safetensors.torch.load(uncompressed_data)
+    timeprint("Have read into tensors")
 
     # Check that the dictionary has exactly the required keys, no more and no less
     required_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
