@@ -64,7 +64,7 @@ def find_similar_noncooccurring_pairs(
         # Combine all conditions
         combined_mask_e = torch.logical_and(
             torch.logical_and(remaining_mask_e, valid_cooccurrences_e),
-            valid_cosine_sims_e,
+            valid_cosine_sims_e.cpu(),
         )
 
         # Get the valid indices
