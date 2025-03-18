@@ -39,25 +39,34 @@ def find_similar_noncooccurring_pairs(
             timeprint(f"Reached maximum steps ({max_steps}). Stopping early.")
             break
 
-        # Get all ablators after the current one
-        remaining_indices = torch.arange(i + 1, num_ablators, device=effects_eE.device)
-
-        if len(remaining_indices) == 0:
+        # Skip if we're at the last ablator
+        if i >= num_ablators - 1:
             continue
 
-        # Check cooccurrence threshold for all pairs at once
-        valid_cooccurrence_mask = (
-            cooccurrences_ee[i, remaining_indices] <= cooccurrence_threshold
+        # Compute cosine similarity with ALL ablators at once via matmul
+        # This avoids indexing with large arrays
+        all_cosine_sims_e = torch.matmul(
+            normalized_effects_eE, normalized_effects_eE[i]
         )
-        valid_indices = remaining_indices[valid_cooccurrence_mask]
+
+        # Create a mask for remaining indices (all after current i)
+        remaining_mask_e = torch.zeros(
+            num_ablators, dtype=torch.bool, device=effects_eE.device
+        )
+        remaining_mask_e[i + 1 : num_ablators] = True
+
+        # Apply cooccurrence threshold to those remaining
+        valid_cooccurrences_e = cooccurrences_ee[i] <= cooccurrence_threshold
+        combined_mask_e = torch.logical_and(remaining_mask_e, valid_cooccurrences_e)
+
+        # Get the valid indices
+        valid_indices = torch.where(combined_mask_e)[0]
 
         if len(valid_indices) == 0:
             continue
 
-        # Compute cosine similarity for all valid pairs at once
-        cosine_sims_D = torch.matmul(
-            normalized_effects_eE[valid_indices], normalized_effects_eE[i]
-        )
+        # Get the corresponding cosine similarities
+        cosine_sims_D = all_cosine_sims_e[valid_indices]
 
         # Convert to CPU for processing
         valid_indices_cpu = valid_indices.cpu()
