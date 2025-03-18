@@ -15,14 +15,14 @@ from sae_hacking.timeprint import timeprint
 def find_similar_noncooccurring_pairs(
     effects_eE: torch.Tensor,
     cooccurrences_ee: torch.Tensor,
-    top_n: int,
     cooccurrence_threshold: int,
+    cosine_sim_threshold: float,
     max_steps: int | None,
 ) -> list[tuple[int, int, float]]:
     """
     Find pairs of ablator latents that:
     1. Don't significantly co-occur (below cooccurrence_threshold)
-    2. Have similar effects on reader SAEs (cosine similarity above threshold)
+    2. Have similar effects on reader SAEs (cosine similarity above cosine_sim_threshold)
 
     Returns a list of tuples (ablator1, ablator2, cosine_similarity)
     """
@@ -57,7 +57,15 @@ def find_similar_noncooccurring_pairs(
 
         # Apply cooccurrence threshold to those remaining
         valid_cooccurrences_e = cooccurrences_ee[i] <= cooccurrence_threshold
-        combined_mask_e = torch.logical_and(remaining_mask_e, valid_cooccurrences_e)
+
+        # Apply cosine similarity threshold
+        valid_cosine_sims_e = all_cosine_sims_e >= cosine_sim_threshold
+
+        # Combine all conditions
+        combined_mask_e = torch.logical_and(
+            torch.logical_and(remaining_mask_e, valid_cooccurrences_e),
+            valid_cosine_sims_e,
+        )
 
         # Get the valid indices
         valid_indices = torch.where(combined_mask_e)[0]
@@ -78,10 +86,8 @@ def find_similar_noncooccurring_pairs(
                 (i, int(valid_indices_cpu[idx]), float(cosine_sims_cpu_D[idx]))
             )
 
-        # Sort by cosine sim and keep only top_n
-        similar_pairs.sort(key=lambda x: x[2], reverse=True)
-        similar_pairs = similar_pairs[:top_n]
-
+    # Sort by cosine similarity (highest first)
+    similar_pairs.sort(key=lambda x: x[2], reverse=True)
     return similar_pairs
 
 
@@ -95,8 +101,13 @@ def make_parser() -> ArgumentParser:
         default=0,
         help="Throw away any pairs that co-occur more than this",
     )
+    parser.add_argument(
+        "--cosine-sim-threshold",
+        type=float,
+        default=0.0,
+        help="Only keep pairs with cosine similarity above this threshold",
+    )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
-    parser.add_argument("--top-n", type=int, default=1000, help="Keep top N results")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
@@ -108,15 +119,13 @@ def process_results(
     results: list[tuple[int, int, float]],
     ablator_sae_id: str,
     cooccurrences: torch.Tensor,
-    top_n: int,
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
     timeprint(f"Found {len(results)} similar non-co-occurring pairs")
-    timeprint(f"Showing top {min(top_n, len(results))} results:")
     print()
 
-    for i, (ablator1, ablator2, cosine_sim) in enumerate(results[:top_n]):
+    for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
         print(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}")
         print(f"  Cosine similarity: {cosine_sim:.4f}")
         print(f"  Co-occurrence count: {cooccurrences[ablator1, ablator2]}")
@@ -142,15 +151,13 @@ def main(args: Namespace) -> None:
     results = find_similar_noncooccurring_pairs(
         effects_eE,
         cooccurrences_ee,
-        args.top_n,
         args.cooccurrence_threshold,
+        args.cosine_sim_threshold,
         max_steps=args.max_steps,
     )
 
     # Process and display results
-    process_results(
-        results, args.ablator_sae_neuronpedia_id, cooccurrences_ee, args.top_n
-    )
+    process_results(results, args.ablator_sae_neuronpedia_id, cooccurrences_ee)
 
 
 if __name__ == "__main__":
