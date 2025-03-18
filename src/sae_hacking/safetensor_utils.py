@@ -124,8 +124,8 @@ def load_v2(load_path: str) -> dict[str, torch.Tensor]:
     required_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
     actual_keys = set(tensor_dict.keys())
 
-    assert (
-        required_keys == actual_keys
-    ), f"Dictionary has incorrect keys. Expected: {required_keys}, Got: {actual_keys}"
+    assert required_keys == actual_keys, (
+        f"Dictionary has incorrect keys. Expected: {required_keys}, Got: {actual_keys}"
+    )
 
     return tensor_dict
