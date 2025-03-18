@@ -73,8 +73,10 @@ def find_similar_noncooccurring_pairs(
         cosine_sims_cpu_D = cosine_sims_D.cpu()
 
         # Add all valid pairs to the list
-        for idx, j in enumerate(valid_indices_cpu):
-            similar_pairs.append((i, int(j), float(cosine_sims_cpu_D[idx])))
+        for idx in range(len(valid_indices_cpu)):
+            similar_pairs.append(
+                (i, int(valid_indices_cpu[idx]), float(cosine_sims_cpu_D[idx]))
+            )
 
         # Sort by cosine sim and keep only top_n
         similar_pairs.sort(key=lambda x: x[2], reverse=True)
