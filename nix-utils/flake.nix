@@ -19,6 +19,7 @@
           devShells.default = mkShell {
             buildInputs = [
               nvtop
+              ruff
             ];
           };
         }
