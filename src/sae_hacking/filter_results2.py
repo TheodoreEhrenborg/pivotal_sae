@@ -27,7 +27,9 @@ def main(args: Namespace) -> None:
 
     # Abridge tensors: keep only the first args.abridge elements
     abridged_effects_eE = effects_eE[: args.abridge]
-    abridged_cooccurrences_ee = cooccurrences_ee[: args.abridge, : args.abridge]
+    abridged_cooccurrences_ee = cooccurrences_ee[
+        : args.abridge, : args.abridge
+    ].contiguous()
     abridged_how_often_activated_e = how_often_activated_e[: args.abridge]
 
     # Save abridged tensors to output path
