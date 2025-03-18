@@ -30,8 +30,7 @@ def find_similar_noncooccurring_pairs(
     num_ablators = effects_eE.shape[0]
     ablator_ids = list(range(num_ablators))
 
-    # Move to CUDA and apply sign function
-    effects_eE = torch.sign(effects_eE.cuda())
+    effects_eE = torch.sign(effects_eE).cuda()
 
     # Check each pair of ablators
     for i, ablator1 in enumerate(tqdm(ablator_ids)):
