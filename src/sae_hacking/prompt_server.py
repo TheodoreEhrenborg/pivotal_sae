@@ -126,7 +126,9 @@ def process_client_request(
     model: HookedSAETransformer,
     tokenizer: GemmaTokenizerFast,
 ) -> dict[str, Any]:
+    print(torch.cuda.memory_summary())
     torch.cuda.empty_cache()
+    print(torch.cuda.memory_summary())
     try:
         sae_id = request_data["sae_id"]
         sae_release = request_data["sae_release"]
