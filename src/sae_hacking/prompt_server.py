@@ -116,11 +116,6 @@ def get_feature_activation_per_token(
     # Assuming batch_size is 1, we take the first batch with sae_acts[0]
     feature_acts = sae_acts[0, :, feature_idx].cpu()
 
-    model.reset_hooks()
-    model.reset_saes()
-
-    del _, cache, sae_acts, sae
-
     return feature_acts
 
 
@@ -152,7 +147,6 @@ def process_client_request(
         timeprint("Got activations")
 
         sae.cpu()
-        del sae
 
         split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
 
