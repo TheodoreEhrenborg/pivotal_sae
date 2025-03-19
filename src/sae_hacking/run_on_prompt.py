@@ -158,6 +158,8 @@ def run_once(
     html_output = create_html(
         split_text, activations_S, sae_id, sae_release, prompt, feature_idx
     )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
     with open(output_dir / time.strftime("%Y%m%d_%H%M%S_prompt.html"), "w") as f:
         f.write(html_output)
 
