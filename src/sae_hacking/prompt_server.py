@@ -127,7 +127,6 @@ def process_client_request(
     tokenizer: GemmaTokenizerFast,
 ) -> dict[str, Any]:
     torch.cuda.empty_cache()
-    print(torch.cuda.memory_summary())
     try:
         sae_id = request_data["sae_id"]
         sae_release = request_data["sae_release"]
