@@ -75,17 +75,20 @@ def load_dict_with_tensors(load_path: str) -> tuple[dict, torch.Tensor | None]:
 
 @beartype
 def save_v2(
-    effects_eE: torch.Tensor,
+    effects_eE: torch.Tensor | None,
     save_path: str,
-    cooccurrences_ee: torch.Tensor,
-    how_often_activated_e: torch.Tensor,
+    cooccurrences_ee: torch.Tensor | None,
+    how_often_activated_e: torch.Tensor | None,
 ) -> None:
     assert save_path.endswith(".safetensors.zst")
 
     tensors = {}
-    tensors["cooccurrences_ee"] = cooccurrences_ee
-    tensors["effects_eE"] = effects_eE
-    tensors["how_often_activated_e"] = how_often_activated_e
+    if cooccurrences_ee is not None:
+        tensors["cooccurrences_ee"] = cooccurrences_ee
+    if effects_eE is not None:
+        tensors["effects_eE"] = effects_eE
+    if how_often_activated_e is not None:
+        tensors["how_often_activated_e"] = how_often_activated_e
 
     uncompressed_data = safetensors.torch.save(tensors)
 
