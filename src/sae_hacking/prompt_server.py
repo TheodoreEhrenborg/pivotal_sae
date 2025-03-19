@@ -151,6 +151,9 @@ def process_client_request(
         activations = get_feature_activation_per_token(model, sae, feature_idx, prompt)
         timeprint("Got activations")
 
+        sae.cpu()
+        del sae
+
         split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
 
         html_output = create_html(
