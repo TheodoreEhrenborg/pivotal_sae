@@ -146,6 +146,8 @@ def process_client_request(
         activations = get_feature_activation_per_token(model, sae, feature_idx, prompt)
         timeprint("Got activations")
 
+        # There are references to the SAE that I can't immediately find. So let's turn
+        # the VRAM leak into the lesser problem of a RAM leak
         sae.cpu()
 
         split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
