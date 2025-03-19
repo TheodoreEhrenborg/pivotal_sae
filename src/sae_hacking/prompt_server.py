@@ -9,7 +9,7 @@ from typing import Any, Dict
 import torch
 from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, GemmaTokenizerFast
 
 from sae_hacking.timeprint import timeprint
 
@@ -122,7 +122,9 @@ def get_feature_activation_per_token(
 @torch.inference_mode()
 @beartype
 def process_client_request(
-    request_data: Dict[str, Any], model: HookedSAETransformer, tokenizer: AutoTokenizer
+    request_data: Dict[str, Any],
+    model: HookedSAETransformer,
+    tokenizer: GemmaTokenizerFast,
 ) -> Dict[str, Any]:
     try:
         sae_id = request_data["sae_id"]
