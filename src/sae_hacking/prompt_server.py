@@ -114,7 +114,12 @@ def get_feature_activation_per_token(
 
     # Extract activations for the specified feature across all tokens
     # Assuming batch_size is 1, we take the first batch with sae_acts[0]
-    feature_acts = sae_acts[0, :, feature_idx]
+    feature_acts = sae_acts[0, :, feature_idx].cpu()
+
+    model.reset_hooks()
+    model.reset_saes()
+
+    del _, cache, sae_acts, sae
 
     return feature_acts
 
@@ -126,7 +131,6 @@ def process_client_request(
     model: HookedSAETransformer,
     tokenizer: GemmaTokenizerFast,
 ) -> dict[str, Any]:
-    print(torch.cuda.memory_summary())
     torch.cuda.empty_cache()
     print(torch.cuda.memory_summary())
     try:
