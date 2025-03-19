@@ -17,7 +17,7 @@ from sae_hacking.timeprint import timeprint
 def highlight_tokens_with_intensity(
     split_text: list[str], activations: torch.Tensor
 ) -> str:
-    # Client
+    # Server
     html_parts = []
 
     for token, activation in zip(split_text, activations, strict=True):
@@ -44,7 +44,7 @@ def create_html(
     prompt: str,
     feature_idx: int,
 ) -> str:
-    # Client
+    # Server
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
     full_html = f"""
@@ -157,7 +157,6 @@ def run_once(
     activations_S = get_feature_activation_per_token(model, sae, feature_idx, prompt)
     timeprint("Got activations")
 
-    # Client
     split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
 
     html_output = create_html(
