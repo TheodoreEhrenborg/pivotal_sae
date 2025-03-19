@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import datetime
+import os
 from argparse import ArgumentParser, Namespace
 
 import torch
@@ -121,29 +123,43 @@ def process_results(
     cooccurrences_ee: Float[torch.Tensor, "e e"],
     how_often_activated_e: Float[torch.Tensor, " e"],
 ) -> None:
+    # Create the results directory if it doesn't exist
+    os.makedirs("/results", exist_ok=True)
+
+    # Generate filename with current timestamp
+    current_time = datetime.datetime.now()
+    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.txt"
+
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
-    timeprint(f"Found {len(results)} similar non-co-occurring pairs")
-    print()
+    with open(filename, "w") as f:
+        f.write(f"Found {len(results)} similar non-co-occurring pairs\n")
+        f.write("\n")
 
-    for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
-        print(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}")
-        print(f"  Cosine similarity: {cosine_sim:.4f}")
-        print(f"  Co-occurrence count: {cooccurrences_ee[ablator1, ablator2]}")
+        for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
+            f.write(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}\n")
+            f.write(f"  Cosine similarity: {cosine_sim:.4f}\n")
+            f.write(f"  Co-occurrence count: {cooccurrences_ee[ablator1, ablator2]}\n")
 
-        print(f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}")
-        print(f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}")
+            f.write(
+                f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}\n"
+            )
+            f.write(
+                f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}\n"
+            )
 
-        print(
-            f"  Ablator {ablator1} activated on {how_often_activated_e[ablator1]} prompts"
-        )
-        print(
-            f"  Ablator {ablator2} activated on {how_often_activated_e[ablator2]} prompts"
-        )
+            f.write(
+                f"  Ablator {ablator1} activated on {how_often_activated_e[ablator1]} prompts\n"
+            )
+            f.write(
+                f"  Ablator {ablator2} activated on {how_often_activated_e[ablator2]} prompts\n"
+            )
 
-        print(f"  URLs: {construct_url(ablator_sae_id, ablator1)}")
-        print(f"        {construct_url(ablator_sae_id, ablator2)}")
-        print()
+            f.write(f"  URLs: {construct_url(ablator_sae_id, ablator1)}\n")
+            f.write(f"        {construct_url(ablator_sae_id, ablator2)}\n")
+            f.write("\n")
+
+    timeprint(f"Results saved to {filename}")
 
 
 @beartype
