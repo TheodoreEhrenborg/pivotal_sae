@@ -17,6 +17,7 @@ from sae_hacking.timeprint import timeprint
 def highlight_tokens_with_intensity(
     split_text: list[str], activations: torch.Tensor
 ) -> str:
+    # Client
     html_parts = []
 
     for token, activation in zip(split_text, activations, strict=True):
@@ -43,6 +44,7 @@ def create_html(
     prompt: str,
     feature_idx: int,
 ) -> str:
+    # Client
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
     full_html = f"""
@@ -84,6 +86,7 @@ def create_html(
 def get_feature_activation_per_token(
     model: HookedSAETransformer, sae: SAE, feature_idx: int, prompt: str
 ) -> torch.Tensor:
+    # Server
     """
     Returns an array showing how much a specific SAE feature activated on each token of the prompt.
 
@@ -148,11 +151,13 @@ def run_once(
     feature_idx: int,
     output_dir: Path,
 ) -> None:
+    # Server
     sae, _, _ = SAE.from_pretrained(release=sae_release, sae_id=sae_id, device=device)
     timeprint("Loaded SAE")
     activations_S = get_feature_activation_per_token(model, sae, feature_idx, prompt)
     timeprint("Got activations")
 
+    # Client
     split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
 
     html_output = create_html(
