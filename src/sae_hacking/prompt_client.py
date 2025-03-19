@@ -3,7 +3,6 @@
 import json
 import socket
 from argparse import ArgumentParser
-from ast import literal_eval
 from pathlib import Path
 
 
@@ -18,13 +17,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--server-host", default="localhost")
     parser.add_argument("--server-port", type=int, default=9000)
     return parser
-
-
-def maybe_get(old_value, name):
-    strng = input(f"Enter new value for {name} (currently {old_value}): ")
-    if strng == "":
-        return old_value
-    return literal_eval(strng)
 
 
 def send_request_to_server(request_data, host, port):
@@ -82,40 +74,25 @@ def main():
 
     print(f"Connecting to server at {args.server_host}:{args.server_port}")
 
-    while True:
-        # Prepare request data
-        request_data = {
-            "sae_id": sae_id,
-            "sae_release": sae_release,
-            "prompt": prompt,
-            "feature_idx": feature_idx,
-            "output_dir": str(output_dir),
-            "device": device,
-        }
+    # Prepare request data
+    request_data = {
+        "sae_id": sae_id,
+        "sae_release": sae_release,
+        "prompt": prompt,
+        "feature_idx": feature_idx,
+        "output_dir": str(output_dir),
+        "device": device,
+    }
 
-        # Send request to server
-        print("Sending request to server...")
-        response = send_request_to_server(
-            request_data, args.server_host, args.server_port
-        )
+    # Send request to server
+    print("Sending request to server...")
+    response = send_request_to_server(request_data, args.server_host, args.server_port)
 
-        # Display response
-        if response["status"] == "success":
-            print(f"Success: {response['message']}")
-        else:
-            print(f"Error: {response['message']}")
-
-        # Get new parameters for next run
-        print("\nEnter new values (or press Enter to keep current value):")
-        sae_id = maybe_get(sae_id, "sae_id")
-        sae_release = maybe_get(sae_release, "sae_release")
-        prompt = maybe_get(prompt, "prompt")
-        feature_idx = maybe_get(feature_idx, "feature_idx")
-
-        # Check if user wants to continue
-        continue_run = input("\nContinue with another run? (y/n): ")
-        if continue_run.lower() != "y":
-            break
+    # Display response
+    if response["status"] == "success":
+        print(f"Success: {response['message']}")
+    else:
+        print(f"Error: {response['message']}")
 
 
 if __name__ == "__main__":
