@@ -4,7 +4,7 @@ import json
 import socketserver
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import torch
 from beartype import beartype
@@ -122,10 +122,10 @@ def get_feature_activation_per_token(
 @torch.inference_mode()
 @beartype
 def process_client_request(
-    request_data: Dict[str, Any],
+    request_data: dict[str, Any],
     model: HookedSAETransformer,
     tokenizer: GemmaTokenizerFast,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     torch.cuda.empty_cache()
     try:
         sae_id = request_data["sae_id"]
