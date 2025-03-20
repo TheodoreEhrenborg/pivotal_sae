@@ -46,9 +46,7 @@ def generate_prompts(
         preprocess_function,
         batched=True,
         batch_size=batch_size,
-        remove_columns=[
-            "text"
-        ],  # TODO Remove any other columns that might be in the dataset
+        remove_columns=dataset.column_names,
     )
     # https://discuss.huggingface.co/t/streaming-batched-data/21603
     # def group_into_batch(batch):
