@@ -121,7 +121,7 @@ def main(args: Namespace) -> None:
         args.batch_size,
     )
 
-    cooccurrences_ee = torch.zeros(e, e, device=device)
+    cooccurrences_ee = torch.zeros(e, e)
 
     for i, batch in enumerate(tqdm(prompts)):
         # Move batch to device
