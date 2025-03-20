@@ -38,6 +38,8 @@ def generate_prompts(
             truncation=True,
         )["input_ids"]
 
+        print(f"{tokenized_prompts.shape=}")
+
         return {"abridged_tensor": tokenized_prompts}
 
     processed_dataset = dataset.map(
