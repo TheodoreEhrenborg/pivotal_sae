@@ -78,7 +78,7 @@ def make_parser() -> ArgumentParser:
 def compute_cooccurrences(
     model: HookedSAETransformer,
     ablator_sae: SAE,
-    prompt_Bs: torch.Tensor,
+    prompt_BS: Float[torch.Tensor, "batch seq_len"],
     cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
 ) -> None:
     """
@@ -89,14 +89,17 @@ def compute_cooccurrences(
     # Batch process all prompts at once
     model.reset_hooks()
     model.reset_saes()
-    _, ablator_cache = model.run_with_cache_with_saes(prompt_Bs, saes=[ablator_sae])
+    _, ablator_cache = model.run_with_cache_with_saes(prompt_BS, saes=[ablator_sae])
 
     # Get the batched SAE activations
     ablator_acts_BSe = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Process each item's co-occurrences separately since gather_co_occurrences2 doesn't accept batched input
-    for i in range(prompt_Bs.shape[0]):
+    print(f"{ablator_acts_BSe.shape=}")
+    print(f"{prompt_BS.shape=}")
+    for i in range(prompt_BS.shape[0]):
         ablator_acts_1Se = ablator_acts_BSe[i : i + 1]
+        print(f"{ablator_acts_1Se.shape=}")
         cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
 
 
