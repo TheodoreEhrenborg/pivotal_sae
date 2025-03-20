@@ -25,10 +25,11 @@ def generate_prompts(
     tokenizer = AutoTokenizer.from_pretrained(model)
 
     def preprocess_function(example):
-        tokenized_prompt = tokenizer(example["text"], return_tensors="pt")["input_ids"]
-        print(tokenized_prompt.shape)
-        abridged_prompt = tokenized_prompt[:max_tokens_in_prompt]
-        return {"abridged_tensor": abridged_prompt}
+        tokenized_prompt_BS = tokenizer(example["text"], return_tensors="pt")[
+            "input_ids"
+        ]
+        abridged_prompt_Bs = tokenized_prompt_BS[:, :max_tokens_in_prompt]
+        return {"abridged_tensor": abridged_prompt_Bs}
 
     processed_dataset = dataset.map(preprocess_function)
 
@@ -57,7 +58,7 @@ def make_parser() -> ArgumentParser:
 def compute_cooccurrences(
     model: HookedSAETransformer,
     ablator_sae: SAE,
-    prompt: torch.Tensor,
+    prompt_Bs: torch.Tensor,
     cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
 ) -> None:
     """
@@ -69,7 +70,7 @@ def compute_cooccurrences(
     model.reset_hooks()
     model.reset_saes()
     # Pass tokens directly instead of a string
-    _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
+    _, ablator_cache = model.run_with_cache_with_saes(prompt_Bs, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
