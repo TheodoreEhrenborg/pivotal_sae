@@ -40,7 +40,9 @@ def generate_prompts(
 
         print(f"{tokenized_prompts.shape=}")
 
-        return {"abridged_tensor": [tokenized_prompts]}
+        return {k: [v] for k, v in examples.items()} | {
+            "abridged_tensor": [tokenized_prompts]
+        }
 
     processed_dataset = dataset.map(
         preprocess_function,
