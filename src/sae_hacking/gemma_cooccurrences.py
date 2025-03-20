@@ -40,7 +40,7 @@ def generate_prompts(
 
         print(f"{tokenized_prompts.shape=}")
 
-        return {"abridged_tensor": tokenized_prompts}
+        return {"abridged_tensor": [tokenized_prompts]}
 
     processed_dataset = dataset.map(
         preprocess_function,
@@ -50,6 +50,10 @@ def generate_prompts(
             "text"
         ],  # TODO Remove any other columns that might be in the dataset
     )
+    # https://discuss.huggingface.co/t/streaming-batched-data/21603
+    # def group_into_batch(batch):
+    # return {k: [v] for k, v in batch.items()}
+    # processed_dataset = processed_dataset.map(group_into_batch, batched=True, batch_size=batch_size)
 
     if n_prompts is not None:
         processed_dataset = processed_dataset.take(n_prompts)
@@ -128,7 +132,7 @@ def main(args: Namespace) -> None:
 
     cooccurrences_ee = torch.zeros(e, e)
 
-    for i, batch in enumerate(tqdm(prompts.iter(batch_size=args.batch_size))):
+    for i, batch in enumerate(tqdm(prompts)):
         # Move batch to device
         prompt_batch = batch["abridged_tensor"].to(device)
 
