@@ -28,6 +28,9 @@ def generate_prompts(
     dataset = load_dataset(dataset_id, split="train", streaming=True)
     tokenizer = AutoTokenizer.from_pretrained(model)
 
+    if n_prompts is not None:
+        abridged_dataset = dataset.take(n_prompts)
+
     def preprocess_function(examples):
         # Process a batch of examples at once
         tokenized_prompts = tokenizer(
@@ -44,15 +47,12 @@ def generate_prompts(
             "abridged_tensor": [tokenized_prompts]
         }
 
-    processed_dataset = dataset.map(
+    processed_dataset = abridged_dataset.map(
         preprocess_function,
         batched=True,
         batch_size=batch_size,
         remove_columns=dataset.column_names,
     )
-
-    if n_prompts is not None:
-        processed_dataset = processed_dataset.take(n_prompts)
 
     return processed_dataset
 
