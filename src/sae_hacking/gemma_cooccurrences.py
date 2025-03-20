@@ -65,7 +65,6 @@ def compute_cooccurrences(
     """
     - e: number of features in ablator SAE
     """
-    timeprint(prompt)
     ablator_sae.use_error_term = True
 
     # Run the model with ablator SAE to get its activations
@@ -74,9 +73,7 @@ def compute_cooccurrences(
     _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
-    timeprint("Starting to update co-occurrence matrix")
     cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
-    timeprint("Done updating co-occurrence matrix")
 
 
 @torch.inference_mode()
@@ -98,18 +95,18 @@ def main(args: Namespace) -> None:
 
     cooccurrences_ee = torch.zeros(e, e)
     for i, prompt in enumerate(tqdm(prompts)):
-        timeprint("Computing co-occurrences...")
         compute_cooccurrences(
             model, ablator_sae, prompt["processed_text"], cooccurrences_ee
         )
-        timeprint("Done computing co-occurrences")
         if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
+            timeprint("Saving")
             save_v2(
                 None,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
                 cooccurrences_ee.to_dense(),
                 None,
             )
+            timeprint("Done saving")
 
 
 if __name__ == "__main__":
