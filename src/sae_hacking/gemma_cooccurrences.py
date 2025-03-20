@@ -38,8 +38,8 @@ def generate_prompts(
             truncation=True,
         )["input_ids"]
 
-        print(f"{tokenized_prompts.shape=}")
-
+        # Hack to change the dataset's batch size
+        # https://discuss.huggingface.co/t/streaming-batched-data/21603
         return {k: [v] for k, v in examples.items()} | {
             "abridged_tensor": [tokenized_prompts]
         }
@@ -50,10 +50,6 @@ def generate_prompts(
         batch_size=batch_size,
         remove_columns=dataset.column_names,
     )
-    # https://discuss.huggingface.co/t/streaming-batched-data/21603
-    # def group_into_batch(batch):
-    # return {k: [v] for k, v in batch.items()}
-    # processed_dataset = processed_dataset.map(group_into_batch, batched=True, batch_size=batch_size)
 
     if n_prompts is not None:
         processed_dataset = processed_dataset.take(n_prompts)
@@ -101,11 +97,8 @@ def compute_cooccurrences(
     ablator_acts_BSe = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Process each item's co-occurrences separately since gather_co_occurrences2 doesn't accept batched input
-    print(f"{ablator_acts_BSe.shape=}")
-    print(f"{prompt_BS.shape=}")
     for i in range(prompt_BS.shape[0]):
         ablator_acts_1Se = ablator_acts_BSe[i : i + 1]
-        print(f"{ablator_acts_1Se.shape=}")
         cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
 
 
