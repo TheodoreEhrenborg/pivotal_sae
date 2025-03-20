@@ -128,7 +128,7 @@ def main(args: Namespace) -> None:
 
     cooccurrences_ee = torch.zeros(e, e)
 
-    for i, batch in enumerate(tqdm(prompts)):
+    for i, batch in enumerate(tqdm(prompts.iter(batch_size=args.batch_size))):
         # Move batch to device
         prompt_batch = batch["abridged_tensor"].to(device)
 
