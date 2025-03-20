@@ -109,11 +109,13 @@ def main(args: Namespace) -> None:
     Path(output_dir).mkdir()
     timeprint(f"Writing to {output_dir}")
     device = "cuda"
-    model = HookedSAETransformer.from_pretrained(args.model, device=device)
+    # model = HookedSAETransformer.from_pretrained(args.model, device=device)
 
     ablator_sae, ablator_sae_config, _ = SAE.from_pretrained(
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
+    print(ablator_sae_config)
+    exit()
     e = ablator_sae_config["d_sae"]
     prompts = generate_prompts(
         args.model,
