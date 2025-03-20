@@ -132,24 +132,26 @@ def main(args: Namespace) -> None:
 
     cooccurrences_ee = torch.zeros(e, e)
 
-    for i, batch in enumerate(tqdm(prompts)):
-        # Move batch to device
-        prompt_batch = batch["abridged_tensor"].to(device)
+    with tqdm(total=args.n_prompts) as pbar:
+        for i, batch in enumerate(prompts):
+            # Move batch to device
+            prompt_batch = batch["abridged_tensor"].to(device)
 
-        # Process the batch
-        compute_cooccurrences(model, ablator_sae, prompt_batch, cooccurrences_ee)
+            # Process the batch
+            compute_cooccurrences(model, ablator_sae, prompt_batch, cooccurrences_ee)
 
-        if not args.never_save and (
-            i % args.save_frequency == 0 or i + 1 == args.n_prompts
-        ):
-            timeprint("Saving")
-            save_v2(
-                None,
-                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
-                cooccurrences_ee.to_dense(),
-                None,
-            )
-            timeprint("Done saving")
+            if not args.never_save and (
+                i % args.save_frequency == 0 or i + 1 == args.n_prompts
+            ):
+                timeprint("Saving")
+                save_v2(
+                    None,
+                    f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
+                    cooccurrences_ee.to_dense(),
+                    None,
+                )
+                timeprint("Done saving")
+            pbar.update(args.batch_size)
 
 
 if __name__ == "__main__":
