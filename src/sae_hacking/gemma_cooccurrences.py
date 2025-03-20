@@ -7,7 +7,7 @@ import torch
 from beartype import beartype
 from coolname import generate_slug
 from datasets import IterableDataset, load_dataset
-from jaxtyping import Float, jaxtyped
+from jaxtyping import Float, Int, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 from transformers import AutoTokenizer
@@ -84,7 +84,7 @@ def make_parser() -> ArgumentParser:
 def compute_cooccurrences(
     model: HookedSAETransformer,
     ablator_sae: SAE,
-    prompt_BS: Float[torch.Tensor, "batch seq_len"],
+    prompt_BS: Int[torch.Tensor, "batch seq_len"],
     cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
 ) -> None:
     """
