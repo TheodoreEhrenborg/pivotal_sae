@@ -12,7 +12,6 @@ from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 from transformers import AutoTokenizer
 
-from sae_hacking.gemma_utils import gather_co_occurrences2
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
 
@@ -91,15 +90,7 @@ def compute_cooccurrences(
     # Batch process all prompts at once
     model.reset_hooks()
     model.reset_saes()
-    _, ablator_cache = model.run_with_cache_with_saes(prompt_BS, saes=[ablator_sae])
-
-    # Get the batched SAE activations
-    ablator_acts_BSe = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
-
-    # Process each item's co-occurrences separately since gather_co_occurrences2 doesn't accept batched input
-    for i in range(prompt_BS.shape[0]):
-        ablator_acts_1Se = ablator_acts_BSe[i : i + 1]
-        cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
+    _ = model(prompt_BS)
 
 
 @torch.inference_mode()
