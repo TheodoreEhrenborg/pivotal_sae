@@ -126,14 +126,8 @@ def process_results(
     ablator_sae_id: str,
     cooccurrences_ee: Float[torch.Tensor, "e e"],
     how_often_activated_e: Float[torch.Tensor, " e"],
+    filename: str,
 ) -> None:
-    # Create the results directory if it doesn't exist
-    os.makedirs("/results", exist_ok=True)
-
-    # Generate filename with current timestamp
-    current_time = datetime.datetime.now()
-    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.txt"
-
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
     with open(filename, "w") as f:
@@ -168,6 +162,16 @@ def process_results(
 
 @beartype
 def main(args: Namespace) -> None:
+    # Create the results directory if it doesn't exist
+    os.makedirs("/results", exist_ok=True)
+
+    # Generate filename with current timestamp
+    current_time = datetime.datetime.now()
+    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.txt"
+
+    # Print the output file's name at the very start
+    print(f"Output will be saved to: {filename}")
+
     timeprint("Loading file")
     data = load_v2(args.input_path)
 
@@ -196,6 +200,7 @@ def main(args: Namespace) -> None:
         args.ablator_sae_neuronpedia_id,
         cooccurrences_ee,
         data["how_often_activated_e"],
+        filename,
     )
 
 
