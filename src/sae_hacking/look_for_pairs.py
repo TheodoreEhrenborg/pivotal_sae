@@ -98,6 +98,10 @@ def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
     parser.add_argument("--input-path", required=True)
     parser.add_argument(
+        "--cooccurrence-path",
+        help="If provided, load only the co-occurrence matrix from this path",
+    )
+    parser.add_argument(
         "--cooccurrence-threshold",
         type=int,
         default=0,
@@ -168,7 +172,13 @@ def main(args: Namespace) -> None:
     data = load_v2(args.input_path)
 
     effects_eE = data["effects_eE"]
-    cooccurrences_ee = data["cooccurrences_ee"]
+
+    if args.cooccurrence_path:
+        timeprint(f"Loading co-occurrence matrix from {args.cooccurrence_path}")
+        cooccurrence_data = load_v2(args.cooccurrence_path)
+        cooccurrences_ee = cooccurrence_data["cooccurrences_ee"]
+    else:
+        cooccurrences_ee = data["cooccurrences_ee"]
 
     # Find similar non-co-occurring pairs
     timeprint("Finding similar non-co-occurring pairs...")
