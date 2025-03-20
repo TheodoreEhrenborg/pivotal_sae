@@ -19,19 +19,35 @@ from sae_hacking.timeprint import timeprint
 
 @beartype
 def generate_prompts(
-    model: str, n_prompts: int, max_tokens_in_prompt: int, dataset_id: str
+    model: str,
+    n_prompts: int,
+    max_tokens_in_prompt: int,
+    dataset_id: str,
+    batch_size: int,
 ) -> IterableDataset:
     dataset = load_dataset(dataset_id, split="train", streaming=True)
     tokenizer = AutoTokenizer.from_pretrained(model)
 
-    def preprocess_function(example):
-        tokenized_prompt_BS = tokenizer(example["text"], return_tensors="pt")[
-            "input_ids"
-        ]
-        abridged_prompt_Bs = tokenized_prompt_BS[:, :max_tokens_in_prompt]
-        return {"abridged_tensor": abridged_prompt_Bs}
+    def preprocess_function(examples):
+        # Process a batch of examples at once
+        tokenized_prompts = tokenizer(
+            examples["text"],
+            return_tensors="pt",
+            padding="max_length",
+            max_length=max_tokens_in_prompt,
+            truncation=True,
+        )["input_ids"]
 
-    processed_dataset = dataset.map(preprocess_function)
+        return {"abridged_tensor": tokenized_prompts}
+
+    processed_dataset = dataset.map(
+        preprocess_function,
+        batched=True,
+        batch_size=batch_size,
+        remove_columns=[
+            "text"
+        ],  # TODO Remove any other columns that might be in the dataset
+    )
 
     if n_prompts is not None:
         processed_dataset = processed_dataset.take(n_prompts)
@@ -52,6 +68,9 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--save-frequency", type=int, default=240)
     parser.add_argument("--never-save", action="store_true")
+    parser.add_argument(
+        "--batch-size", type=int, default=1, help="Batch size for processing"
+    )
     return parser
 
 
@@ -67,14 +86,22 @@ def compute_cooccurrences(
     """
     ablator_sae.use_error_term = True
 
-    # Run the model with ablator SAE to get its activations
-    model.reset_hooks()
-    model.reset_saes()
-    # Pass tokens directly instead of a string
-    _, ablator_cache = model.run_with_cache_with_saes(prompt_Bs, saes=[ablator_sae])
-    ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
+    # Process each item in the batch separately because gather_co_occurrences2 doesn't accept batched input
+    for i in range(prompt_Bs.shape[0]):
+        single_prompt = prompt_Bs[i : i + 1]  # Keep batch dimension with size 1
 
-    cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
+        # Run the model with ablator SAE to get its activations
+        model.reset_hooks()
+        model.reset_saes()
+        # Pass tokens directly instead of a string
+        _, ablator_cache = model.run_with_cache_with_saes(
+            single_prompt, saes=[ablator_sae]
+        )
+        ablator_acts_1Se = ablator_cache[
+            f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"
+        ]
+
+        cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
 
 
 @torch.inference_mode()
@@ -91,14 +118,22 @@ def main(args: Namespace) -> None:
     )
     e = ablator_sae_config["d_sae"]
     prompts = generate_prompts(
-        args.model, args.n_prompts, args.max_tokens_in_prompt, args.dataset_id
+        args.model,
+        args.n_prompts,
+        args.max_tokens_in_prompt,
+        args.dataset_id,
+        args.batch_size,
     )
 
-    cooccurrences_ee = torch.zeros(e, e)
-    for i, prompt in enumerate(tqdm(prompts)):
-        compute_cooccurrences(
-            model, ablator_sae, prompt["abridged_tensor"], cooccurrences_ee
-        )
+    cooccurrences_ee = torch.zeros(e, e, device=device)
+
+    for i, batch in enumerate(tqdm(prompts)):
+        # Move batch to device
+        prompt_batch = batch["abridged_tensor"].to(device)
+
+        # Process the batch
+        compute_cooccurrences(model, ablator_sae, prompt_batch, cooccurrences_ee)
+
         if not args.never_save and (
             i % args.save_frequency == 0 or i + 1 == args.n_prompts
         ):
