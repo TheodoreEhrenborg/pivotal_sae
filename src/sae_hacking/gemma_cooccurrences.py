@@ -99,9 +99,11 @@ def main(args: Namespace) -> None:
     cooccurrences_ee = torch.zeros(e, e)
     for i, prompt in enumerate(tqdm(prompts)):
         timeprint("Computing co-occurrences...")
-        compute_cooccurrences(model, ablator_sae, prompt, cooccurrences_ee)
+        compute_cooccurrences(
+            model, ablator_sae, prompt["processed_text"], cooccurrences_ee
+        )
         timeprint("Done computing co-occurrences")
-        if i % args.save_frequency == 0 or i + 1 == len(prompts):
+        if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
             save_v2(
                 None,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
