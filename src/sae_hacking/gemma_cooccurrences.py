@@ -88,18 +88,25 @@ def compute_cooccurrences(
     """
     ablator_sae.use_error_term = True
 
-    # Batch process all prompts at once
+    ablator_acts_BSe = None
+
+    def get_sae_latents(model_activation, hook):
+        nonlocal ablator_acts_BSe
+        ablator_acts_BSe = ablator_sae.encode_jumprelu(model_activation)
+        return model_activation
+
     model.reset_hooks()
     model.reset_saes()
-    _, ablator_cache = model.run_with_cache_with_saes(prompt_BS, saes=[ablator_sae])
+    model.add_hook(ablator_sae.cfg.hook_name, get_sae_latents, "fwd")
 
-    # Get the batched SAE activations
-    ablator_acts_BSe = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
+    model(prompt_BS)
 
-    # Process each item's co-occurrences separately since gather_co_occurrences2 doesn't accept batched input
     for i in range(prompt_BS.shape[0]):
         ablator_acts_1Se = ablator_acts_BSe[i : i + 1]
         cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
+
+    # Clean up
+    model.reset_hooks()
 
 
 @torch.inference_mode()
