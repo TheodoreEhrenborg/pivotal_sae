@@ -19,9 +19,9 @@ from sae_hacking.timeprint import timeprint
 
 @beartype
 def generate_prompts(
-    model: str, n_prompts: int, max_tokens_in_prompt: int
+    model: str, n_prompts: int, max_tokens_in_prompt: int, dataset_id: str
 ) -> IterableDataset:
-    dataset = load_dataset("NeelNanda/pile-10k", split="train", streaming=True)
+    dataset = load_dataset(dataset_id, split="train", streaming=True)
     tokenizer = AutoTokenizer.from_pretrained(model)
 
     def preprocess_function(example):
@@ -48,6 +48,7 @@ def make_parser() -> ArgumentParser:
         "--ablator-sae-release", default="gemma-scope-2b-pt-res-canonical"
     )
     parser.add_argument("--ablator-sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument("--dataset-id", required=True)
     parser.add_argument("--max-tokens-in-prompt", type=int, default=125)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--save-frequency", type=int, default=240)
@@ -91,7 +92,9 @@ def main(args: Namespace) -> None:
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
     e = ablator_sae_config["d_sae"]
-    prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
+    prompts = generate_prompts(
+        args.model, args.n_prompts, args.max_tokens_in_prompt, args.dataset_id
+    )
 
     cooccurrences_ee = torch.zeros(e, e)
     for i, prompt in enumerate(tqdm(prompts)):
