@@ -130,12 +130,11 @@ def load_v2(load_path: str) -> dict[str, torch.Tensor]:
     tensor_dict = safetensors.torch.load(uncompressed_data)
     timeprint("Have read into tensors")
 
-    # Check that the dictionary has exactly the required keys, no more and no less
-    required_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
+    possible_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
     actual_keys = set(tensor_dict.keys())
 
-    assert required_keys == actual_keys, (
-        f"Dictionary has incorrect keys. Expected: {required_keys}, Got: {actual_keys}"
+    assert possible_keys >= actual_keys, (
+        f"Dictionary has unexpected keys. Expected: {possible_keys}, Got: {actual_keys}"
     )
 
     return tensor_dict
