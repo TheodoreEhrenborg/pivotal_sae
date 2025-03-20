@@ -6,13 +6,38 @@ from pathlib import Path
 import torch
 from beartype import beartype
 from coolname import generate_slug
+from datasets import IterableDataset, load_dataset
 from jaxtyping import Float, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
+from transformers import AutoTokenizer
 
-from sae_hacking.gemma_utils import gather_co_occurrences2, generate_prompts
+from sae_hacking.gemma_utils import gather_co_occurrences2
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
+
+
+@beartype
+def generate_prompts(
+    model: str, n_prompts: int, max_tokens_in_prompt: int
+) -> IterableDataset:
+    dataset = load_dataset("NeelNanda/pile-10k", split="train", streaming=True)
+    tokenizer = AutoTokenizer.from_pretrained(model)
+
+    def preprocess_function(example):
+        tokenized_prompt = tokenizer(example["text"])["input_ids"]
+        # Skip the BOS that the tokenizer adds and limit to max_tokens_in_prompt
+        processed_prompt = tokenizer.decode(
+            tokenized_prompt[1 : max_tokens_in_prompt + 1]
+        )
+        return {"processed_text": processed_prompt}
+
+    processed_dataset = dataset.map(preprocess_function)
+
+    if n_prompts is not None:
+        processed_dataset = processed_dataset.take(n_prompts)
+
+    return processed_dataset
 
 
 @beartype
