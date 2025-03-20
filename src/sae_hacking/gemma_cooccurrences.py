@@ -51,6 +51,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--max-tokens-in-prompt", type=int, default=125)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--save-frequency", type=int, default=240)
+    parser.add_argument("--never-save", action="store_true")
     return parser
 
 
@@ -98,7 +99,9 @@ def main(args: Namespace) -> None:
         compute_cooccurrences(
             model, ablator_sae, prompt["abridged_tensor"], cooccurrences_ee
         )
-        if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
+        if not args.never_save and (
+            i % args.save_frequency == 0 or i + 1 == args.n_prompts
+        ):
             timeprint("Saving")
             save_v2(
                 None,
