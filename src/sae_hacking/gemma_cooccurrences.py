@@ -26,6 +26,7 @@ def generate_prompts(
 
     def preprocess_function(example):
         tokenized_prompt = tokenizer(example["text"], return_tensors="pt")["input_ids"]
+        print(tokenized_prompt.shape)
         abridged_prompt = tokenized_prompt[:max_tokens_in_prompt]
         return {"abridged_tensor": abridged_prompt}
 
