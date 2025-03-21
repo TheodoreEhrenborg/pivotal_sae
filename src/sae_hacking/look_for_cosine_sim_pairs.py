@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from beartype import beartype
 from jaxtyping import Float, jaxtyped
+from sae_lens import SAE
 
 from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
 from sae_hacking.safetensor_utils import load_v2
@@ -75,14 +76,12 @@ def compute_decoder_similarities(
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument("--sae-path", required=True, help="Path to the SAE file")
+    parser.add_argument(
+        "--ablator-sae-release", default="gemma-scope-2b-pt-res-canonical"
+    )
+    parser.add_argument("--ablator-sae-id", default="layer_20/width_65k/canonical")
     parser.add_argument(
         "--cooccurrence-path", required=True, help="Path to co-occurrence matrix file"
-    )
-    parser.add_argument(
-        "--neuronpedia-id",
-        required=True,
-        help="Neuronpedia ID for feature explanations",
     )
     parser.add_argument(
         "--top-k", type=int, default=1000, help="Number of top similarities to find"
@@ -134,18 +133,22 @@ def main(args: Namespace) -> None:
     # Print output filename at start
     print(f"Output will be saved to: {filename}")
 
+    # Get device
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     timeprint("Loading SAE file")
-    sae_data = load_v2(args.sae_path)
+    ablator_sae, ablator_sae_config, _ = SAE.from_pretrained(
+        release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
+    )
+
+    # Get the neuronpedia_id from the sae_config
+    neuronpedia_id = ablator_sae_config.neuronpedia_id
 
     # Extract decoder matrix
-    if "decoder.weight" in sae_data:
-        decoder_eD = sae_data["decoder.weight"]
-    elif "W_dec" in sae_data:
-        decoder_eD = sae_data["W_dec"]
-    else:
-        raise ValueError("Decoder matrix not found in SAE file")
+    decoder_eD = ablator_sae.W_dec
 
     timeprint("Loading co-occurrence matrix")
+
     cooccurrence_data = load_v2(args.cooccurrence_path)
 
     if "cooccurrences_ee" in cooccurrence_data:
@@ -166,7 +169,7 @@ def main(args: Namespace) -> None:
 
     # Process and save results
     timeprint("Processing results")
-    process_results(top_pairs, args.neuronpedia_id, filename)
+    process_results(top_pairs, neuronpedia_id, filename)
 
     timeprint("Done!")
 
