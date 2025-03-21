@@ -103,7 +103,7 @@ def process_results(
 
         for i, (feature1, feature2, cosine_sim) in enumerate(results):
             f.write(f"Pair {i + 1}: Feature {feature1} and Feature {feature2}\n")
-            f.write(f"  Cosine similarity: {cosine_sim:.4f}\n")
+            f.write(f"  Cosine similarity of decoder vectors: {cosine_sim:.4f}\n")
 
             # Get feature descriptions
             desc1 = feature_descriptions.get_explanation(feature1)
