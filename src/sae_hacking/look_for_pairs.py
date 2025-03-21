@@ -21,6 +21,8 @@ def find_similar_noncooccurring_pairs(
     cooccurrence_threshold: int,
     cosine_sim_threshold: float,
     max_steps: int | None,
+    skip_before: int | None,
+    skip_after: int | None,
 ) -> list[tuple[int, int, float]]:
     """
     Find pairs of ablator latents that:
@@ -38,6 +40,11 @@ def find_similar_noncooccurring_pairs(
 
     # Process in batches for each ablator
     for i in tqdm(range(num_ablators)):
+        if skip_before and skip_before > i:
+            continue
+        if skip_after and skip_after < i:
+            continue
+
         if max_steps is not None and i >= max_steps:
             timeprint(f"Reached maximum steps ({max_steps}). Stopping early.")
             break
@@ -52,12 +59,6 @@ def find_similar_noncooccurring_pairs(
             normalized_effects_eE, normalized_effects_eE[i]
         )
 
-        # Create a mask for remaining indices (all after current i)
-        remaining_mask_e = torch.zeros(
-            num_ablators, dtype=torch.bool, device=effects_eE.device
-        )
-        remaining_mask_e[i + 1 : num_ablators] = True
-
         # Apply cooccurrence threshold to those remaining
         valid_cooccurrences_e = cooccurrences_ee[i] <= cooccurrence_threshold
 
@@ -65,9 +66,7 @@ def find_similar_noncooccurring_pairs(
         valid_cosine_sims_e = all_cosine_sims_e >= cosine_sim_threshold
 
         # Combine all conditions
-        combined_mask_e = (
-            remaining_mask_e & valid_cooccurrences_e & valid_cosine_sims_e.cpu()
-        )
+        combined_mask_e = valid_cooccurrences_e & valid_cosine_sims_e.cpu()
 
         # Get the valid indices
         valid_indices = torch.where(combined_mask_e)[0]
@@ -114,6 +113,8 @@ def make_parser() -> ArgumentParser:
         help="Only keep pairs with cosine similarity above this threshold",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
+    parser.add_argument("--skip-before", type=int)
+    parser.add_argument("--skip-after", type=int)
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
@@ -192,6 +193,8 @@ def main(args: Namespace) -> None:
         args.cooccurrence_threshold,
         args.cosine_sim_threshold,
         max_steps=args.max_steps,
+        skip_before=args.skip_before,
+        skip_after=args.skip_after,
     )
 
     # Process and display results
