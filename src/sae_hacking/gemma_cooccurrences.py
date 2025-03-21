@@ -6,55 +6,13 @@ from pathlib import Path
 import torch
 from beartype import beartype
 from coolname import generate_slug
-from datasets import IterableDataset, load_dataset
 from jaxtyping import Float, Int, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
-from transformers import AutoTokenizer
 
-from sae_hacking.gemma_utils import gather_co_occurrences2
+from sae_hacking.gemma_utils import gather_co_occurrences2, generate_prompts2
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
-
-
-@beartype
-def generate_prompts2(
-    model: str,
-    n_prompts: int,
-    max_tokens_in_prompt: int,
-    dataset_id: str,
-    batch_size: int,
-) -> IterableDataset:
-    dataset = load_dataset(dataset_id, split="train", streaming=True)
-    tokenizer = AutoTokenizer.from_pretrained(model)
-
-    if n_prompts is not None:
-        abridged_dataset = dataset.take(n_prompts)
-
-    def preprocess_function(examples):
-        # Process a batch of examples at once
-        tokenized_prompts = tokenizer(
-            examples["text"],
-            return_tensors="pt",
-            padding="max_length",
-            max_length=max_tokens_in_prompt,
-            truncation=True,
-        )["input_ids"]
-
-        # Hack to change the dataset's batch size
-        # https://discuss.huggingface.co/t/streaming-batched-data/21603
-        return {k: [v] for k, v in examples.items()} | {
-            "abridged_tensor": [tokenized_prompts]
-        }
-
-    processed_dataset = abridged_dataset.map(
-        preprocess_function,
-        batched=True,
-        batch_size=batch_size,
-        remove_columns=dataset.column_names,
-    )
-
-    return processed_dataset
 
 
 @beartype
