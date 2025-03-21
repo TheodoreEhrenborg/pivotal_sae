@@ -18,7 +18,7 @@ from sae_hacking.timeprint import timeprint
 
 
 @beartype
-def generate_prompts(
+def generate_prompts2(
     model: str,
     n_prompts: int,
     max_tokens_in_prompt: int,
@@ -115,7 +115,7 @@ def main(args: Namespace) -> None:
         release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
     )
     e = ablator_sae_config["d_sae"]
-    prompts = generate_prompts(
+    prompts = generate_prompts2(
         args.model,
         args.n_prompts,
         args.max_tokens_in_prompt,
