@@ -140,7 +140,7 @@ def main(args: Namespace) -> None:
     )
 
     # Get the neuronpedia_id from the sae_config
-    neuronpedia_id = sae_config.neuronpedia_id
+    neuronpedia_id = sae_config["neuronpedia_id"]
 
     # Extract decoder matrix
     decoder_eD = sae.W_dec
