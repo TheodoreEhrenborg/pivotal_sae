@@ -155,17 +155,20 @@ def main(args: Namespace) -> None:
     ablation_results_eE = torch.zeros(e, E)
     how_often_activated_e = torch.zeros(e).cuda()
     with tqdm(total=args.n_prompts) as pbar:
+        print("HACK: Filtering out prompts unless they start with a comma")
         for i, batch in enumerate(prompts):
-            compute_ablation_matrix(
-                model,
-                ablator_sae,
-                reader_sae,
-                batch["abridged_tensor"],
-                ablation_results_eE,
-                args.abridge_ablations_to,
-                how_often_activated_e,
-                args.selected_feature,
-            )
+            any_comma = any(text.startswith(",") for text in batch["text"])
+            if any_comma:
+                compute_ablation_matrix(
+                    model,
+                    ablator_sae,
+                    reader_sae,
+                    batch["abridged_tensor"],
+                    ablation_results_eE,
+                    args.abridge_ablations_to,
+                    how_often_activated_e,
+                    args.selected_feature,
+                )
             if (i % args.save_frequency == 0 or i + 1 == args.n_prompts) and (
                 not args.never_save
             ):
