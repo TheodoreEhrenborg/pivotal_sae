@@ -23,6 +23,7 @@ def find_similar_noncooccurring_pairs(
     max_steps: int | None,
     skip_before: int | None,
     skip_after: int | None,
+    skip_torch_sign: bool,
 ) -> list[tuple[int, int, float]]:
     """
     Find pairs of ablator latents that:
@@ -35,7 +36,9 @@ def find_similar_noncooccurring_pairs(
     num_ablators = effects_eE.shape[0]
 
     timeprint("Beginning to normalize")
-    normalized_effects_eE = F.normalize(torch.sign(effects_eE), dim=1).cuda()
+    normalized_effects_eE = F.normalize(
+        effects_eE if skip_torch_sign else torch.sign(effects_eE), dim=1
+    ).cuda()
     timeprint("Done normalizing")
 
     # Process in batches for each ablator
@@ -115,6 +118,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
     parser.add_argument("--skip-before", type=int)
     parser.add_argument("--skip-after", type=int)
+    parser.add_argument("--skip-torch-sign", action="store_true")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
@@ -195,6 +199,7 @@ def main(args: Namespace) -> None:
         max_steps=args.max_steps,
         skip_before=args.skip_before,
         skip_after=args.skip_after,
+        skip_torch_sign=args.skip_torch_sign,
     )
 
     # Process and display results
