@@ -40,6 +40,7 @@ def make_parser() -> ArgumentParser:
     )
     parser.add_argument("--dataset-id", required=True)
     parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--never-save", action="store_true")
     return parser
 
 
@@ -163,7 +164,9 @@ def main(args: Namespace) -> None:
             how_often_activated_e,
             args.selected_feature,
         )
-        if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
+        if (i % args.save_frequency == 0 or i + 1 == args.n_prompts) and (
+            not args.never_save
+        ):
             timeprint("Saving...")
             save_v2(
                 ablation_results_eE,
