@@ -10,7 +10,7 @@ from jaxtyping import Float, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 
-from sae_hacking.gemma_utils import gather_co_occurrences2, generate_prompts
+from sae_hacking.gemma_utils import generate_prompts
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
 
@@ -53,7 +53,6 @@ def compute_ablation_matrix(
         torch.Tensor, "num_ablator_features num_reader_features"
     ],
     abridge_ablations_to: int,
-    cooccurrences_ee: Float[torch.Tensor, "num_ablator_features num_ablator_features"],
     how_often_activated_e: Float[torch.Tensor, " num_ablator_features"],
 ) -> None:
     """
@@ -69,10 +68,6 @@ def compute_ablation_matrix(
     model.reset_saes()
     _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
-
-    timeprint("Starting to update co-occurrence matrix")
-    cooccurrences_ee += gather_co_occurrences2(ablator_acts_1Se)
-    timeprint("Done updating co-occurrence matrix")
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
@@ -139,7 +134,6 @@ def main(args: Namespace) -> None:
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
     ablation_results_eE = torch.zeros(e, E)
-    cooccurrences_ee = torch.zeros(e, e)
     how_often_activated_e = torch.zeros(e)
     for i, prompt in enumerate(tqdm(prompts)):
         timeprint("Computing ablation matrix...")
@@ -150,7 +144,6 @@ def main(args: Namespace) -> None:
             prompt,
             ablation_results_eE,
             args.abridge_ablations_to,
-            cooccurrences_ee,
             how_often_activated_e,
         )
         timeprint("Done computing ablation matrix")
@@ -158,7 +151,7 @@ def main(args: Namespace) -> None:
             save_v2(
                 ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
-                cooccurrences_ee.to_dense(),
+                None,
                 how_often_activated_e,
             )
 
