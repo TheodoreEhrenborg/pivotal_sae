@@ -76,10 +76,8 @@ def compute_decoder_similarities(
 @beartype
 def make_parser() -> ArgumentParser:
     parser = ArgumentParser()
-    parser.add_argument(
-        "--ablator-sae-release", default="gemma-scope-2b-pt-res-canonical"
-    )
-    parser.add_argument("--ablator-sae-id", default="layer_20/width_65k/canonical")
+    parser.add_argument("--sae-release", default="gemma-scope-2b-pt-res-canonical")
+    parser.add_argument("--sae-id", default="layer_20/width_65k/canonical")
     parser.add_argument(
         "--cooccurrence-path", required=True, help="Path to co-occurrence matrix file"
     )
@@ -137,15 +135,15 @@ def main(args: Namespace) -> None:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     timeprint("Loading SAE file")
-    ablator_sae, ablator_sae_config, _ = SAE.from_pretrained(
-        release=args.ablator_sae_release, sae_id=args.ablator_sae_id, device=device
+    sae, sae_config, _ = SAE.from_pretrained(
+        release=args.sae_release, sae_id=args.sae_id, device=device
     )
 
     # Get the neuronpedia_id from the sae_config
-    neuronpedia_id = ablator_sae_config.neuronpedia_id
+    neuronpedia_id = sae_config.neuronpedia_id
 
     # Extract decoder matrix
-    decoder_eD = ablator_sae.W_dec
+    decoder_eD = sae.W_dec
 
     timeprint("Loading co-occurrence matrix")
 
