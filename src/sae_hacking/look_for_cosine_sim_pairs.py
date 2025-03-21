@@ -99,12 +99,16 @@ def process_results(
         f.write("\n")
 
         for i, (feature1, feature2, cosine_sim) in enumerate(results):
-            f.write(f"Pair {i + 1}: Feature {feature1} and Feature {feature2}\n")
-            f.write(f"  Cosine similarity of decoder vectors: {cosine_sim:.4f}\n")
-
-            # Get feature descriptions
+            if feature1 < feature2:
+                continue
             desc1 = feature_descriptions.get_explanation(feature1)
             desc2 = feature_descriptions.get_explanation(feature2)
+            none_found = "No explanation found"
+            if desc1.startswith(none_found) or desc2.startswith(none_found):
+                continue
+
+            f.write(f"Pair {i + 1}: Feature {feature1} and Feature {feature2}\n")
+            f.write(f"  Cosine similarity of decoder vectors: {cosine_sim:.4f}\n")
 
             f.write(f"  Feature {feature1}: {desc1}\n")
             f.write(f"  Feature {feature2}: {desc2}\n")
