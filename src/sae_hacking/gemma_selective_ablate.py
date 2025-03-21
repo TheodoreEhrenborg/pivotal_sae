@@ -6,7 +6,7 @@ from pathlib import Path
 import torch
 from beartype import beartype
 from coolname import generate_slug
-from jaxtyping import Float, jaxtyped
+from jaxtyping import Float, Int, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 
@@ -48,7 +48,7 @@ def compute_ablation_matrix(
     model: HookedSAETransformer,
     ablator_sae: SAE,
     reader_sae: SAE,
-    prompt: torch.Tensor,
+    prompt_BS: Int[torch.Tensor, "batch seq_len"],
     ablation_results_eE: Float[
         torch.Tensor, "num_ablator_features num_reader_features"
     ],
@@ -66,7 +66,7 @@ def compute_ablation_matrix(
     # First, run the model with ablator SAE to get its activations
     model.reset_hooks()
     model.reset_saes()
-    _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
+    _, ablator_cache = model.run_with_cache_with_saes(prompt_BS, saes=[ablator_sae])
     ablator_acts_1Se = ablator_cache[f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"]
 
     # Find the features with highest activation summed across all positions
@@ -84,7 +84,7 @@ def compute_ablation_matrix(
     # Get baseline activations for reader SAE
     model.reset_hooks()
     model.reset_saes()
-    _, baseline_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+    _, baseline_cache = model.run_with_cache_with_saes(prompt_BS, saes=[reader_sae])
     baseline_acts_1SE = baseline_cache[f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"]
     baseline_acts_E = baseline_acts_1SE[0, -1, :]
 
@@ -102,7 +102,7 @@ def compute_ablation_matrix(
         model.add_hook(hook_point, ablation_hook, "fwd")
 
         # Run with this feature ablated
-        _, ablated_cache = model.run_with_cache_with_saes(prompt, saes=[reader_sae])
+        _, ablated_cache = model.run_with_cache_with_saes(prompt_BS, saes=[reader_sae])
         ablated_acts_1SE = ablated_cache[
             f"{reader_sae.cfg.hook_name}.hook_sae_acts_post"
         ]
