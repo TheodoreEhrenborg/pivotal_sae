@@ -14,9 +14,6 @@ from sae_hacking.gemma_utils import generate_prompts2
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
 
-# Gemma-scope based on https://colab.research.google.com/drive/17dQFYUYnuKnP6OwQPH9v_GSYUW5aj-Rp
-# Neuronpedia API based on https://colab.research.google.com/github/jbloomAus/SAELens/blob/main/tutorials/tutorial_2_0.ipynb
-
 
 @beartype
 def make_parser() -> ArgumentParser:
