@@ -48,7 +48,7 @@ def compute_decoder_similarities(
 
     # Apply mask to cosine similarities
     timeprint("Applying mask")
-    masked_cosine_sims_ee = cosine_sims_ee.clone()
+    masked_cosine_sims_ee = cosine_sims_ee.cpu().clone()
     masked_cosine_sims_ee[~mask_ee] = -1.0  # Set masked values to -1
 
     # Find indices of top_k highest values
