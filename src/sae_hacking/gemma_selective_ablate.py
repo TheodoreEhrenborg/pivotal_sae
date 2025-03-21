@@ -145,7 +145,6 @@ def main(args: Namespace) -> None:
     ablation_results_eE = torch.zeros(e, E)
     how_often_activated_e = torch.zeros(e)
     for i, batch in enumerate(tqdm(prompts)):
-        timeprint("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
             ablator_sae,
@@ -156,7 +155,6 @@ def main(args: Namespace) -> None:
             how_often_activated_e,
             args.selected_feature,
         )
-        timeprint("Done computing ablation matrix")
         if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
             timeprint("Saving...")
             save_v2(
