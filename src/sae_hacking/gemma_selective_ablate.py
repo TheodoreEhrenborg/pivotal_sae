@@ -10,7 +10,7 @@ from jaxtyping import Float, jaxtyped
 from sae_lens import SAE, HookedSAETransformer
 from tqdm import tqdm
 
-from sae_hacking.gemma_utils import generate_prompts
+from sae_hacking.gemma_utils import generate_prompts2
 from sae_hacking.safetensor_utils import save_v2
 from sae_hacking.timeprint import timeprint
 
@@ -41,6 +41,8 @@ def make_parser() -> ArgumentParser:
         default=0.1,
         help="Latents more frequent than this are excluded from ablation",
     )
+    parser.add_argument("--dataset-id", required=True)
+    parser.add_argument("--batch-size", type=int, default=1)
     return parser
 
 
@@ -136,7 +138,13 @@ def main(args: Namespace) -> None:
         release=args.reader_sae_release, sae_id=args.reader_sae_id, device=device
     )
     E = reader_sae_config["d_sae"]
-    prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
+    prompts = generate_prompts2(
+        args.model,
+        args.n_prompts,
+        args.max_tokens_in_prompt,
+        args.dataset_id,
+        args.batch_size,
+    )
 
     ablation_results_eE = torch.zeros(e, E)
     how_often_activated_e = torch.zeros(e)
