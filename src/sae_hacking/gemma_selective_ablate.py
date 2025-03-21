@@ -48,7 +48,7 @@ def compute_ablation_matrix(
     model: HookedSAETransformer,
     ablator_sae: SAE,
     reader_sae: SAE,
-    prompt: str,
+    prompt: torch.Tensor,
     ablation_results_eE: Float[
         torch.Tensor, "num_ablator_features num_reader_features"
     ],
@@ -145,13 +145,13 @@ def main(args: Namespace) -> None:
 
     ablation_results_eE = torch.zeros(e, E)
     how_often_activated_e = torch.zeros(e)
-    for i, prompt in enumerate(tqdm(prompts)):
+    for i, batch in enumerate(tqdm(prompts)):
         timeprint("Computing ablation matrix...")
         compute_ablation_matrix(
             model,
             ablator_sae,
             reader_sae,
-            prompt,
+            batch["abridged_tensor"],
             ablation_results_eE,
             args.abridge_ablations_to,
             how_often_activated_e,
