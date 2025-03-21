@@ -154,28 +154,30 @@ def main(args: Namespace) -> None:
 
     ablation_results_eE = torch.zeros(e, E)
     how_often_activated_e = torch.zeros(e).cuda()
-    for i, batch in enumerate(tqdm(prompts)):
-        compute_ablation_matrix(
-            model,
-            ablator_sae,
-            reader_sae,
-            batch["abridged_tensor"],
-            ablation_results_eE,
-            args.abridge_ablations_to,
-            how_often_activated_e,
-            args.selected_feature,
-        )
-        if (i % args.save_frequency == 0 or i + 1 == args.n_prompts) and (
-            not args.never_save
-        ):
-            timeprint("Saving...")
-            save_v2(
+    with tqdm(total=args.n_prompts) as pbar:
+        for i, batch in enumerate(prompts):
+            compute_ablation_matrix(
+                model,
+                ablator_sae,
+                reader_sae,
+                batch["abridged_tensor"],
                 ablation_results_eE,
-                f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
-                None,
+                args.abridge_ablations_to,
                 how_often_activated_e,
+                args.selected_feature,
             )
-            timeprint("Saved")
+            if (i % args.save_frequency == 0 or i + 1 == args.n_prompts) and (
+                not args.never_save
+            ):
+                timeprint("Saving...")
+                save_v2(
+                    ablation_results_eE,
+                    f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
+                    None,
+                    how_often_activated_e,
+                )
+                timeprint("Saved")
+            pbar.update(args.batch_size)
 
 
 if __name__ == "__main__":
