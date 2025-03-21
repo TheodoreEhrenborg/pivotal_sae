@@ -82,6 +82,7 @@ def compute_ablation_matrix(
 
         if selected_feature not in top_features_K:
             continue
+        print("Got one")
 
         how_often_activated_e[top_features_K] += 1
 
