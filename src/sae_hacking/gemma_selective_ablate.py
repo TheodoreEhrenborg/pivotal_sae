@@ -143,7 +143,7 @@ def main(args: Namespace) -> None:
     )
 
     ablation_results_eE = torch.zeros(e, E)
-    how_often_activated_e = torch.zeros(e)
+    how_often_activated_e = torch.zeros(e).cuda()
     for i, batch in enumerate(tqdm(prompts)):
         compute_ablation_matrix(
             model,
