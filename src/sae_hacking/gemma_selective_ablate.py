@@ -60,7 +60,6 @@ def compute_ablation_matrix(
     - e: number of features in ablator SAE
     - E: number of features in reader SAE
     """
-    timeprint(prompt)
     ablator_sae.use_error_term = True
     reader_sae.use_error_term = True
 
@@ -158,13 +157,15 @@ def main(args: Namespace) -> None:
             args.selected_feature,
         )
         timeprint("Done computing ablation matrix")
-        if i % args.save_frequency == 0 or i + 1 == len(prompts):
+        if i % args.save_frequency == 0 or i + 1 == args.n_prompts:
+            timeprint("Saving...")
             save_v2(
                 ablation_results_eE,
                 f"{output_dir}/{time.strftime('%Y%m%d-%H%M%S')}intermediate.safetensors.zst",
                 None,
                 how_often_activated_e,
             )
+            timeprint("Saved")
 
 
 if __name__ == "__main__":
