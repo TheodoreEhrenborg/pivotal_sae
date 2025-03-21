@@ -2,7 +2,6 @@
 import time
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
-from typing import Dict
 
 import torch
 from beartype import beartype
@@ -34,7 +33,6 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--max-tokens-in-prompt", type=int, default=125)
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-prompts", type=int, default=1)
-    parser.add_argument("--keep-frequent-features", action="store_true")
     parser.add_argument("--save-frequency", type=int, default=240)
     parser.add_argument(
         "--exclude-latent-threshold",
@@ -45,81 +43,12 @@ def make_parser() -> ArgumentParser:
     return parser
 
 
-@beartype
-def find_frequently_activating_features(
-    model: HookedSAETransformer,
-    ablator_sae: SAE,
-    prompts: list[str],
-    exclude_latent_threshold: float,
-) -> list[int]:
-    """
-    For each prompt, checks which ablator SAE features activate on which tokens.
-    Returns a list of features that activate on at least the specified percentage of tokens.
-
-    Args:
-        model: The transformer model with SAE hooks
-        ablator_sae: The SAE to analyze for feature activations
-        prompts: List of text prompts to process
-        min_activation_percentage: Minimum percentage of tokens a feature must activate on
-
-    Returns:
-        List of feature indices that activate on at least min_activation_percentage of tokens
-    """
-    ablator_sae.use_error_term = True
-
-    # Count of total tokens across all prompts
-    total_token_count = 0
-
-    # Dictionary to track activation counts for each feature
-    feature_activation_counts: Dict[int, int] = {}
-
-    # Process each prompt
-    for prompt in prompts:
-        timeprint(f"Processing prompt: {prompt}")
-
-        # Run the model with ablator SAE to get its activations
-        model.reset_hooks()
-        model.reset_saes()
-        _, ablator_cache = model.run_with_cache_with_saes(prompt, saes=[ablator_sae])
-        ablator_acts_1Se = ablator_cache[
-            f"{ablator_sae.cfg.hook_name}.hook_sae_acts_post"
-        ]
-
-        # Count the number of tokens in this prompt
-        num_tokens = ablator_acts_1Se.shape[1]
-        total_token_count += num_tokens
-
-        # For each feature, count on how many tokens it activates
-        for feature_idx in range(ablator_acts_1Se.shape[2]):
-            # Get activations for this feature across all token positions
-            feature_acts_e = ablator_acts_1Se[0, :, feature_idx]
-
-            # Count token positions where activation exceeds threshold
-            activations = (feature_acts_e > 0).sum().item()
-
-            # Update the count for this feature
-            if feature_idx in feature_activation_counts:
-                feature_activation_counts[feature_idx] += activations
-            else:
-                feature_activation_counts[feature_idx] = activations
-
-    # Calculate which features activate on at least min_activation_percentage of tokens
-    frequently_activating_features = []
-    for feature_idx, activation_count in feature_activation_counts.items():
-        activation_percentage = activation_count / total_token_count
-        if activation_percentage >= exclude_latent_threshold:
-            frequently_activating_features.append(feature_idx)
-
-    return sorted(frequently_activating_features)
-
-
 @jaxtyped(typechecker=beartype)
 def compute_ablation_matrix(
     model: HookedSAETransformer,
     ablator_sae: SAE,
     reader_sae: SAE,
     prompt: str,
-    frequent_features: list[int],
     ablation_results_eE: Float[
         torch.Tensor, "num_ablator_features num_reader_features"
     ],
@@ -147,13 +76,9 @@ def compute_ablation_matrix(
 
     # Find the features with highest activation summed across all positions
     summed_acts_e = ablator_acts_1Se[0].sum(dim=0)
-    tentative_top_features_k = torch.topk(
-        summed_acts_e, k=abridge_ablations_to + len(frequent_features)
-    ).indices
+    tentative_top_features_k = torch.topk(summed_acts_e, k=abridge_ablations_to).indices
 
-    top_features_K = [
-        i for i in tentative_top_features_k if i.item() not in frequent_features
-    ][:abridge_ablations_to]
+    top_features_K = tentative_top_features_k[:abridge_ablations_to]
     assert len(top_features_K) == abridge_ablations_to
 
     how_often_activated_e[top_features_K] += 1
@@ -213,17 +138,6 @@ def main(args: Namespace) -> None:
     E = reader_sae_config["d_sae"]
     prompts = generate_prompts(args.model, args.n_prompts, args.max_tokens_in_prompt)
 
-    frequent_features = (
-        []
-        if args.keep_frequent_features
-        else find_frequently_activating_features(
-            model,
-            ablator_sae,
-            prompts,
-            exclude_latent_threshold=args.exclude_latent_threshold,
-        )
-    )
-
     ablation_results_eE = torch.zeros(e, E)
     cooccurrences_ee = torch.zeros(e, e)
     how_often_activated_e = torch.zeros(e)
@@ -234,7 +148,6 @@ def main(args: Namespace) -> None:
             ablator_sae,
             reader_sae,
             prompt,
-            frequent_features,
             ablation_results_eE,
             args.abridge_ablations_to,
             cooccurrences_ee,
