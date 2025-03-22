@@ -31,7 +31,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument("--abridge-ablations-to", type=int, default=1000)
     parser.add_argument("--n-prompts", type=int, default=1)
     parser.add_argument("--save-frequency", type=int, default=240)
-    parser.add_argument("--selected-feature", type=int, required=True)
+    parser.add_argument("--selected-features", type=int, required=True, nargs="+")
     parser.add_argument(
         "--exclude-latent-threshold",
         type=float,
@@ -55,7 +55,7 @@ def compute_ablation_matrix(
     ],
     abridge_ablations_to: int,
     how_often_activated_e: Float[torch.Tensor, " num_ablator_features"],
-    selected_feature: int,
+    selected_features: list[int],
 ) -> None:
     """
     - e: number of features in ablator SAE
@@ -80,7 +80,7 @@ def compute_ablation_matrix(
         top_features_K = tentative_top_features_k[:abridge_ablations_to]
         assert len(top_features_K) == abridge_ablations_to
 
-        if selected_feature not in top_features_K:
+        if all(feature not in top_features_K for feature in selected_features):
             continue
         print("Got one")
 
@@ -164,7 +164,7 @@ def main(args: Namespace) -> None:
                 ablation_results_eE,
                 args.abridge_ablations_to,
                 how_often_activated_e,
-                args.selected_feature,
+                args.selected_features,
             )
             if (i % args.save_frequency == 0 or i + 1 == args.n_prompts) and (
                 not args.never_save
