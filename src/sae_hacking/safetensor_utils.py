@@ -102,11 +102,12 @@ def save_v2(
 @beartype
 def load_v2(load_path: str) -> dict[str, torch.Tensor]:
     """
-    Load effects, cooccurrences, and activation frequency tensors from a compressed safetensors file.
+    Load effects, cooccurrences, and activation frequency tensors from a safetensors file,
+    either compressed (.safetensors.zst) or uncompressed (.safetensors).
     This function is the inverse of save_v2.
 
     Args:
-        load_path: Path to the compressed safetensors file
+        load_path: Path to the safetensors file (compressed or uncompressed)
 
     Returns:
         Dictionary containing the loaded tensors with exactly the keys:
@@ -114,20 +115,29 @@ def load_v2(load_path: str) -> dict[str, torch.Tensor]:
     """
     timeprint("Starting to load")
 
-    assert load_path.endswith(".safetensors.zst")
+    # Check file extension and load accordingly
+    if load_path.endswith(".safetensors.zst"):
+        # Read the compressed data
+        with open(load_path, "rb") as f_in:
+            compressed_data = f_in.read()
 
-    # Read the compressed data
-    with open(load_path, "rb") as f_in:
-        compressed_data = f_in.read()
+        timeprint("Have read the file")
+        # Decompress the data
+        decompressor = zstandard.ZstdDecompressor()
+        uncompressed_data = decompressor.decompress(compressed_data)
+        timeprint("Have decompressed the file")
 
-    timeprint("Have read the file")
-    # Decompress the data
-    decompressor = zstandard.ZstdDecompressor()
-    uncompressed_data = decompressor.decompress(compressed_data)
-    timeprint("Have decompressed the file")
+        # Load the tensors from the uncompressed data
+        tensor_dict = safetensors.torch.load(uncompressed_data)
+    elif load_path.endswith(".safetensors"):
+        # Directly load uncompressed safetensors file
+        timeprint("Loading uncompressed safetensors file")
+        tensor_dict = safetensors.torch.load_file(load_path)
+    else:
+        raise ValueError(
+            f"Unsupported file extension for {load_path}. Expected .safetensors or .safetensors.zst"
+        )
 
-    # Load the tensors from the uncompressed data
-    tensor_dict = safetensors.torch.load(uncompressed_data)
     timeprint("Have read into tensors")
 
     possible_keys = {"effects_eE", "cooccurrences_ee", "how_often_activated_e"}
