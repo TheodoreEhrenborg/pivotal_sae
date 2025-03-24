@@ -46,11 +46,13 @@ def create_html(
 ) -> str:
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
+    title = "Highlighted Text Example"
+
     full_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Highlighted Text Example</title>
+        <title>{title}</title>
         <meta charset="UTF-8">
         <style>
             body {{
@@ -63,7 +65,7 @@ def create_html(
         </style>
     </head>
     <body>
-        <h1>Green Intensity Highlighting Example</h1>
+        <h1>{title}</h1>
         <p>{html_output}</p>
         <hr>
         <p>{sae_id=}</p>
