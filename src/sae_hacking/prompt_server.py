@@ -43,7 +43,6 @@ def create_html(
     sae_id: str,
     sae_release: str,
     prompt: str,
-    feature_idx: int,
     description: str,
     url: str,
 ) -> str:
@@ -71,17 +70,15 @@ def create_html(
         <h1>{title}</h1>
         <p>{html_output}</p>
         <hr>
+        <p>Neuronpedia: <a href="{url}" target="_blank">{url}</a></p>
+        <hr>
+        <p>Feature Summary: {description}</p>
+        <hr>
         <p>{sae_id=}</p>
         <hr>
         <p>{sae_release=}</p>
         <hr>
         <p>{prompt}</p>
-        <hr>
-        <p>{feature_idx}</p>
-        <hr>
-        <p>Neuronpedia: <a href="{url}" target="_blank">{url}</a></p>
-        <hr>
-        <p>Feature Summary: {description}</p>
         <hr>
         <p>Activations: {list(zip(split_text, activations.tolist(), strict=True))}</p>
     </body>
@@ -167,14 +164,7 @@ def process_client_request(
         url = construct_url(neuronpedia_id, feature_idx)
 
         html_output = create_html(
-            split_text,
-            activations,
-            sae_id,
-            sae_release,
-            prompt,
-            feature_idx,
-            description,
-            url,
+            split_text, activations, sae_id, sae_release, prompt, description, url
         )
 
         output_dir.mkdir(parents=True, exist_ok=True)
