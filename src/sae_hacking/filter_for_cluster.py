@@ -21,10 +21,11 @@ def find_similar_feature_group(
     cooccurrences_ee: Float[torch.Tensor, "e e"],
     min_cosine_sim: float,
     group_size: int,
+    neuronpedia_id: str,
 ) -> list[int]:
     """
     Find a group of features where each pair has cosine similarity >= min_cosine_sim
-    and no pair has co-occurrence > 0.
+    and no pair has co-occurrence > 0, excluding features with explanation starting with "No explanation found".
 
     Args:
         start_feature: Index of the feature to start with
@@ -32,6 +33,7 @@ def find_similar_feature_group(
         cooccurrences_ee: Co-occurrence matrix (e by e)
         min_cosine_sim: Minimum cosine similarity threshold
         group_size: Number of features to find (including start_feature)
+        neuronpedia_id: ID for the Neuronpedia database
 
     Returns:
         List of feature indices that form a group with the required properties
@@ -39,6 +41,14 @@ def find_similar_feature_group(
     timeprint(
         f"Finding a group of {group_size} features starting with feature {start_feature}"
     )
+
+    # Load feature explanations
+    feature_descriptions = NeuronExplanationLoader(neuronpedia_id)
+
+    # Check if start feature has valid explanation
+    start_feature_desc = feature_descriptions.get_explanation(start_feature)
+    if start_feature_desc.startswith("No explanation found"):
+        raise ValueError("start feature doesn't have a valid explanation")
 
     # Normalize decoder vectors
     normalized_decoder_eD = F.normalize(decoder_eD, dim=1)
@@ -56,6 +66,15 @@ def find_similar_feature_group(
         candidates.difference_update(
             selected_features
         )  # Remove already selected features
+
+        # Remove candidates with no explanation or "No explanation found"
+        candidates = {
+            idx
+            for idx in candidates
+            if not feature_descriptions.get_explanation(idx).startswith(
+                "No explanation found"
+            )
+        }
 
         # Check cosine similarity and co-occurrence constraints for each candidate
         for selected in selected_features:
@@ -218,6 +237,7 @@ def main(args: Namespace) -> None:
         cooccurrences_ee,
         args.min_cosine_sim,
         args.group_size,
+        neuronpedia_id,
     )
 
     # Compute cosine similarities for output
