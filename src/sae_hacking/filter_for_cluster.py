@@ -163,7 +163,7 @@ def process_results(
             f"Group of {len(features)} features with similar decoder vectors and zero co-occurrence\n\n"
         )
 
-        f.write("".join(map(str, features)))
+        f.write(" ".join(map(str, features)))
         f.write("\n")
 
         # Print individual features
