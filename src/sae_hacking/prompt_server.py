@@ -11,6 +11,7 @@ from beartype import beartype
 from sae_lens import SAE, HookedSAETransformer
 from transformers import AutoTokenizer, GemmaTokenizerFast
 
+from sae_hacking.neuronpedia_utils import NeuronExplanationLoader, construct_url
 from sae_hacking.timeprint import timeprint
 
 
@@ -43,6 +44,8 @@ def create_html(
     sae_release: str,
     prompt: str,
     feature_idx: int,
+    description: str,
+    url: str,
 ) -> str:
     html_output = highlight_tokens_with_intensity(split_text, activations)
 
@@ -75,6 +78,10 @@ def create_html(
         <p>{prompt}</p>
         <hr>
         <p>{feature_idx}</p>
+        <hr>
+        <p>Neuronpedia: <a href="{url}" target="_blank">{url}</a></p>
+        <hr>
+        <p>Feature Summary: {description}</p>
         <hr>
         <p>Activations: {list(zip(split_text, activations.tolist(), strict=True))}</p>
     </body>
@@ -140,9 +147,12 @@ def process_client_request(
 
         timeprint(f"Processing request for SAE {sae_id} with feature {feature_idx}")
 
-        sae, _, _ = SAE.from_pretrained(
+        sae, sae_config, _ = SAE.from_pretrained(
             release=sae_release, sae_id=sae_id, device=device
         )
+        neuronpedia_id = sae_config["neuronpedia_id"]
+        describer = NeuronExplanationLoader(neuronpedia_id)
+        description = describer.get_explanation(feature_idx)
         timeprint("Loaded SAE")
 
         activations = get_feature_activation_per_token(model, sae, feature_idx, prompt)
@@ -154,8 +164,17 @@ def process_client_request(
 
         split_text = tokenizer.tokenize(prompt, add_special_tokens=True)
 
+        url = construct_url(neuronpedia_id, feature_idx)
+
         html_output = create_html(
-            split_text, activations, sae_id, sae_release, prompt, feature_idx
+            split_text,
+            activations,
+            sae_id,
+            sae_release,
+            prompt,
+            feature_idx,
+            description,
+            url,
         )
 
         output_dir.mkdir(parents=True, exist_ok=True)
