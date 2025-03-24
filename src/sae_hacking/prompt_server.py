@@ -56,6 +56,7 @@ def create_html(
             body {{
                 font-family: Arial, sans-serif;
                 font-size: 16px;
+                overflow-wrap: break-word;
                 line-height: 1.5;
                 margin: 20px;
             }}
