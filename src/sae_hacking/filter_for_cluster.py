@@ -19,8 +19,8 @@ def find_similar_feature_group(
     start_feature: int,
     decoder_eD: Float[torch.Tensor, "e D"],
     cooccurrences_ee: Float[torch.Tensor, "e e"],
-    min_cosine_sim: float = 0.4,
-    group_size: int = 10,
+    min_cosine_sim: float,
+    group_size: int,
 ) -> list[int]:
     """
     Find a group of features where each pair has cosine similarity >= min_cosine_sim
