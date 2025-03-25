@@ -141,7 +141,7 @@ def process_results(
 
         for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
             f.write(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}\n")
-            f.write(f"  Cosine similarity: {cosine_sim:.4f}\n")
+            f.write(f"  Cosine similarity of downstream effects: {cosine_sim:.4f}\n")
             f.write(f"  Co-occurrence count: {cooccurrences_ee[ablator1, ablator2]}\n")
 
             f.write(
