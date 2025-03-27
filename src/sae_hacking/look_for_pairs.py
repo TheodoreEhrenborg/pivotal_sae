@@ -21,8 +21,7 @@ def find_similar_noncooccurring_pairs(
     cooccurrence_threshold: int,
     cosine_sim_threshold: float,
     max_steps: int | None,
-    skip_before: int | None,
-    skip_after: int | None,
+    just_these: list[int] | None,
     skip_torch_sign: bool,
 ) -> list[tuple[int, int, float]]:
     """
@@ -43,9 +42,8 @@ def find_similar_noncooccurring_pairs(
 
     # Process in batches for each ablator
     for i in tqdm(range(num_ablators)):
-        if skip_before and skip_before > i:
-            continue
-        if skip_after and skip_after < i:
+        # Skip if not in the list of specific ablators to process
+        if just_these is not None and i not in just_these:
             continue
 
         if max_steps is not None and i >= max_steps:
@@ -116,8 +114,12 @@ def make_parser() -> ArgumentParser:
         help="Only keep pairs with cosine similarity above this threshold",
     )
     parser.add_argument("--ablator-sae-neuronpedia-id", required=True)
-    parser.add_argument("--skip-before", type=int)
-    parser.add_argument("--skip-after", type=int)
+    parser.add_argument(
+        "--just-these",
+        type=int,
+        nargs="+",
+        help="List of specific ablator indices to process, skipping all others",
+    )
     parser.add_argument("--skip-torch-sign", action="store_true")
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
@@ -197,8 +199,7 @@ def main(args: Namespace) -> None:
         args.cooccurrence_threshold,
         args.cosine_sim_threshold,
         max_steps=args.max_steps,
-        skip_before=args.skip_before,
-        skip_after=args.skip_after,
+        just_these=args.just_these,
         skip_torch_sign=args.skip_torch_sign,
     )
 
