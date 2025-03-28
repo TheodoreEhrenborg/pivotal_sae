@@ -126,6 +126,7 @@ def make_parser() -> ArgumentParser:
     parser.add_argument(
         "--max-steps", type=int, help="Maximum number of pair comparisons to perform"
     )
+    parser.add_argument("--no-log-scale", action="store_true")
     return parser
 
 
@@ -250,7 +251,8 @@ def main(args: Namespace) -> None:
     plot_similarity_histogram(
         results,
         histogram_filename,
-        title=f"Distribution of Cosine Similarities (threshold={args.cosine_sim_threshold})",
+        f"Distribution of Cosine Similarities (threshold={args.cosine_sim_threshold})",
+        not args.no_log_scale,
     )
 
 
