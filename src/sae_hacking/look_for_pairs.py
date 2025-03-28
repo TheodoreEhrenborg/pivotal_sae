@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import json
 import os
 from argparse import ArgumentParser, Namespace
 
@@ -137,32 +138,35 @@ def process_results(
 ) -> None:
     ablator_descriptions = NeuronExplanationLoader(ablator_sae_id)
 
+    # Create a dictionary to hold all the data
+    output_data = {
+        "meta": {"count": len(results), "ablator_sae_id": ablator_sae_id},
+        "pairs": [],
+    }
+
+    # Process each result pair
+    for ablator1, ablator2, cosine_sim in results:
+        pair_data = {
+            "ablator1": {
+                "id": int(ablator1),
+                "explanation": ablator_descriptions.get_explanation(ablator1),
+                "activation_count": float(how_often_activated_e[ablator1]),
+                "url": construct_url(ablator_sae_id, ablator1),
+            },
+            "ablator2": {
+                "id": int(ablator2),
+                "explanation": ablator_descriptions.get_explanation(ablator2),
+                "activation_count": float(how_often_activated_e[ablator2]),
+                "url": construct_url(ablator_sae_id, ablator2),
+            },
+            "cosine_similarity": float(cosine_sim),
+            "cooccurrence_count": float(cooccurrences_ee[ablator1, ablator2]),
+        }
+        output_data["pairs"].append(pair_data)
+
+    # Write the dictionary to a JSON file
     with open(filename, "w") as f:
-        f.write(f"Found {len(results)} similar non-co-occurring pairs\n")
-        f.write("\n")
-
-        for i, (ablator1, ablator2, cosine_sim) in enumerate(results):
-            f.write(f"Pair {i + 1}: Ablator {ablator1} and Ablator {ablator2}\n")
-            f.write(f"  Cosine similarity of downstream effects: {cosine_sim:.4f}\n")
-            f.write(f"  Co-occurrence count: {cooccurrences_ee[ablator1, ablator2]}\n")
-
-            f.write(
-                f"  Ablator {ablator1}: {ablator_descriptions.get_explanation(ablator1)}\n"
-            )
-            f.write(
-                f"  Ablator {ablator2}: {ablator_descriptions.get_explanation(ablator2)}\n"
-            )
-
-            f.write(
-                f"  Ablator {ablator1} activated on {how_often_activated_e[ablator1]} prompts\n"
-            )
-            f.write(
-                f"  Ablator {ablator2} activated on {how_often_activated_e[ablator2]} prompts\n"
-            )
-
-            f.write(f"  URLs: {construct_url(ablator_sae_id, ablator1)}\n")
-            f.write(f"        {construct_url(ablator_sae_id, ablator2)}\n")
-            f.write("\n")
+        json.dump(output_data, f, indent=2)
 
     timeprint(f"Results saved to {filename}")
 
@@ -174,7 +178,7 @@ def main(args: Namespace) -> None:
 
     # Generate filename with current timestamp
     current_time = datetime.datetime.now()
-    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.txt"
+    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.json"
 
     # Print the output file's name at the very start
     print(f"Output will be saved to: {filename}")
