@@ -2,5 +2,6 @@
 set -euo pipefail
 IFS=$'\n\t'
 scp "$1" pivotal:
-ssh pivotal "sudo mv $1 /var/www/html/"
-echo http://3.10.22.91/"$1"
+base=$(basename "$1")
+ssh pivotal "sudo mv $base /var/www/html/"
+echo http://3.10.22.91/"$base"
