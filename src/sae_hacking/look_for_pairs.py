@@ -209,7 +209,7 @@ def main(args: Namespace) -> None:
 
     # Generate filename with current timestamp
     current_time = datetime.datetime.now()
-    base_filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}"
+    base_filename = f"/results/{current_time.strftime('%Y%m%d_%H%M%S')}"
     json_filename = f"{base_filename}.json"
     histogram_filename = f"{base_filename}_histogram.png"
 
