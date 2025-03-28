@@ -174,7 +174,7 @@ def save_to_json(
 
 @beartype
 def plot_similarity_histogram(
-    results: list[tuple[int, int, float]], filename: str, title: str
+    results: list[tuple[int, int, float]], filename: str, title: str, log_scale: bool
 ) -> None:
     bins = 50
     # Extract the cosine similarities from the results
@@ -188,6 +188,10 @@ def plot_similarity_histogram(
     plt.xlabel("Cosine Similarity")
     plt.ylabel("Frequency")
     plt.title(title)
+
+    # Set y-axis to logarithmic scale if requested
+    if log_scale:
+        plt.yscale("log")
 
     # Save the plot
     plt.tight_layout()
