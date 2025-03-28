@@ -129,7 +129,7 @@ def make_parser() -> ArgumentParser:
 
 
 @jaxtyped(typechecker=beartype)
-def process_results(
+def save_to_json(
     results: list[tuple[int, int, float]],
     ablator_sae_id: str,
     cooccurrences_ee: Float[torch.Tensor, "e e"],
@@ -207,8 +207,7 @@ def main(args: Namespace) -> None:
         skip_torch_sign=args.skip_torch_sign,
     )
 
-    # Process and display results
-    process_results(
+    save_to_json(
         results,
         args.ablator_sae_neuronpedia_id,
         cooccurrences_ee,
