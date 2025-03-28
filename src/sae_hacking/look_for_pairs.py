@@ -4,6 +4,7 @@ import json
 import os
 from argparse import ArgumentParser, Namespace
 
+import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 from beartype import beartype
@@ -172,16 +173,43 @@ def save_to_json(
 
 
 @beartype
+def plot_similarity_histogram(
+    results: list[tuple[int, int, float]], filename: str, title: str
+) -> None:
+    bins = 50
+    # Extract the cosine similarities from the results
+    similarities = [sim for _, _, sim in results]
+
+    # Create the histogram
+    plt.figure(figsize=(10, 6))
+    plt.hist(similarities, bins=bins, color="skyblue", edgecolor="black", alpha=0.7)
+
+    # Add labels and title
+    plt.xlabel("Cosine Similarity")
+    plt.ylabel("Frequency")
+    plt.title(title)
+
+    # Save the plot
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+    timeprint(f"Histogram saved to {filename}")
+
+
+@beartype
 def main(args: Namespace) -> None:
     # Create the results directory if it doesn't exist
     os.makedirs("/results", exist_ok=True)
 
     # Generate filename with current timestamp
     current_time = datetime.datetime.now()
-    filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}.json"
+    base_filename = f"/results/{current_time.strftime('%Y%m%d_%H%M')}"
+    json_filename = f"{base_filename}.json"
+    histogram_filename = f"{base_filename}_histogram.png"
 
     # Print the output file's name at the very start
-    print(f"Output will be saved to: {filename}")
+    print(f"Output will be saved to: {json_filename}")
 
     timeprint("Loading file")
     data = load_v2(args.input_path)
@@ -212,7 +240,13 @@ def main(args: Namespace) -> None:
         args.ablator_sae_neuronpedia_id,
         cooccurrences_ee,
         data["how_often_activated_e"],
-        filename,
+        json_filename,
+    )
+
+    plot_similarity_histogram(
+        results,
+        histogram_filename,
+        title=f"Distribution of Cosine Similarities (threshold={args.cosine_sim_threshold})",
     )
 
 
