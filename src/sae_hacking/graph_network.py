@@ -104,14 +104,14 @@ def graph_ablation_matrix(
         name = f"A{i.item()}"
         G.add_node(
             name,
-            title=f"{name} {ablator_descriptions.get_explanation(i.item())}",
+            title=f"{ablator_sae_id}/{i.item()} {ablator_descriptions.get_explanation(i.item())}",
             group="ablator",
         )
     for i in reader_indices:
         name = f"R{i.item()}"
         G.add_node(
             name,
-            title=f"{name} {reader_descriptions.get_explanation(i.item())}",
+            title=f"{reader_sae_id}/{i.item()} {reader_descriptions.get_explanation(i.item())}",
             group="reader",
         )
 
@@ -121,8 +121,8 @@ def graph_ablation_matrix(
         weight = ablation_results[ablator_idx.item()][reader_idx.item()].item()
         edge_color = "blue" if weight > 0 else "red"
         G.add_edge(
-            f"{ablator_sae_id}/{ablator_idx.item()}",
-            f"{reader_sae_id}/{reader_idx.item()}",
+            f"A{ablator_idx.item()}",
+            f"R{reader_idx.item()}",
             weight=abs(weight),
             color=edge_color,
             title=f"Weight: {weight:.4f}",
