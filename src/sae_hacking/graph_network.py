@@ -121,8 +121,8 @@ def graph_ablation_matrix(
         weight = ablation_results[ablator_idx.item()][reader_idx.item()].item()
         edge_color = "blue" if weight > 0 else "red"
         G.add_edge(
-            f"A{ablator_idx.item()}",
-            f"R{reader_idx.item()}",
+            f"{ablator_sae_id}/{ablator_idx.item()}",
+            f"{reader_sae_id}/{reader_idx.item()}",
             weight=abs(weight),
             color=edge_color,
             title=f"Weight: {weight:.4f}",
