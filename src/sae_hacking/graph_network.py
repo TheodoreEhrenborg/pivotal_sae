@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from datetime import datetime
 
 import networkx as nx
 import torch
@@ -133,5 +133,8 @@ def graph_ablation_matrix(
     timeprint("Calculating layout")
     nt.from_nx(G)
     nt.show_buttons(filter_=["physics"])
-    nt.save_graph(f"{output_dir}/ablation_network.html")
+
+    nt.save_graph(
+        f"{output_dir}/ablation_network_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    )
     timeprint("Plot has been saved")
