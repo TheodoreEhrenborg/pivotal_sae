@@ -11,6 +11,7 @@ fi
 docker run -it --rm \
 	--memory=10g \
 	--memory-swap=10g \
+	--cpus=1 \
 	$@ \
 	-v $HOME/.cache/huggingface:/root/.cache/huggingface \
 	-v $HOME/.config/vastai:/root/.config/vastai \
