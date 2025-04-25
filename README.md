@@ -1,4 +1,8 @@
-Work in progress
+# Pivotal SAE
+
+This is my code
+from when I was a fellow at [Pivotal Research](https://www.pivotal-research.org/),
+in Q1 2025.
 
 ## Installation
 
@@ -20,17 +24,23 @@ To run uv in this case, use the provided Dockerfile:
 1. To mount a results directory, use `./run.sh -v /absolute/host/path/to/results/:/results`
 1. Then inside the container you can run `uv run ...` as before
 
-TODO docker is limited
+`run.sh` is meant for local development.
+Some of the scripts are memory hungry.
+To prevent your dev machine from freezing,
+`run.sh` limits the container's CPUs to 1 and the RAM to 10 GB.
+
+If you instead run the code on [Vast.ai](https://vast.ai),
+the image is called
+[theodoreehrenborg/ubuntu-uv](https://hub.docker.com/r/theodoreehrenborg/ubuntu-uv). Note that Vast.ai will not call `./run.sh`.
 
 ## Running tests
 
 `uv run pytest tests`
 
-## History
+## Dimension naming convention
 
-Cloned from [here](https://github.com/TheodoreEhrenborg/tiny_stories_sae)
-
-# Dimension naming convention
+This repo uses
+[Shazeer typing](https://www.kolaayonrinde.com/blog/2025/01/01/shazeer-typing.html):
 
 - 1: singleton dimension (for broadcasting)
 - A: Number of parent features in the dataset
@@ -46,6 +56,8 @@ Cloned from [here](https://github.com/TheodoreEhrenborg/tiny_stories_sae)
 - S: sequence length
 
 # TODO Scripts
+
+Not a comprehensive list.
 
 All scripts can run on a single 4090.
 It may be necessary to have a lot of RAM available
@@ -64,3 +76,7 @@ uv run src/sae_hacking/gemma_cooccurrences.py
 uv run src/sae_hacking/prompt_server.py
 
 uv run src/sae_hacking/prompt_client.py
+
+## History
+
+Cloned from [here](https://github.com/TheodoreEhrenborg/tiny_stories_sae)
