@@ -29,6 +29,7 @@ To run uv in this case, use the provided Dockerfile:
 Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many files deleted
 
 # Dimension naming convention
+
 - 1: singleton dimension (for broadcasting)
 - A: Number of parent features in the dataset
 - B: batch size
@@ -43,26 +44,21 @@ Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many
 - S: sequence length
 
 # TODO Scripts
-All scripts can run on a single 4090. 
-It may be necessary to have a lot of RAM available 
-(>200 GB), and a lot of disk space (>100 GB).
 
+All scripts can run on a single 4090.
+It may be necessary to have a lot of RAM available
+(>200 GB), and a lot of disk space (>100 GB).
 
 uv run src/sae_hacking/train_topk_sae_toy.py --lr 1e-4 --sae-hidden-dim 30 --dataset-num-features 30 --batch-size 100 --cuda --hierarchical --perturbation_size 0.4 --model-dim 50
 
 Unusual combinations of hyperparameters are not guaranteed to run.
 
-
 uv run src/sae_hacking/gemma_selective_ablate.py
-
 
 uv run src/sae_hacking/look_for_pairs.py
 
 uv run src/sae_hacking/gemma_cooccurrences.py
 
-
-
 uv run src/sae_hacking/prompt_server.py
-
 
 uv run src/sae_hacking/prompt_client.py

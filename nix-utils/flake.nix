@@ -25,6 +25,7 @@
             buildInputs = [
               ruff
               nvtop-pkgs.nvtopPackages.nvidia
+              mdformat
             ];
           };
         }
