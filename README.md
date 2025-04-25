@@ -55,17 +55,26 @@ This repo uses
 - M: model dimension
 - S: sequence length
 
-# TODO Scripts
+## Scripts
 
 Not a comprehensive list.
 
+Unusual combinations of hyperparameters are not guaranteed to run.
+
+### Hierarchical SAEs
+
 All scripts can run on a single 4090.
+
+- Example of training a hierarchical SAE:
+
+```bash
+uv run src/sae_hacking/train_topk_sae_toy.py --lr 1e-4 --sae-hidden-dim 30 --dataset-num-features 30 --batch-size 100 --cuda --hierarchical --perturbation_size 0.4 --model-dim 50
+```
+
+### TODO Looking for feature absorption
+
 It may be necessary to have a lot of RAM available
 (>200 GB), and a lot of disk space (>100 GB).
-
-uv run src/sae_hacking/train_topk_sae_toy.py --lr 1e-4 --sae-hidden-dim 30 --dataset-num-features 30 --batch-size 100 --cuda --hierarchical --perturbation_size 0.4 --model-dim 50
-
-Unusual combinations of hyperparameters are not guaranteed to run.
 
 uv run src/sae_hacking/gemma_selective_ablate.py
 
@@ -73,9 +82,19 @@ uv run src/sae_hacking/look_for_pairs.py
 
 uv run src/sae_hacking/gemma_cooccurrences.py
 
-uv run src/sae_hacking/prompt_server.py
+### Highlighting prompts
 
-uv run src/sae_hacking/prompt_client.py
+- Here's how to start the prompt server:
+
+```bash
+uv run src/sae_hacking/prompt_server.py
+```
+
+- And then in a different window, you can send prompts to the server to get annotated with how strongly the latents activate:
+
+```bash
+uv run src/sae_hacking/prompt_client.py --sae-release gemma-scope-2b-pt-mlp-canonical --sae-id layer_20/width_65k/canonical --prompt "testing 1 2 3" --output-dir /results/prompts --feature-idx 1000
+```
 
 ## History
 
