@@ -3,6 +3,8 @@
 This is my code
 from when I was a fellow at [Pivotal Research](https://www.pivotal-research.org/),
 in Q1 2025.
+Draft LessWrong post is
+[here](https://docs.google.com/document/d/13CzUE_NEe3XFLxCDx4L-BDk90nw3D_2uf7cs5zY7Pxo/edit?tab=t.5owtaf4w9s2w).
 
 ## Installation
 
