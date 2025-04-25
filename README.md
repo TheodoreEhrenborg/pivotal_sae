@@ -20,13 +20,15 @@ To run uv in this case, use the provided Dockerfile:
 1. To mount a results directory, use `./run.sh -v /absolute/host/path/to/results/:/results`
 1. Then inside the container you can run `uv run ...` as before
 
+TODO docker is limited
+
 ## Running tests
 
 `uv run pytest tests`
 
 ## History
 
-Based on https://github.com/TheodoreEhrenborg/tiny_stories_sae, except with many files deleted
+Cloned from [here](https://github.com/TheodoreEhrenborg/tiny_stories_sae)
 
 # Dimension naming convention
 
