@@ -65,32 +65,44 @@ Unusual combinations of hyperparameters are not guaranteed to run.
 
 All scripts can run on a single 4090.
 
-- Example of training a hierarchical SAE:
+Example of training a hierarchical SAE:
 
 ```bash
 uv run src/sae_hacking/train_topk_sae_toy.py --lr 1e-4 --sae-hidden-dim 30 --dataset-num-features 30 --batch-size 100 --cuda --hierarchical --perturbation_size 0.4 --model-dim 50
 ```
 
-### TODO Looking for feature absorption
+### Looking for feature absorption
 
 It may be necessary to have a lot of RAM available
 (>200 GB), and a lot of disk space (>100 GB).
 
-uv run src/sae_hacking/gemma_selective_ablate.py
+First gather data on which latents cooccur with which other latents:
 
-uv run src/sae_hacking/look_for_pairs.py
+```bash
+uv run src/sae_hacking/gemma_cooccurrences.py --max-tokens 100 --ablator-sae-release gemma-scope-2b-pt-mlp-canonical --n-prompts 2000000 --save-frequency 30000 --dataset-id monology/pile-uncopyrighted --batch-size 5
+```
 
-uv run src/sae_hacking/gemma_cooccurrences.py
+Then gather data on latents' downstream effects:
+
+```bash
+uv run src/sae_hacking/gemma_selective_ablate.py --abridge-ablations-to 100 --max-tokens 100 --ablator-sae-release gemma-scope-2b-pt-mlp-canonical --reader-sae-release gemma-scope-2b-pt-res-canonical --n-prompts 1000000 --save-frequency 10000 --dataset-id monology/pile-uncopyrighted --selected-features 3000 9000 15000 21000 27000 33000 39000 45000 51000 57000 63000 --batch-size 5
+```
+
+Finally filter to find non-cooccuring latents with similar downstream effects:
+
+```bash
+uv run src/sae_hacking/look_for_pairs.py --input-path /results/ablations.safetensors.zst --ablator-sae-neuronpedia-id gemma-2-2b/20-gemmascope-mlp-65k --cosine-sim-threshold -0.2 --cooccurrence-path /results/cooccurrences.safetensors --skip-torch-sign --just-these 15000
+```
 
 ### Highlighting prompts
 
-- Here's how to start the prompt server:
+Here's how to start the prompt server:
 
 ```bash
 uv run src/sae_hacking/prompt_server.py
 ```
 
-- And then in a different window, you can send prompts to the server to get annotated with how strongly the latents activate:
+And then in a different window, you can send prompts to the server to get annotated with how strongly the latents activate:
 
 ```bash
 uv run src/sae_hacking/prompt_client.py --sae-release gemma-scope-2b-pt-mlp-canonical --sae-id layer_20/width_65k/canonical --prompt "testing 1 2 3" --output-dir /results/prompts --feature-idx 1000
